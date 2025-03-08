@@ -1,0 +1,61 @@
+---
+title: "parkinsonsMetagenomicData"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{parkinsonsMetagenomicData}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(parkinsonsMetagenomicData)
+library(dplyr)
+library(DT)
+```
+
+# Sample Metadata
+
+Metadata for all samples present within `parkinsonsMetagenomicData` is available
+through the included `data.frame` `sampleMetadata`. Both curated and uncurated
+features are included in this `data.frame`, with uncurated features being
+prefixed by "uncurated_". Curated features include the following at this time:
+
+ * curation_id
+ * study_name
+ * sample_id
+ * subject_id
+ * target_condition
+ * target_condition_ontology_term_id
+ * control
+ * control_ontology_term_id
+ * age
+ * age_group
+ * age_group_ontology_term_id
+ * age_unit
+ * age_unit_ontology_term_id
+ * sex
+ * sex_ontology_term_id
+ * disease
+ * disease_ontology_term_id
+ * curator
+ * BioProject
+ * BioSample
+ * NCBI_accession
+ * uuid
+
+```{r, collapse = TRUE}
+sampleMetadata |>
+    filter(study_name == "BedarfJR_2017") |>
+    select(where(~ !any(is.na(.x)))) |>
+    slice(1:10) |>
+    select(1:10) |>
+    datatable(options = list(dom = "t"), extensions = "Responsive")
+```
+

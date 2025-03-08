@@ -9,40 +9,54 @@ map_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsonsMetagenomicData/shotgun
 accession_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/pipeline/data/ParkinsonAccessions/ParkinsonAccessions/"
 
 # curated metadata
-temp <- list.files(path = curated_dir, pattern="^[^W]*\\.csv$")
+temp <- list.files(path = curated_dir, pattern="\\.csv$")
 curated_meta <- lapply(file.path(curated_dir, temp), read.csv)
-names(curated_meta) <- c("bedarf", "boktor1", "boktor2", "jo", "lee", "mao", "nishiwaki")
+names(curated_meta) <- c("bedarf", "boktor1", "boktor2", "duru", "jo", "lee",
+                         "mao", "nishiwaki", "qian", "wallen", "zhang")
 #all_curated <- bind_rows(curated_meta)
 
 # UUID maps
-temp <- list.files(path = map_dir, pattern="^[^WZ]*\\.tsv$")
+temp <- list.files(path = map_dir, pattern="\\.tsv$")
 uuid_maps <- lapply(file.path(map_dir, temp), read.delim)
 uuid_maps <- lapply(uuid_maps, function(x) x %>% rename(BioSample = sample_id))
-names(uuid_maps) <- c("bedarf", "boktor1", "boktor2", "jo", "lee", "mao", "nishiwaki")
+names(uuid_maps) <- c("bedarf", "boktor1", "boktor2", "duru", "jo", "lee",
+                      "mao", "nishiwaki", "qian", "wallen", "zhang")
 #all_uuids <- bind_rows(uuid_maps)
 
 # accession lists
-temp <- list.files(path = accession_dir, pattern="^[^WZ]*\\.csv$")
+temp <- list.files(path = accession_dir, pattern="\\.csv$")
 accession_lists <- lapply(file.path(accession_dir, temp), read.csv)
+temp <- list.files(path = accession_dir, pattern="\\.tsv$")
+accession_lists <- append(accession_lists,
+                          list(read.delim(file.path(accession_dir, temp))), 8)
 accession_lists <- lapply(accession_lists, function(x) x %>%
                               mutate(across(everything(), as.character)))
-names(accession_lists) <- c("bedarf", "boktor1", "boktor2", "jo", "lee", "mao", "nishiwaki")
+names(accession_lists) <- c("bedarf", "boktor1", "boktor2", "duru", "jo", "lee",
+                            "mao", "nishiwaki", "qian", "wallen", "zhang")
 #all_accessions <- bind_rows(accession_lists)
 
 # combine curated with original metadata
 all_metas <- list("bedarf" = NULL,
                   "boktor" = NULL,
+                  "duru" = NULL,
                   "jo" = NULL,
                   "lee" = NULL,
                   "mao" = NULL,
-                  "nishiwaki" = NULL)
+                  "nishiwaki" = NULL,
+                  "qian" = NULL,
+                  "wallen" = NULL,
+                  "zhang" = NULL)
 
 final_metas <- list("bedarf" = NULL,
                     "boktor" = NULL,
+                    "duru" = NULL,
                     "jo" = NULL,
                     "lee" = NULL,
                     "mao" = NULL,
-                    "nishiwaki" = NULL)
+                    "nishiwaki" = NULL,
+                    "qian" = NULL,
+                    "wallen" = NULL,
+                    "zhang" = NULL)
 
 curated_cols <- c("curation_id",
                   "study_name",
@@ -105,6 +119,26 @@ all_metas$boktor <- boktor_accessions %>%
 boktor_uuids <- bind_rows(uuid_maps$boktor1, uuid_maps$boktor2)
 final_metas$boktor <- boktor_uuids %>%
     left_join(all_metas$boktor,
+              by = join_by(BioSample),
+              suffix = c("", ""),
+              keep = TRUE)
+
+# duru
+duru <- read.csv(file.path(original_dir, "DuruIC_2024.csv")) %>%
+    rename_with( ~ paste0("uncurated_", .x))
+all_metas$duru <- curated_meta$duru %>%
+    left_join(duru,
+              by = join_by(sample_id == uncurated_Sample_name),
+              suffix = c("", ""),
+              keep = TRUE)
+all_metas$duru <- accession_lists$duru %>%
+    select(BioSample, Sample_name) %>%
+    right_join(all_metas$duru,
+               by = join_by(Sample_name == sample_id),
+               keep = TRUE) %>%
+    select(-Sample_name)
+final_metas$duru <- uuid_maps$duru %>%
+    left_join(all_metas$duru,
               by = join_by(BioSample),
               suffix = c("", ""),
               keep = TRUE)
@@ -184,6 +218,67 @@ final_metas$nishiwaki <- uuid_maps$nishiwaki %>%
               suffix = c("", ""),
               keep = TRUE)
 
+# qian
+qian <- read.delim(file.path(original_dir, "QianY_2020.tsv")) %>%
+    rename_with( ~ paste0("uncurated_", .x))
+all_metas$qian <- curated_meta$qian %>%
+    left_join(qian,
+              by = join_by(sample_id == uncurated_Sample.Name),
+              suffix = c("", ""),
+              keep = TRUE)
+all_metas$qian <- accession_lists$qian %>%
+    select(BioSample, Sample.Name) %>%
+    right_join(all_metas$qian,
+               by = join_by(Sample.Name == sample_id),
+               keep = TRUE) %>%
+    select(-Sample.Name)
+final_metas$qian <- uuid_maps$qian %>%
+    left_join(all_metas$qian,
+              by = join_by(BioSample),
+              suffix = c("", ""),
+              keep = TRUE)
+
+# wallen
+wallen <- read.csv(file.path(original_dir, "WallenZD_2022.csv")) %>%
+    rename_with( ~ paste0("uncurated_", .x))
+all_metas$wallen <- curated_meta$wallen %>%
+    left_join(wallen,
+              by = join_by(sample_id == uncurated_Sample.Name),
+              suffix = c("", ""),
+              keep = TRUE)
+all_metas$wallen <- accession_lists$wallen %>%
+    select(BioSample, Sample.Name) %>%
+    right_join(all_metas$wallen,
+               by = join_by(Sample.Name == sample_id),
+               keep = TRUE) %>%
+    select(-Sample.Name)
+final_metas$wallen <- uuid_maps$wallen %>%
+    left_join(all_metas$wallen,
+              by = join_by(BioSample),
+              suffix = c("", ""),
+              keep = TRUE)
+
+# zhang
+zhang <- read.csv(file.path(original_dir, "ZhangM_2023.csv")) %>%
+    rename_with( ~ paste0("uncurated_", .x))
+all_metas$zhang <- curated_meta$zhang %>%
+    left_join(zhang,
+              by = join_by(sample_id == uncurated_Sample.Name),
+              suffix = c("", ""),
+              keep = TRUE)
+all_metas$zhang <- accession_lists$zhang %>%
+    select(BioSample, Sample.Name) %>%
+    right_join(all_metas$zhang,
+               by = join_by(Sample.Name == sample_id),
+               keep = TRUE) %>%
+    select(-Sample.Name)
+final_metas$zhang <- uuid_maps$zhang %>%
+    left_join(all_metas$zhang,
+              by = join_by(BioSample),
+              suffix = c("", ""),
+              keep = TRUE)
+
+# merge
 final_metas <- lapply(final_metas, function(x) x %>%
                           mutate(across(-any_of(curated_cols), as.character)))
 sampleMetadata <- bind_rows(final_metas)
