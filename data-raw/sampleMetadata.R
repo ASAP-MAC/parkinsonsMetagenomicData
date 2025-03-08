@@ -51,16 +51,16 @@ curated_cols <- c("curation_id",
                   "target_condition",
                   "target_condition_ontology_term_id",
                   "control",
-                  "control_ontology_term_id", 
-                  "age", 
-                  "age_group", 
-                  "age_group_ontology_term_id", 
-                  "age_unit", 
-                  "age_unit_ontology_term_id", 
-                  "sex", 
-                  "sex_ontology_term_id", 
-                  "disease", 
-                  "disease_ontology_term_id", 
+                  "control_ontology_term_id",
+                  "age",
+                  "age_group",
+                  "age_group_ontology_term_id",
+                  "age_unit",
+                  "age_unit_ontology_term_id",
+                  "sex",
+                  "sex_ontology_term_id",
+                  "disease",
+                  "disease_ontology_term_id",
                   "curator")
 
 # bedarf
@@ -186,5 +186,7 @@ final_metas$nishiwaki <- uuid_maps$nishiwaki %>%
 
 final_metas <- lapply(final_metas, function(x) x %>%
                           mutate(across(-any_of(curated_cols), as.character)))
-merged_metadata <- bind_rows(final_metas)
-write.csv(merged_metadata, file = "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsonsMetagenomicData/shotgun_samples/merged_metadata.csv", row.names = FALSE)
+sampleMetadata <- bind_rows(final_metas)
+#write.csv(merged_metadata, file = "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsonsMetagenomicData/shotgun_samples/merged_metadata.csv", row.names = FALSE)
+
+usethis::use_data(sampleMetadata, overwrite = TRUE)
