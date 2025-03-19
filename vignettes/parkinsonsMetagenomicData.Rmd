@@ -71,18 +71,18 @@ the user must authenticate with a service account keyfile in the following way:
 gcs_auth("full/path/to/keyfile.json")
 ```
 
-To access a particular output file, use `get_metaphlan_locator` to return the
-path to the relevant file within the Google Cloud Bucket. Then use
-`cache_metaphlan` to download the file and store it in a cache location. If
-this operation is performed a second time, the file will not be redownloaded
-unless explicity specified, in order to reduce excessive downloads. The cached
-file can then be read into R.
+To access MetaPhlAn output files, use `getMetagenomicData`. This function takes
+UUID and data type arguments, downloads the corresponding MetaPhlAn output
+files, and stores them in a local cache. If the same files are requested again
+through this function, they will not be re-downloaded unless explicitly
+specified, in order to reduce excessive downloads. `getMetagenomicData` returns
+a tibble of cached file paths and cache IDs for each requested file. The file
+paths can be used to read the cached files into R.
 
 ```{r}
-locator <- get_metaphlan_locator(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                                 data_type = "bugs")
-cached_file_path <- cache_metaphlan(locator)
-metaphlan_table <- readr::read_tsv(cached_file_path, skip = 4)
+cache_tbl <- getMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+                                data_type = "all")
+datatable(cache_table, options = list(dom = "t"), extensions = "Responsive")
 ```
 
 
