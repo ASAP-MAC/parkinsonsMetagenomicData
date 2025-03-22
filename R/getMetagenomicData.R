@@ -111,12 +111,9 @@ get_metaphlan_locators <- function(uuids, data_types = "all") {
 #'  \code{\link[BiocFileCache]{BiocFileCache-class}}
 #' @rdname cache_gcb
 #' @export
-#' @importFrom googleCloudStorageR gcs_download_url gcs_get_object
+#' @importFrom googleCloudStorageR gcs_get_object
 #' @importFrom BiocFileCache bfcquery bfcnew bfcrpath
 cache_gcb <- function(locator, ask_on_update = TRUE) {
-    ## Convert locator to download URL
-    url <- googleCloudStorageR::gcs_download_url(locator)
-
     ## Get cache
     bfc <- pMD_get_cache()
 
@@ -135,9 +132,13 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
         rid <- names(newpath)
         googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
     } else { ## Cached file found, ask whether to overwrite cache
-        over <- readline(prompt = paste0("Resource with rname = '", locator, "' found in cache. Redownload and overwrite? (yes/no): "))
-        response <- substr(tolower(over), 1, 1)
-        doit <- switch(response, y = TRUE, n = FALSE, NA)
+        if (interactive()) {
+            over <- readline(prompt = paste0("Resource with rname = '", locator, "' found in cache. Redownload and overwrite? (yes/no): "))
+            response <- substr(tolower(over), 1, 1)
+            doit <- switch(response, y = TRUE, n = FALSE, NA)
+        } else {
+            doit <- FALSE
+        }
 
         if (doit) {
             rpath <- BiocFileCache::bfcrpath(bfc, rids = rid)
@@ -183,14 +184,13 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 getMetagenomicData <- function(uuids,
                                data_types = "all",
                                ask_on_update = TRUE) {
-
     ## Get Google Bucket locators for requested files
-    locators <- get_metaphlan_locator(uuids, data_types)
+    locators <- get_metaphlan_locators(uuids, data_types)
 
     ## Download and cache requested files
     cache_paths <- c()
     for (locator in locators) {
-        current_file <- cache_gcb(locator)
+        current_file <- cache_gcb(locator, ask_on_update = ask_on_update)
         cache_paths <- c(cache_paths, current_file)
     }
 
@@ -208,6 +208,61 @@ getMetagenomicData <- function(uuids,
                                 cache_path = cache_paths)
 
     return(cache_tbl)
+}
+
+#' @title List metagenomic data available for download
+#' @description 'listMetagenomicData' provides a table of all objects within the
+#' 'gs://metagenomics-mac' Google Cloud Bucket that are available for download.
+#' @return Tibble: information on the available files, including UUID, data
+#' type, Google Cloud Bucket object name, object size, and time the object was
+#' last updated
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  listMetagenomicData()
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[googleCloudStorageR]{gcs_list_objects}}
+#'  \code{\link[readr]{read_delim}}
+#'  \code{\link[dplyr]{filter}}
+#'  \code{\link[stringr]{str_detect}}, \code{\link[stringr]{str_split}}
+#'  \code{\link[tibble]{tibble}}
+#' @rdname listMetagenomicData
+#' @export
+#' @importFrom googleCloudStorageR gcs_list_objects
+#' @importFrom readr read_csv
+#' @importFrom dplyr filter
+#' @importFrom stringr str_detect str_split
+#' @importFrom tibble tibble
+listMetagenomicData <- function() {
+    ## List all objects
+    objs <- googleCloudStorageR::gcs_list_objects()
+
+    ## Get output file types to list
+    fpath <- system.file("extdata", "output_files.csv",
+                         package="parkinsonsMetagenomicData")
+    ftypes <- readr::read_csv(fpath)
+    fdetect <- paste(ftypes$file_name, collapse = "|")
+
+    ## Filter for allowed file types
+    objs <- objs %>%
+        dplyr::filter(stringr::str_detect(name, fdetect))
+
+    ## Format file information for user
+    parsed_locators <- stringr::str_split(objs$name, "/")
+    parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
+
+    parsed_data_types <- unlist(lapply(parsed_locators, function(x) x[5]))
+    parsed_shorthand <- ftypes$data_type[match(parsed_data_types,
+                                               ftypes$file_name)]
+
+    data_tbl <- tibble::tibble(UUID = parsed_uuids,
+                               data_type = parsed_shorthand,
+                               gcb_object = objs$name,
+                               size = objs$size,
+                               updated = objs$updated)
+    return(data_tbl)
 }
 
 ####

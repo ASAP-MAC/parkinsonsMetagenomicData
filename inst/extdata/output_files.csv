@@ -1,0 +1,4 @@
+data_type,file_name,subdir
+bugs,metaphlan_bugs_list.tsv.gz,metaphlan_lists/
+viruses,metaphlan_viruses_list.tsv.gz,metaphlan_lists/
+unknown,metaphlan_unknown_list.tsv.gz,metaphlan_lists/
