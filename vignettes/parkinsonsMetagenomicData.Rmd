@@ -15,9 +15,11 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(parkinsonsMetagenomicData)
-library(dplyr)
-library(DT)
+suppressPackageStartupMessages({
+    library(parkinsonsMetagenomicData)
+    library(dplyr)
+    library(DT)
+})
 ```
 
 # Sample Metadata
@@ -50,7 +52,7 @@ prefixed by "uncurated_". Curated features include the following at this time:
  * NCBI_accession
  * uuid
 
-```{r, collapse = TRUE}
+```{r}
 sampleMetadata |>
     filter(study_name == "BedarfJR_2017") |>
     select(where(~ !any(is.na(.x)))) |>
@@ -64,25 +66,64 @@ sampleMetadata |>
 The UUID(s) of any sample(s) of interest may be then used to access MetaPhlAn
 output files.
 
-Note: output files are contained in a private Google Cloud Bucket at the moment,
-the user must authenticate with a service account keyfile in the following way:
+## Google Bucket Setup
 
-```{r}
-gcs_auth("full/path/to/keyfile.json")
+Output files are contained in the private Google Cloud Bucket
+`gs://metagenomics-mac` at the moment, the user must authenticate with a service
+account keyfile in the following way:
+
+```{r, eval=FALSE}
+googleCloudStorageR::gcs_auth("full/path/to/keyfile.json")
 ```
 
-To access a particular output file, use `get_metaphlan_locator` to return the
-path to the relevant file within the Google Cloud Bucket. Then use
-`cache_metaphlan` to download the file and store it in a cache location. If
-this operation is performed a second time, the file will not be redownloaded
-unless explicity specified, in order to reduce excessive downloads. The cached
-file can then be read into R.
+To obtain this keyfile, the owner of a service account affiliated with the
+Google Cloud Project containing `gs://metagenomics-mac` must create it
+according to the process detailed in the Google Cloud Guide
+"[Create and delete service account keys](https://cloud.google.com/iam/docs/keys-create-delete)".
+
+Additionally, the default bucket for `GoogleCloudStorageR` must be set to the
+Google Bucket name, in this case `metagenomics-mac`. This is done automatically
+upon loading the package, but if an error occurs can be manually done through
+the following:
+
+```{r, eval=FALSE}
+googleCloudStorageR::gcs_global_bucket("metagenomics-mac")
+```
+
+All objects stored in `gs://metagenomics-mac` can then be viewed with the
+following. This operation can take several minutes due to the number of objects
+stored in `gs://metagenomics-mac`.
+
+```{r, eval=FALSE}
+googleCloudStorageR::gcs_list_objects()
+```
+
+Alternatively, `listMetagenomicData` will provide a table of objects that are compatible
+with the `getMetagenomicData` streamlined downloading and caching function.
 
 ```{r}
-locator <- get_metaphlan_locator(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                                 data_type = "bugs")
-cached_file_path <- cache_metaphlan(locator)
-metaphlan_table <- readr::read_tsv(cached_file_path, skip = 4)
+file_tbl <- listMetagenomicData()
+```
+
+```{r, echo=FALSE}
+datatable(file_tbl[1:10,], options = list(dom = "t"), extensions = "Responsive")
+```
+
+To access MetaPhlAn output files, use `getMetagenomicData`. This function takes
+UUID and data type arguments, downloads the corresponding MetaPhlAn output
+files, and stores them in a local cache. If the same files are requested again
+through this function, they will not be re-downloaded unless explicitly
+specified, in order to reduce excessive downloads. `getMetagenomicData` returns
+a tibble of cached file paths and cache IDs for each requested file. The file
+paths can be used to read the cached files into R.
+
+```{r}
+cache_tbl <- getMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+                                data_type = "all")
+```
+
+```{r, echo=FALSE}
+datatable(cache_tbl, options = list(dom = "t"), extensions = "Responsive")
 ```
 
 
