@@ -20,6 +20,7 @@
 pMD_get_cache <- function() {
     ## Create a directory for cached data
     cache <- tools::R_user_dir("parkinsonsMetagenomicData", "cache")
+    if (!dir.exists(cache)) {dir.create(cache)}
 
     ## Directory path of cache
     BiocFileCache::BiocFileCache(cache = cache)
@@ -30,8 +31,9 @@ pMD_get_cache <- function() {
 #' Google Bucket gs://metagenomics-mac that contain MetaPhlAn output. Output is
 #' requested by associated sample UUID and type of MetaPhlAn output file.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
-#' @param data_types Single string or vector of strings: 'bugs', 'viruses',
-#' 'unknown', or 'all', indicating which output files to get, Default: 'all'
+#' @param data_types Single string or vector of strings: values found in the
+#' 'data_type' column of listMetagenomicData() or 'all', indicating which output
+#' files to get, Default: 'all'
 #' @return Vector of strings: names of requested Google Bucket objects
 #' @details 'data_types' can be supplied as a single string, to be applied to
 #' all provided values in 'uuids', or as a vector of strings the same length as
@@ -46,7 +48,12 @@ pMD_get_cache <- function() {
 #' @rdname get_metaphlan_locators
 #' @export
 get_metaphlan_locators <- function(uuids, data_types = "all") {
-    allowed_types <- c("bugs", "viruses", "unknown", "all")
+    ## Get available data_types
+    fpath <- system.file("extdata", "output_files.csv",
+                         package="parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath)
+
+    allowed_types <- c(ftable$data_type, "all")
     single_type <- FALSE
 
     ## Check that data_types is valid
@@ -59,7 +66,7 @@ get_metaphlan_locators <- function(uuids, data_types = "all") {
     # values
     if (!all(data_types %in% allowed_types)) {
         error_vals <- data_types[!data_types %in% allowed_types]
-        stop(paste0("'", error_vals, "' is not an allowed value for 'data_types'. Please enter either 'bugs', 'viruses', or 'unknown'."))
+        stop(paste0("'", error_vals, "' is not an allowed value for 'data_types'. Please enter a value found in listMetagenomicData() or 'all'."))
     }
 
     ## Create locator(s)
@@ -75,16 +82,21 @@ get_metaphlan_locators <- function(uuids, data_types = "all") {
         }
 
         if (parsed_type == "all") {
-            current_type <- c("bugs", "viruses", "unknown")
+            current_type <- ftable$data_type
+            current_name <- ftable$file_name
+            current_subdir <- ftable$subdir
         } else {
             current_type <- parsed_type
+            filerow <- ftable[ftable$data_type == current_type,]
+            current_name <- filerow$file_name
+            current_subdir <- filerow$subdir
         }
 
         current_locator <- paste0("results/cMDv4/",
                                   current_uuid,
-                                  "/metaphlan_lists/metaphlan_",
-                                  current_type,
-                                  "_list.tsv.gz")
+                                  "/",
+                                  current_subdir,
+                                  current_name)
         locators <- c(locators, current_locator)
     }
 
@@ -242,8 +254,8 @@ listMetagenomicData <- function() {
     ## Get output file types to list
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftypes <- readr::read_csv(fpath)
-    fdetect <- paste(ftypes$file_name, collapse = "|")
+    ftable <- readr::read_csv(fpath)
+    fdetect <- paste(ftable$file_name, collapse = "|")
 
     ## Filter for allowed file types
     objs <- objs %>%
@@ -254,8 +266,8 @@ listMetagenomicData <- function() {
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
     parsed_data_types <- unlist(lapply(parsed_locators, function(x) x[5]))
-    parsed_shorthand <- ftypes$data_type[match(parsed_data_types,
-                                               ftypes$file_name)]
+    parsed_shorthand <- ftable$data_type[match(parsed_data_types,
+                                               ftable$file_name)]
 
     data_tbl <- tibble::tibble(UUID = parsed_uuids,
                                data_type = parsed_shorthand,
@@ -269,16 +281,18 @@ listMetagenomicData <- function() {
 
 #### Load and format downloaded file
 
-format_metaphlan <- function(uuid, data_type) {
+format_metaphlan_list <- function(path, data_type) {
     # check that data_type %in% c("bugs", "viruses", "unknown")
     # load raw file from cache
 
 
 
     if (data_type %in% c("bugs", "unkown")) {
-        load_file <- read_tsv(fpath, skip = 4)
+        load_file <- readr::read_tsv(path, skip = 4)
     } else if (data_type == "viruses") {
         # convert to SummarizedExperiment (different raw format)
+    } else {
+        stop(paste0("data_type '", data_type, "' is not 'bugs', 'viruses', or 'unknown'. Please enter one of these values or use a different formatting function"))
     }
 }
 ####
