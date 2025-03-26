@@ -281,18 +281,40 @@ listMetagenomicData <- function() {
 
 #### Load and format downloaded file
 
-format_metaphlan_list <- function(path, data_type) {
-    # check that data_type %in% c("bugs", "viruses", "unknown")
-    # load raw file from cache
+format_metaphlan_list <- function(uuid, file_path, data_type) {
 
+    if (data_type %in% c("bugs", "unknown")) {
+        meta <- readLines(file_path, n = 4)[1:3]
+        meta <- gsub("#| reads processed", "", meta)
+        meta_list <- as.list(meta)
+        names(meta_list) <- c("metaphlan_database",
+                              "command",
+                              "reads_processed")
 
+        load_file <- readr::read_tsv(file_path, skip = 4)
+        colnames(load_file) <- c("clade_name", "ncbi_tax_id",
+                                 "relative_abundance", "additional_species")
 
-    if (data_type %in% c("bugs", "unkown")) {
-        load_file <- readr::read_tsv(path, skip = 4)
+        rdata <- S4Vectors::DataFrame(load_file[,c("ncbi_tax_id", "additional_species")])
+        rownames(rdata) <- load_file$clade_name
+
+        cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
+        rownames(cdata) <- uuid
+
+        relabundance <- as.matrix(load_file$relative_abundance)
+        alist <- list(relabundance)
+        names(alist) <- paste0(data_type, "_relative_abundance")
+
+        ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
+                                                         rowData = rdata,
+                                                         colData = cdata,
+                                                         metadata = meta_list)
     } else if (data_type == "viruses") {
         # convert to SummarizedExperiment (different raw format)
     } else {
         stop(paste0("data_type '", data_type, "' is not 'bugs', 'viruses', or 'unknown'. Please enter one of these values or use a different formatting function"))
     }
+
+    return(ex)
 }
 ####
