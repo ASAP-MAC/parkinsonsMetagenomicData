@@ -9,8 +9,9 @@ get_metaphlan_locators(uuids, data_types = "all")
 \arguments{
 \item{uuids}{Vector of strings: sample UUID(s) to get output for}
 
-\item{data_types}{Single string or vector of strings: 'bugs', 'viruses',
-'unknown', or 'all', indicating which output files to get, Default: 'all'}
+\item{data_types}{Single string or vector of strings: values found in the
+'data_type' column of listMetagenomicData() or 'all', indicating which output
+files to get, Default: 'all'}
 }
 \value{
 Vector of strings: names of requested Google Bucket objects
