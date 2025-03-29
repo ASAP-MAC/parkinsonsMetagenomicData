@@ -166,17 +166,22 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 
 #' @title Retrieve and cache MetaPhlAn output files
 #' @description 'getMetagenomicData' takes UUID and data type arguments,
-#' downloads the corresponding MetaPhlAn output files, and stores them in a
-#' local parkinsonsMetagenomicData cache. If the same files are requested again
-#' through this function, they will not be re-downloaded unless explicitly
+#' downloads the corresponding MetaPhlAn output files, stores them in a
+#' local parkinsonsMetagenomicData cache, and loads them into R as
+#' SummarizedExperiment objects if requested. If the same files are requested
+#' again through this function, they will not be re-downloaded unless explicitly
 #' specified, in order to reduce excessive downloads.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
 #' @param data_types Single string or vector of strings: 'bugs', 'viruses',
 #' 'unknown', or 'all', indicating which output files to get, Default: 'all'
 #' @param ask_on_update Boolean: should the function ask the user before
 #' re-downloading a file that is already present in the cache, Default: TRUE
-#' @return Tibble: information on the cached files, including UUID, data type,
-#' Google Cloud Bucket object name, local cache ID, and cached file path
+#' @param load Boolean: should the retrieved files be loaded into R as a list of
+#' SummarizedExperiment objects, Default: TRUE
+#' @return If load = TRUE, a list of SummarizedExperiment objects. If
+#' load = FALSE, a tibble with information on the cached files, including UUID,
+#' data type, Google Cloud Bucket object name, local cache ID, and cached file
+#' path
 #' @details 'data_types' can be supplied as a single string, to be applied to
 #' all provided values in 'uuids', or as a vector of strings the same length as
 #' 'uuids' to supply individual values for each UUID.
@@ -184,7 +189,8 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' \dontrun{
 #' if(interactive()){
 #'  getMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                     data_type = "all")
+#'                     data_type = "all",
+#'                     load = TRUE)
 #'  }
 #' }
 #' @seealso
@@ -196,7 +202,8 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' @importFrom tibble tibble
 getMetagenomicData <- function(uuids,
                                data_types = "all",
-                               ask_on_update = TRUE) {
+                               ask_on_update = TRUE,
+                               load = TRUE) {
     ## Get Google Bucket locators for requested files
     locators <- get_metaphlan_locators(uuids, data_types)
 
@@ -220,7 +227,20 @@ getMetagenomicData <- function(uuids,
                                 cache_id = names(cache_paths),
                                 cache_path = cache_paths)
 
-    return(cache_tbl)
+    ## Load data as SummarizedExperiment objects if requested
+    if (load) {
+        se_list <- vector("list", nrow(cache_tbl))
+
+        for (i in 1:nrow(cache_tbl)) {
+            se_list[[i]] <- parse_metaphlan_list(cache_tbl$UUID[i],
+                                                 cache_tbl$cache_path[i],
+                                                 cache_tbl$data_type[i])
+        }
+        names(se_list) <- paste(cache_tbl$UUID, cache_tbl$data_type, sep = "_")
+
+        return(se_list)
+    } else {return(cache_tbl)}
+
 }
 
 #' @title List metagenomic data available for download
@@ -394,3 +414,4 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 
     return(ex)
 }
+
