@@ -218,8 +218,11 @@ getMetagenomicData <- function(uuids,
     parsed_locators <- stringr::str_split(locators, "/")
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
-    parsed_data_types <- unlist(lapply(parsed_locators, function(x) x[5]))
-    parsed_data_types <- gsub("metaphlan_|_list.tsv.gz", "", parsed_data_types)
+    parsed_filenames <- unlist(lapply(parsed_locators, function(x) x[5]))
+    fpath <- system.file("extdata", "output_files.csv",
+                         package="parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath)
+    parsed_data_types <- ftable$data_type[match(parsed_filenames, ftable$file_name)]
 
     cache_tbl <- tibble::tibble(UUID = parsed_uuids,
                                 data_type = parsed_data_types,
