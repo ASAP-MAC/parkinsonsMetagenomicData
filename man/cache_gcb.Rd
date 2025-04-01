@@ -24,7 +24,8 @@ needed, and returns the path of the cached file.
 \examples{
 \dontrun{
 if(interactive()){
- cache_gcb("results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz")
+ cache_gcb(locator = "results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz",
+           ask_on_update = TRUE)
  }
 }
 }

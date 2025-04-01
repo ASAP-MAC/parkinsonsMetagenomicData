@@ -4,7 +4,12 @@
 \alias{getMetagenomicData}
 \title{Retrieve and cache MetaPhlAn output files}
 \usage{
-getMetagenomicData(uuids, data_types = "all", ask_on_update = TRUE)
+getMetagenomicData(
+  uuids,
+  data_types = "all",
+  ask_on_update = TRUE,
+  load = TRUE
+)
 }
 \arguments{
 \item{uuids}{Vector of strings: sample UUID(s) to get output for}
@@ -14,16 +19,22 @@ getMetagenomicData(uuids, data_types = "all", ask_on_update = TRUE)
 
 \item{ask_on_update}{Boolean: should the function ask the user before
 re-downloading a file that is already present in the cache, Default: TRUE}
+
+\item{load}{Boolean: should the retrieved files be loaded into R as a list of
+SummarizedExperiment objects, Default: TRUE}
 }
 \value{
-Tibble: information on the cached files, including UUID, data type,
-Google Cloud Bucket object name, local cache ID, and cached file path
+If load = TRUE, a list of SummarizedExperiment objects. If
+load = FALSE, a tibble with information on the cached files, including UUID,
+data type, Google Cloud Bucket object name, local cache ID, and cached file
+path
 }
 \description{
 'getMetagenomicData' takes UUID and data type arguments,
-downloads the corresponding MetaPhlAn output files, and stores them in a
-local parkinsonsMetagenomicData cache. If the same files are requested again
-through this function, they will not be re-downloaded unless explicitly
+downloads the corresponding MetaPhlAn output files, stores them in a
+local parkinsonsMetagenomicData cache, and loads them into R as
+SummarizedExperiment objects if requested. If the same files are requested
+again through this function, they will not be re-downloaded unless explicitly
 specified, in order to reduce excessive downloads.
 }
 \details{
@@ -35,7 +46,8 @@ all provided values in 'uuids', or as a vector of strings the same length as
 \dontrun{
 if(interactive()){
  getMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                    data_type = "all")
+                    data_type = "all",
+                    load = TRUE)
  }
 }
 }

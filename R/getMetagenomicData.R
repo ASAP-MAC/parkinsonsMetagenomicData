@@ -20,6 +20,7 @@
 pMD_get_cache <- function() {
     ## Create a directory for cached data
     cache <- tools::R_user_dir("parkinsonsMetagenomicData", "cache")
+    if (!dir.exists(cache)) {dir.create(cache)}
 
     ## Directory path of cache
     BiocFileCache::BiocFileCache(cache = cache)
@@ -30,8 +31,9 @@ pMD_get_cache <- function() {
 #' Google Bucket gs://metagenomics-mac that contain MetaPhlAn output. Output is
 #' requested by associated sample UUID and type of MetaPhlAn output file.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
-#' @param data_types Single string or vector of strings: 'bugs', 'viruses',
-#' 'unknown', or 'all', indicating which output files to get, Default: 'all'
+#' @param data_types Single string or vector of strings: values found in the
+#' 'data_type' column of listMetagenomicData() or 'all', indicating which output
+#' files to get, Default: 'all'
 #' @return Vector of strings: names of requested Google Bucket objects
 #' @details 'data_types' can be supplied as a single string, to be applied to
 #' all provided values in 'uuids', or as a vector of strings the same length as
@@ -46,7 +48,12 @@ pMD_get_cache <- function() {
 #' @rdname get_metaphlan_locators
 #' @export
 get_metaphlan_locators <- function(uuids, data_types = "all") {
-    allowed_types <- c("bugs", "viruses", "unknown", "all")
+    ## Get available data_types
+    fpath <- system.file("extdata", "output_files.csv",
+                         package="parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath)
+
+    allowed_types <- c(ftable$data_type, "all")
     single_type <- FALSE
 
     ## Check that data_types is valid
@@ -59,7 +66,7 @@ get_metaphlan_locators <- function(uuids, data_types = "all") {
     # values
     if (!all(data_types %in% allowed_types)) {
         error_vals <- data_types[!data_types %in% allowed_types]
-        stop(paste0("'", error_vals, "' is not an allowed value for 'data_types'. Please enter either 'bugs', 'viruses', or 'unknown'."))
+        stop(paste0("'", error_vals, "' is not an allowed value for 'data_types'. Please enter a value found in listMetagenomicData() or 'all'."))
     }
 
     ## Create locator(s)
@@ -75,16 +82,21 @@ get_metaphlan_locators <- function(uuids, data_types = "all") {
         }
 
         if (parsed_type == "all") {
-            current_type <- c("bugs", "viruses", "unknown")
+            current_type <- ftable$data_type
+            current_name <- ftable$file_name
+            current_subdir <- ftable$subdir
         } else {
             current_type <- parsed_type
+            filerow <- ftable[ftable$data_type == current_type,]
+            current_name <- filerow$file_name
+            current_subdir <- filerow$subdir
         }
 
         current_locator <- paste0("results/cMDv4/",
                                   current_uuid,
-                                  "/metaphlan_lists/metaphlan_",
-                                  current_type,
-                                  "_list.tsv.gz")
+                                  "/",
+                                  current_subdir,
+                                  current_name)
         locators <- c(locators, current_locator)
     }
 
@@ -103,7 +115,8 @@ get_metaphlan_locators <- function(uuids, data_types = "all") {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  cache_gcb("results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz")
+#'  cache_gcb(locator = "results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz",
+#'            ask_on_update = TRUE)
 #'  }
 #' }
 #' @seealso
@@ -153,17 +166,22 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 
 #' @title Retrieve and cache MetaPhlAn output files
 #' @description 'getMetagenomicData' takes UUID and data type arguments,
-#' downloads the corresponding MetaPhlAn output files, and stores them in a
-#' local parkinsonsMetagenomicData cache. If the same files are requested again
-#' through this function, they will not be re-downloaded unless explicitly
+#' downloads the corresponding MetaPhlAn output files, stores them in a
+#' local parkinsonsMetagenomicData cache, and loads them into R as
+#' SummarizedExperiment objects if requested. If the same files are requested
+#' again through this function, they will not be re-downloaded unless explicitly
 #' specified, in order to reduce excessive downloads.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
 #' @param data_types Single string or vector of strings: 'bugs', 'viruses',
 #' 'unknown', or 'all', indicating which output files to get, Default: 'all'
 #' @param ask_on_update Boolean: should the function ask the user before
 #' re-downloading a file that is already present in the cache, Default: TRUE
-#' @return Tibble: information on the cached files, including UUID, data type,
-#' Google Cloud Bucket object name, local cache ID, and cached file path
+#' @param load Boolean: should the retrieved files be loaded into R as a list of
+#' SummarizedExperiment objects, Default: TRUE
+#' @return If load = TRUE, a list of SummarizedExperiment objects. If
+#' load = FALSE, a tibble with information on the cached files, including UUID,
+#' data type, Google Cloud Bucket object name, local cache ID, and cached file
+#' path
 #' @details 'data_types' can be supplied as a single string, to be applied to
 #' all provided values in 'uuids', or as a vector of strings the same length as
 #' 'uuids' to supply individual values for each UUID.
@@ -171,7 +189,8 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' \dontrun{
 #' if(interactive()){
 #'  getMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                     data_type = "all")
+#'                     data_type = "all",
+#'                     load = TRUE)
 #'  }
 #' }
 #' @seealso
@@ -183,7 +202,8 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' @importFrom tibble tibble
 getMetagenomicData <- function(uuids,
                                data_types = "all",
-                               ask_on_update = TRUE) {
+                               ask_on_update = TRUE,
+                               load = TRUE) {
     ## Get Google Bucket locators for requested files
     locators <- get_metaphlan_locators(uuids, data_types)
 
@@ -198,8 +218,11 @@ getMetagenomicData <- function(uuids,
     parsed_locators <- stringr::str_split(locators, "/")
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
-    parsed_data_types <- unlist(lapply(parsed_locators, function(x) x[5]))
-    parsed_data_types <- gsub("metaphlan_|_list.tsv.gz", "", parsed_data_types)
+    parsed_filenames <- unlist(lapply(parsed_locators, function(x) x[5]))
+    fpath <- system.file("extdata", "output_files.csv",
+                         package="parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath)
+    parsed_data_types <- ftable$data_type[match(parsed_filenames, ftable$file_name)]
 
     cache_tbl <- tibble::tibble(UUID = parsed_uuids,
                                 data_type = parsed_data_types,
@@ -207,7 +230,20 @@ getMetagenomicData <- function(uuids,
                                 cache_id = names(cache_paths),
                                 cache_path = cache_paths)
 
-    return(cache_tbl)
+    ## Load data as SummarizedExperiment objects if requested
+    if (load) {
+        se_list <- vector("list", nrow(cache_tbl))
+
+        for (i in 1:nrow(cache_tbl)) {
+            se_list[[i]] <- parse_metaphlan_list(cache_tbl$UUID[i],
+                                                 cache_tbl$cache_path[i],
+                                                 cache_tbl$data_type[i])
+        }
+        names(se_list) <- paste(cache_tbl$UUID, cache_tbl$data_type, sep = "_")
+
+        return(se_list)
+    } else {return(cache_tbl)}
+
 }
 
 #' @title List metagenomic data available for download
@@ -242,8 +278,8 @@ listMetagenomicData <- function() {
     ## Get output file types to list
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftypes <- readr::read_csv(fpath)
-    fdetect <- paste(ftypes$file_name, collapse = "|")
+    ftable <- readr::read_csv(fpath)
+    fdetect <- paste(ftable$file_name, collapse = "|")
 
     ## Filter for allowed file types
     objs <- objs %>%
@@ -254,8 +290,8 @@ listMetagenomicData <- function() {
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
     parsed_data_types <- unlist(lapply(parsed_locators, function(x) x[5]))
-    parsed_shorthand <- ftypes$data_type[match(parsed_data_types,
-                                               ftypes$file_name)]
+    parsed_shorthand <- ftable$data_type[match(parsed_data_types,
+                                               ftable$file_name)]
 
     data_tbl <- tibble::tibble(UUID = parsed_uuids,
                                data_type = parsed_shorthand,
@@ -265,20 +301,142 @@ listMetagenomicData <- function() {
     return(data_tbl)
 }
 
-####
+#' @title Parse basic MetaPhlAn output for a single sample as a
+#' SummarizedExperiment object
+#' @description 'parse_metaphlan_list' reads a file obtained from running
+#' MetaPhlAn for microbial profiling (with or without unclassified fraction
+#' estimation) or viral sequence cluster analysis. This file is parsed into a
+#' SummarizedExperiment object.
+#' @param sample_id String: A sample identifier
+#' @param file_path String: Path to a locally stored MetaPhlAn output file in
+#' TSV format
+#' @param data_type String: The type of MetaPhlAn output file to be parsed, as
+#' found in the 'data_type' column of listMetagenomicData()
+#' @return A SummarizedExperiment object with process metadata, row data, column
+#' names, and relevant assays.
+#' @details This function does not integrate sample metadata as column data. The
+#' provided sample_id is used as the column name for assays within the
+#' SummarizedExperiment object and is intended to be used for integration of
+#' sample metadata.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                       file_path = file.path(system.file("extdata",
+#'                                             package = "parkinsonsMetagenomicData"),
+#'                                             "sample_metaphlan_list.tsv.gz"),
+#'                       data_type = "bugs")
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
+#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#' @rdname parse_metaphlan_list
+#' @export
+#' @importFrom readr read_tsv
+#' @importFrom S4Vectors DataFrame
+#' @importFrom SummarizedExperiment SummarizedExperiment
+parse_metaphlan_list <- function(sample_id, file_path, data_type) {
+    ## Slight differences in output file format
+    if (data_type %in% c("bugs", "unknown")) {
+        ## Convert commented header lines to metadata
+        meta <- readLines(file_path, n = 3)
+        meta <- gsub("#| reads processed", "", meta)
+        meta_list <- as.list(meta)
+        names(meta_list) <- c("metaphlan_database",
+                              "command",
+                              "reads_processed")
 
-#### Load and format downloaded file
+        ## Read remainder of output file
+        load_file <- readr::read_tsv(file_path, skip = 4)
+        colnames(load_file) <- c("clade_name", "ncbi_tax_id",
+                                 "relative_abundance", "additional_species")
 
-format_metaphlan <- function(uuid, data_type) {
-    # check that data_type %in% c("bugs", "viruses", "unknown")
-    # load raw file from cache
+        ## Separate out row data
+        rdata_cols <- c("ncbi_tax_id", "additional_species")
+        rdata <- S4Vectors::DataFrame(load_file[,rdata_cols])
+        rownames(rdata) <- load_file$clade_name
 
+        ## Set sample ID as column name
+        cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
+        rownames(cdata) <- sample_id
 
+        ## Set relative abundance as assay
+        relabundance <- as.matrix(load_file$relative_abundance)
+        alist <- list(relabundance)
+        names(alist) <- paste0(data_type, "_relative_abundance")
 
-    if (data_type %in% c("bugs", "unkown")) {
-        load_file <- read_tsv(fpath, skip = 4)
     } else if (data_type == "viruses") {
-        # convert to SummarizedExperiment (different raw format)
+        ## Convert commented header lines to metadata
+        meta <- readLines(file_path, n = 2)
+        meta <- gsub("#", "", meta)
+        meta_list <- as.list(meta)
+        names(meta_list) <- c("metaphlan_database",
+                              "command")
+
+        ## Read remainder of output file
+        load_file <- readr::read_tsv(file_path, skip = 3)
+        colnames(load_file) <- c("m_group_cluster", "genome_name", "length",
+                                 "breadth_of_coverage",
+                                 "depth_of_coverage_mean",
+                                 "depth_of_coverage_median", "m_group_type_k_u",
+                                 "first_genome_in_cluster", "other_genomes")
+
+        ## Separate out row data
+        rdata_cols <- c("genome_name", "length", "m_group_type_k_u",
+                        "first_genome_in_cluster", "other_genomes")
+        rdata <- S4Vectors::DataFrame(load_file[,rdata_cols])
+        rownames(rdata) <- load_file$m_group_cluster
+
+        ## Set sample ID as column name
+        cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
+        rownames(cdata) <- sample_id
+
+        ## Set breadth and depth of coverage measurements as separate assays
+        breadth <- as.matrix(load_file$breadth_of_coverage)
+        depth_mean <- as.matrix(load_file$depth_of_coverage_mean)
+        depth_median <- as.matrix(load_file$depth_of_coverage_median)
+        alist <- list(breadth,
+                      depth_mean,
+                      depth_median)
+        names(alist) <- c("viral_breadth_of_coverage",
+                          "viral_depth_of_coverage_mean",
+                          "viral_depth_of_coverage_median")
+    } else {
+        ## Notify if output file is not able to be parsed by this function
+        stop(paste0("data_type '", data_type, "' is not 'bugs', 'viruses', or 'unknown'. Please enter one of these values or use a different parsing function."))
     }
+
+    ## Combine process metadata, row data, sample ID, and assays into
+    ## SummarizedExperiment object
+    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
+                                                     rowData = rdata,
+                                                     colData = cdata,
+                                                     metadata = meta_list)
+
+    return(ex)
 }
-####
+
+merge_metaphlan_lists <- function(merge_list) {
+    ## Check that list contains more than one SummarizedExperiment
+    if (length(merge_list) == 1) {
+        return(merge_list[[1]])
+    }
+
+    ## Check that assays match
+    assay_names <- lapply(merge_list, SummarizedExperiment::assayNames) |>
+        unique()
+
+    if (length(assay_names) != 1) {
+        stop("List contains multiple assay types, please provide a list where all assays match.")
+    }
+
+    ## Merge assays
+
+    ## Merge row data
+
+    ## Merge column data
+
+    ## Reformat as SummarizedExperiment
+}

@@ -114,16 +114,34 @@ UUID and data type arguments, downloads the corresponding MetaPhlAn output
 files, and stores them in a local cache. If the same files are requested again
 through this function, they will not be re-downloaded unless explicitly
 specified, in order to reduce excessive downloads. `getMetagenomicData` returns
-a tibble of cached file paths and cache IDs for each requested file. The file
-paths can be used to read the cached files into R.
+a list of SummarizedExperiment objects if `load = TRUE`, or a tibble of cached
+file paths and cache IDs for each requested file if `load = FALSE`. A single
+metaphlan list file can then be parsed into a SummarizedExperiment object
+separately with `parse_metaphlan_list`.
 
 ```{r}
-cache_tbl <- getMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                                data_type = "all")
+cache_tbl <- getMetagenomicData(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+                                data_types = "all",
+                                load = FALSE)
 ```
 
 ```{r, echo=FALSE}
 datatable(cache_tbl, options = list(dom = "t"), extensions = "Responsive")
+```
+
+```{r}
+parsed_bugs_list <- parse_metaphlan_list(cache_tbl$UUID[1], cache_tbl$cache_path[1], cache_tbl$data_type[1])
+parsed_bugs_list
+```
+
+Once the files have been loaded as SummarizedExperiment objects, matching assays
+from multiple samples can be merged together.
+
+```{r}
+to_merge <- getMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
+                                         "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
+                               data_types = "all",
+                               load = TRUE)
 ```
 
 
