@@ -418,3 +418,25 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     return(ex)
 }
 
+merge_metaphlan_lists <- function(merge_list) {
+    ## Check that list contains more than one SummarizedExperiment
+    if (length(merge_list) == 1) {
+        return(merge_list[[1]])
+    }
+
+    ## Check that assays match
+    assay_names <- lapply(merge_list, SummarizedExperiment::assayNames) |>
+        unique()
+
+    if (length(assay_names) != 1) {
+        stop("List contains multiple assay types, please provide a list where all assays match.")
+    }
+
+    ## Merge assays
+
+    ## Merge row data
+
+    ## Merge column data
+
+    ## Reformat as SummarizedExperiment
+}
