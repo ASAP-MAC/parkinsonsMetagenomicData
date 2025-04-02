@@ -418,6 +418,55 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     return(ex)
 }
 
+add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "append") {
+    ## Check that the length of sample_ids matches the number of samples
+    if (length(sample_ids) != ncol(experiment)) {
+        stop("'sample_ids' has a different number of samples than 'experiment'.")
+    }
+
+    ## Retrieve sample metadata
+    meta <- sampleMetadata
+
+    ## Check that id_col and method are valid
+    if (!id_col %in% colnames(meta)) {
+        stop(paste0("'", id_col, "' is not a column in sampleMetadata."))
+    } else if (length(unique(meta[[id_col]])) != nrow(meta)) {
+        stop(paste0("'", id_col, "' is not unique for every sample and therefore cannot be used to retrieve metadata."))
+    }
+
+    valid_methods <- c("append", "overwrite", "ignore")
+    if (!method %in% valid_methods) {
+        stop(paste0("'", method, "' is not a valid value for 'method'. Please enter 'append', 'overwrite', or 'ignore'."))
+    }
+
+    ## Get metadata rows based on sample ID
+    meta <- meta[match(sample_ids, meta[[id_col]]),] |>
+        S4Vectors::DataFrame()
+    rownames(meta) <- colnames(experiment)
+
+    ## Add sample metadata to colData according to chosen method
+    cdata <- SummarizedExperiment::colData(experiment)
+    duplicated <- intersect(colnames(cdata), colnames(meta))
+    not_duplicated <- setdiff(colnames(meta), duplicated)
+    if (length(duplicated) != 0) {
+        message(paste0("Duplicate metadata columns found, will be processed according to method '", method, "':"))
+        message(paste(duplicated, collapse = ", "))
+    }
+
+    if (method == "append") {
+        newdata <- cbind(cdata, meta)
+    } else if (method == "overwrite") {
+        cdata[duplicated] <- meta[duplicated]
+        newdata <- cbind(cdata, meta[not_duplicated])
+    } else if (method == "ignore") {
+        newdata <- cbind(cdata, meta[not_duplicated])
+    }
+
+    SummarizedExperiment::colData(experiment) <- newdata
+
+    return(experiment)
+}
+
 merge_metaphlan_lists <- function(merge_list) {
     ## Check that list contains more than one SummarizedExperiment
     if (length(merge_list) == 1) {
@@ -429,7 +478,7 @@ merge_metaphlan_lists <- function(merge_list) {
         unique()
 
     if (length(assay_names) != 1) {
-        stop("List contains multiple assay types, please provide a list where all assays match.")
+        stop("'merge_list' contains multiple assay types, please provide a list where all assays match.")
     }
 
     ## Merge assays
