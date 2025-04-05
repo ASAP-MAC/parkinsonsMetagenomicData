@@ -24,8 +24,9 @@ re-downloading a file that is already present in the cache, Default: TRUE}
 SummarizedExperiment objects, Default: TRUE}
 }
 \value{
-If load = TRUE, a list of SummarizedExperiment objects. If
-load = FALSE, a tibble with information on the cached files, including UUID,
+If load = TRUE, a list of SummarizedExperiment objects with relevant
+sample metadata attached as colData. If load = FALSE, a tibble with
+information on the cached files, including UUID,
 data type, Google Cloud Bucket object name, local cache ID, and cached file
 path
 }

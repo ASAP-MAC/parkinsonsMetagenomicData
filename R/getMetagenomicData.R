@@ -178,8 +178,9 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' re-downloading a file that is already present in the cache, Default: TRUE
 #' @param load Boolean: should the retrieved files be loaded into R as a list of
 #' SummarizedExperiment objects, Default: TRUE
-#' @return If load = TRUE, a list of SummarizedExperiment objects. If
-#' load = FALSE, a tibble with information on the cached files, including UUID,
+#' @return If load = TRUE, a list of SummarizedExperiment objects with relevant
+#' sample metadata attached as colData. If load = FALSE, a tibble with
+#' information on the cached files, including UUID,
 #' data type, Google Cloud Bucket object name, local cache ID, and cached file
 #' path
 #' @details 'data_types' can be supplied as a single string, to be applied to
@@ -230,7 +231,7 @@ getMetagenomicData <- function(uuids,
                                 cache_id = names(cache_paths),
                                 cache_path = cache_paths)
 
-    ## Load data as SummarizedExperiment objects if requested
+    ## Load data as SummarizedExperiment objects with sample metadata if requested
     if (load) {
         se_list <- vector("list", nrow(cache_tbl))
 
@@ -238,6 +239,10 @@ getMetagenomicData <- function(uuids,
             se_list[[i]] <- parse_metaphlan_list(cache_tbl$UUID[i],
                                                  cache_tbl$cache_path[i],
                                                  cache_tbl$data_type[i])
+
+            se_list[[i]] <- add_metadata(colnames(se_list[[i]]),
+                                         id_col = "uuid",
+                                         se_list[[i]])
         }
         names(se_list) <- paste(cache_tbl$UUID, cache_tbl$data_type, sep = "_")
 
@@ -321,10 +326,11 @@ listMetagenomicData <- function() {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
+#'  fpath <- file.path(system.file("extdata",
+#'                                 package = "parkinsonsMetagenomicData"),
+#'                     "sample_metaphlan_bugs_list.tsv.gz")
 #'  parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       file_path = file.path(system.file("extdata",
-#'                                             package = "parkinsonsMetagenomicData"),
-#'                                             "sample_metaphlan_list.tsv.gz"),
+#'                       file_path = fpath,
 #'                       data_type = "bugs")
 #'  }
 #' }
@@ -384,10 +390,10 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
                                  "first_genome_in_cluster", "other_genomes")
 
         ## Separate out row data
-        rdata_cols <- c("genome_name", "length", "m_group_type_k_u",
+        rdata_cols <- c("m_group_cluster", "length", "m_group_type_k_u",
                         "first_genome_in_cluster", "other_genomes")
         rdata <- S4Vectors::DataFrame(load_file[,rdata_cols])
-        rownames(rdata) <- load_file$m_group_cluster
+        rownames(rdata) <- load_file$genome_name
 
         ## Set sample ID as column name
         cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
@@ -418,6 +424,44 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     return(ex)
 }
 
+#' @title Add sample metadata to SummarizedExperiment object as colData
+#' @description 'add_metadata' uses the IDs of samples included in a
+#' SummarizedExperiment object to attach sample metadata as colData. This new
+#' metadata can combine with pre-existing colData.
+#' @param sample_ids Vector of strings: sample IDs, such as UUIDs, that will be
+#' used to attach samples to their sampleMetadata
+#' @param id_col String: column name within sampleMetadata where 'sample_ids'
+#' will be found, Default: 'uuid'
+#' @param experiment SummarizedExperiment object: contains samples to add
+#' metadata to
+#' @param method String: 'append', 'overwrite', or 'ignore', indicating how to
+#' handle duplicate colData columns, Default: 'append'
+#' @return SummarizedExperiment object with sampleMetadata stored as colData
+#' @details  sampleMetadata columns found to have the same name as pre-existing
+#' colData columns can be either appended (preserving both duplicate columns),
+#' used to overwrite the pre-existing columns (leaving only the new version of
+#' the duplicate columns), or ignored (leaving only the old version of the
+#' duplicate columns)
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  fpath <- file.path(system.file("extdata",
+#'                                 package = "parkinsonsMetagenomicData"),
+#'                     "sample_experiment.Rds")
+#'  sample_experiment <- readRDS(fpath)
+#'
+#'  add_metadata(sample_ids = colnames(sample_experiment),
+#'               id_col = "uuid",
+#'               experiment = sample_experiment)
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
+#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}
+#' @rdname add_metadata
+#' @export
+#' @importFrom S4Vectors DataFrame
+#' @importFrom SummarizedExperiment colData
 add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "append") {
     ## Check that the length of sample_ids matches the number of samples
     if (length(sample_ids) != ncol(experiment)) {
@@ -467,25 +511,107 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     return(experiment)
 }
 
-merge_metaphlan_lists <- function(merge_list) {
+#' @title Merge SummarizedExperiment objects with the same assay types together
+#' @description 'mergeExperiments' takes a list of SummarizedExperiment objects
+#' with the same assays but different samples, and combines them into a single
+#' SummarizedExperiment object.
+#' @param merge_list List of SummarizedExperiment objects: to be merged into a
+#' single SummarizedExperiment object
+#' @return SummarizedExperiment object with multiple samples
+#' @details The assays contained in the SummarizedExperiments to be merged must
+#' be of the same type (i.e. have the same name) and be in the same order if
+#' there are multiple assays.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  fpath <- file.path(system.file("extdata",
+#'                                 package = "parkinsonsMetagenomicData"),
+#'                     "sample_experiment_list.Rds")
+#'  sample_experiment_list <- readRDS(fpath)
+#'
+#'  mergeExperiments(sample_experiment_list)
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
+#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{c("SummarizedExperiment-class", "SummarizedExperiment")}}
+#'  \code{\link[tibble]{rownames}}
+#'  \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
+#'  \code{\link[tidyselect]{everything}}
+#'  \code{\link[tidyr]{replace_na}}
+#'  \code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{c("DataFrame-class", "S4VectorsOverview")}}
+#'  \code{\link[magrittr]{extract}}
+#' @rdname mergeExperiments
+#' @export
+#' @importFrom purrr map_chr map reduce
+#' @importFrom SummarizedExperiment assayNames assay rowData colData SummarizedExperiment
+#' @importFrom tibble rownames_to_column column_to_rownames
+#' @importFrom dplyr full_join mutate across bind_rows
+#' @importFrom tidyselect everything
+#' @importFrom tidyr replace_na
+#' @importFrom S4Vectors SimpleList DataFrame
+#' @importFrom magrittr set_names
+mergeExperiments <- function(merge_list) {
     ## Check that list contains more than one SummarizedExperiment
     if (length(merge_list) == 1) {
         return(merge_list[[1]])
     }
 
     ## Check that assays match
-    assay_names <- lapply(merge_list, SummarizedExperiment::assayNames) |>
+    assay_names <-
+        lapply(merge_list, SummarizedExperiment::assayNames) |>
         unique()
 
     if (length(assay_names) != 1) {
-        stop("'merge_list' contains multiple assay types, please provide a list where all assays match.")
+        stop("'merge_list' contains multiple assay types, please provide a list where all assays match in type and order.")
     }
 
     ## Merge assays
+    assay_list <- vector("list", length(assay_names[[1]]))
+    names(assay_list) <- assay_names[[1]]
+    for (i in 1:length(assay_list)) {
+        assay_list[[i]] <-
+            purrr::map(merge_list, \(x) SummarizedExperiment::assay(x, i)) |>
+            purrr::map(as.matrix) |>
+            purrr::map(as.data.frame) |>
+            purrr::map(tibble::rownames_to_column) |>
+            purrr::reduce(dplyr::full_join, by = "rowname") |>
+            tibble::column_to_rownames() |>
+            dplyr::mutate(dplyr::across(tidyselect::everything(),
+                                        .fns = ~ tidyr::replace_na(.x, 0))) |>
+            as.matrix()
+    }
+
+    assay_list <- assay_list |>
+        S4Vectors::SimpleList()
 
     ## Merge row data
+    rowData <-
+        purrr::map(merge_list, SummarizedExperiment::rowData) |>
+        purrr::map(as.data.frame) |>
+        purrr::map(tibble::rownames_to_column)
+
+    join_by <-
+        purrr::map(rowData, colnames) |>
+        purrr::reduce(intersect)
+
+    rowData <-
+        purrr::reduce(rowData, dplyr::full_join, by = join_by) |>
+        tibble::column_to_rownames() |>
+        S4Vectors::DataFrame()
 
     ## Merge column data
+    colData <-
+        purrr::map(merge_list, SummarizedExperiment::colData) |>
+        purrr::map(as.data.frame) |>
+        purrr::map(tibble::rownames_to_column) |>
+        dplyr::bind_rows() |>
+        tibble::column_to_rownames() |>
+        S4Vectors::DataFrame()
 
     ## Reformat as SummarizedExperiment
+    se <- SummarizedExperiment::SummarizedExperiment(assays = assay_list,
+                                                     rowData = rowData,
+                                                     colData = colData)
+    return(se)
 }
