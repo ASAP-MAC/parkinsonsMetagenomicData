@@ -90,6 +90,8 @@ the following:
 googleCloudStorageR::gcs_global_bucket("metagenomics-mac")
 ```
 
+## Data Retrieval
+
 All objects stored in `gs://metagenomics-mac` can then be viewed with the
 following. This operation can take several minutes due to the number of objects
 stored in `gs://metagenomics-mac`.
@@ -117,7 +119,9 @@ specified, in order to reduce excessive downloads. `getMetagenomicData` returns
 a list of SummarizedExperiment objects if `load = TRUE`, or a tibble of cached
 file paths and cache IDs for each requested file if `load = FALSE`. A single
 metaphlan list file can then be parsed into a SummarizedExperiment object
-separately with `parse_metaphlan_list`.
+separately with `parse_metaphlan_list`. Additionally, sample metadata will be
+included within the SummarizedExperiment objects as colData if `load = TRUE`, 
+but will have to be added separately if `load = FALSE`.
 
 ```{r}
 cache_tbl <- getMetagenomicData(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
@@ -129,19 +133,51 @@ cache_tbl <- getMetagenomicData(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
 datatable(cache_tbl, options = list(dom = "t"), extensions = "Responsive")
 ```
 
+## Data Handling
+
+### Stepwise Experiment Setup
+
+With the cache information obtained above, we can manually load in individual
+files and format them as SummarizedExperiment objects complete with sample
+metadata. `parse_metaphlan_list` completes the first step for files with
+'data_type' equal to "bugs", "viruses", or "unknown".
+
 ```{r}
-parsed_bugs_list <- parse_metaphlan_list(cache_tbl$UUID[1], cache_tbl$cache_path[1], cache_tbl$data_type[1])
+parsed_bugs_list <- parse_metaphlan_list(sample_id = cache_tbl$UUID[1],
+                                         file_path = cache_tbl$cache_path[1],
+                                         data_type = cache_tbl$data_type[1])
 parsed_bugs_list
 ```
 
-Once the files have been loaded as SummarizedExperiment objects, matching assays
-from multiple samples can be merged together.
+The corresponding metadata from sampleMetadata is then added as colData with
+the function `add_metadata`.
 
 ```{r}
-to_merge <- getMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
-                                         "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
-                               data_types = "all",
-                               load = TRUE)
+bugs_with_metadata <- add_metadata(sample_ids = colnames(parsed_bugs_list),
+                                   id_col = "uuid",
+                                   experiment = parsed_bugs_list)
+bugs_with_metadata
 ```
 
+### Automatic Experiment Setup
 
+The above steps can also be accomplished automatically with `getMetagenomicData`
+with the parameter `load = TRUE`.
+
+```{r}
+sample_experiments <- getMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
+                                                  "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
+                                        data_types = "bugs",
+                                        load = TRUE)
+sample_experiments
+```
+
+## Combining Samples
+
+Once the files have been loaded as SummarizedExperiment objects, matching assays
+from multiple samples can be merged together with `mergeExperiments`.
+
+```{r}
+merged_experiment <- mergeExperiments(sample_experiments)
+merged_experiment
+```
