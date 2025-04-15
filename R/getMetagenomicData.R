@@ -27,78 +27,51 @@ pMD_get_cache <- function() {
 }
 
 #' @title Retrieve locators for MetaPhlAn output
-#' @description 'get_metaphan_locators' gives the names of objects within the
+#' @description 'get_metaphlan_locators' gives the names of objects within the
 #' Google Bucket gs://metagenomics-mac that contain MetaPhlAn output. Output is
 #' requested by associated sample UUID and type of MetaPhlAn output file.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
-#' @param data_types Single string or vector of strings: values found in the
-#' 'data_type' column of listMetagenomicData() or 'all', indicating which output
-#' files to get, Default: 'all'
+#' @param data_type Single string: value found in the data_type' column of
+#' listMetagenomicData(), indicating which output files to get, Default: 'unknown'
 #' @return Vector of strings: names of requested Google Bucket objects
-#' @details 'data_types' can be supplied as a single string, to be applied to
-#' all provided values in 'uuids', or as a vector of strings the same length as
-#' 'uuids' to supply individual values for each UUID.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  get_metaphlan_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                         data_types = "all")
+#'                         data_type = "unknown")
 #'  }
 #' }
 #' @rdname get_metaphlan_locators
 #' @export
-get_metaphlan_locators <- function(uuids, data_types = "all") {
-    ## Get available data_types
+get_metaphlan_locators <- function(uuids, data_type = "unknown") {
+    ## Get available data_type values
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath)
 
-    allowed_types <- c(ftable$data_type, "all")
-    single_type <- FALSE
+    allowed_types <- ftable$data_type
 
-    ## Check that data_types is valid
+    ## Check that data_type is valid
     # length
-    if (length(data_types) > 1 && length(data_types) != length(uuids)) {
-        stop(paste0("The length of 'data_types' is not valid. Please provide either a single value or a vector the same length as 'uuids'."))
-    } else if (length(data_types) == 1) {
-        single_type <- TRUE
+    if (length(data_type) > 1) {
+        stop(paste0("'data_type' should be a single value."))
     }
+
     # values
-    if (!all(data_types %in% allowed_types)) {
-        error_vals <- data_types[!data_types %in% allowed_types]
-        stop(paste0("'", error_vals, "' is not an allowed value for 'data_types'. Please enter a value found in listMetagenomicData() or 'all'."))
+    if (!data_type %in% allowed_types) {
+        stop(paste0("'", data_type, "' is not an allowed value for 'data_type'. Please enter a value found in listMetagenomicData()."))
     }
 
     ## Create locator(s)
-    locators <- c()
+    filerow <- ftable[ftable$data_type == data_type,]
+    file_name <- filerow$file_name
+    subdir <- filerow$subdir
 
-    for (i in 1:length(uuids)) {
-        current_uuid <- uuids[i]
-
-        if (single_type) {
-            parsed_type <- data_types
-        } else {
-            parsed_type <- data_types[i]
-        }
-
-        if (parsed_type == "all") {
-            current_type <- ftable$data_type
-            current_name <- ftable$file_name
-            current_subdir <- ftable$subdir
-        } else {
-            current_type <- parsed_type
-            filerow <- ftable[ftable$data_type == current_type,]
-            current_name <- filerow$file_name
-            current_subdir <- filerow$subdir
-        }
-
-        current_locator <- paste0("results/cMDv4/",
-                                  current_uuid,
-                                  "/",
-                                  current_subdir,
-                                  current_name)
-        locators <- c(locators, current_locator)
-    }
+    locators <- paste0("results/cMDv4/",
+                       uuids,
+                       "/",
+                       subdir,
+                       file_name)
 
     return(locators)
 }
@@ -165,48 +138,37 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 }
 
 #' @title Retrieve and cache MetaPhlAn output files
-#' @description 'getMetagenomicData' takes UUID and data type arguments,
-#' downloads the corresponding MetaPhlAn output files, stores them in a
-#' local parkinsonsMetagenomicData cache, and loads them into R as
-#' SummarizedExperiment objects if requested. If the same files are requested
+#' @description 'cacheMetagenomicData' takes UUID and data type arguments,
+#' downloads the corresponding MetaPhlAn output files, and stores them in a
+#' local parkinsonsMetagenomicData cache. If the same files are requested
 #' again through this function, they will not be re-downloaded unless explicitly
 #' specified, in order to reduce excessive downloads.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
-#' @param data_types Single string or vector of strings: 'bugs', 'viruses',
-#' 'unknown', or 'all', indicating which output files to get, Default: 'all'
+#' @param data_type Single string: 'bugs', 'viruses', or 'unknown', indicating
+#' which output files to get, Default: 'unknown'
 #' @param ask_on_update Boolean: should the function ask the user before
 #' re-downloading a file that is already present in the cache, Default: TRUE
-#' @param load Boolean: should the retrieved files be loaded into R as a list of
-#' SummarizedExperiment objects, Default: TRUE
-#' @return If load = TRUE, a list of SummarizedExperiment objects with relevant
-#' sample metadata attached as colData. If load = FALSE, a tibble with
-#' information on the cached files, including UUID,
-#' data type, Google Cloud Bucket object name, local cache ID, and cached file
-#' path
-#' @details 'data_types' can be supplied as a single string, to be applied to
-#' all provided values in 'uuids', or as a vector of strings the same length as
-#' 'uuids' to supply individual values for each UUID.
+#' @return A tibble with information on the cached files, including UUID, data
+#' type, Google Cloud Bucket object name, local cache ID, and cached file path
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  getMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                     data_type = "all",
-#'                     load = TRUE)
+#'  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                       data_type = "unknown")
 #'  }
 #' }
 #' @seealso
 #'  \code{\link[stringr]{str_split}}
 #'  \code{\link[tibble]{tibble}}
-#' @rdname getMetagenomicData
+#' @rdname cacheMetagenomicData
 #' @export
 #' @importFrom stringr str_split
 #' @importFrom tibble tibble
-getMetagenomicData <- function(uuids,
-                               data_types = "all",
-                               ask_on_update = TRUE,
-                               load = TRUE) {
+cacheMetagenomicData <- function(uuids,
+                                 data_type = "unknown",
+                                 ask_on_update = TRUE) {
     ## Get Google Bucket locators for requested files
-    locators <- get_metaphlan_locators(uuids, data_types)
+    locators <- get_metaphlan_locators(uuids, data_type)
 
     ## Download and cache requested files
     cache_paths <- c()
@@ -231,24 +193,49 @@ getMetagenomicData <- function(uuids,
                                 cache_id = names(cache_paths),
                                 cache_path = cache_paths)
 
-    ## Load data as SummarizedExperiment objects with sample metadata if requested
-    if (load) {
-        se_list <- vector("list", nrow(cache_tbl))
+    return(cache_tbl)
 
-        for (i in 1:nrow(cache_tbl)) {
-            se_list[[i]] <- parse_metaphlan_list(cache_tbl$UUID[i],
-                                                 cache_tbl$cache_path[i],
-                                                 cache_tbl$data_type[i])
+}
 
-            se_list[[i]] <- add_metadata(colnames(se_list[[i]]),
-                                         id_col = "uuid",
-                                         se_list[[i]])
-        }
-        names(se_list) <- paste(cache_tbl$UUID, cache_tbl$data_type, sep = "_")
+#' @title Load cached files into R as a merged SummarizedExperiment object
+#' @description 'loadMetagenomicData' takes a table of information about cached
+#' files, including paths to the cached files as well as associated UUIDs and
+#' data types, and loads the files into R as SummarizedExperiment objects.
+#' Associated sample metadata is automatically attached as colData, and the
+#' objects are merged into a single SummarizedExperiment object.
+#' @param cache_table A data.frame or tibble: structured like
+#' cacheMetagenomicData() output; contains the columns 'UUID', 'cache_path', and
+#' 'data_type', with appropriate entries for each file to be loaded in.
+#' @return A SummarizedExperiment object with relevant sample metadata attached
+#' as colData.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname loadMetagenomicData
+#' @export
+loadMetagenomicData <- function(cache_table) {
+    ## Load data as SummarizedExperiment objects
+    se_list <- vector("list", nrow(cache_table))
 
-        return(se_list)
-    } else {return(cache_tbl)}
+    for (i in 1:nrow(cache_table)) {
+        se_list[[i]] <- parse_metaphlan_list(cache_table$UUID[i],
+                                             cache_table$cache_path[i],
+                                             cache_table$data_type[i])
+    }
+    names(se_list) <- paste(cache_table$UUID, cache_table$data_type, sep = "_")
 
+    ## Merge into single SummarizedExperiment object
+    merged_se <- merge_experiments(se_list)
+
+    ## Add sample metadata
+    merged_se <- add_metadata(colnames(merged_se),
+                              id_col = "uuid",
+                              merged_se)
+
+    return(merged_se)
 }
 
 #' @title List metagenomic data available for download
@@ -512,7 +499,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 }
 
 #' @title Merge SummarizedExperiment objects with the same assay types together
-#' @description 'mergeExperiments' takes a list of SummarizedExperiment objects
+#' @description 'merge_experiments' takes a list of SummarizedExperiment objects
 #' with the same assays but different samples, and combines them into a single
 #' SummarizedExperiment object.
 #' @param merge_list List of SummarizedExperiment objects: to be merged into a
@@ -529,7 +516,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #'                     "sample_experiment_list.Rds")
 #'  sample_experiment_list <- readRDS(fpath)
 #'
-#'  mergeExperiments(sample_experiment_list)
+#'  merge_experiments(sample_experiment_list)
 #'  }
 #' }
 #' @seealso
@@ -541,7 +528,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #'  \code{\link[tidyr]{replace_na}}
 #'  \code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{c("DataFrame-class", "S4VectorsOverview")}}
 #'  \code{\link[magrittr]{extract}}
-#' @rdname mergeExperiments
+#' @rdname merge_experiments
 #' @export
 #' @importFrom purrr map_chr map reduce
 #' @importFrom SummarizedExperiment assayNames assay rowData colData SummarizedExperiment
@@ -551,7 +538,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' @importFrom tidyr replace_na
 #' @importFrom S4Vectors SimpleList DataFrame
 #' @importFrom magrittr set_names
-mergeExperiments <- function(merge_list) {
+merge_experiments <- function(merge_list) {
     ## Check that list contains more than one SummarizedExperiment
     if (length(merge_list) == 1) {
         return(merge_list[[1]])

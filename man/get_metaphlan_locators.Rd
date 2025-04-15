@@ -4,33 +4,27 @@
 \alias{get_metaphlan_locators}
 \title{Retrieve locators for MetaPhlAn output}
 \usage{
-get_metaphlan_locators(uuids, data_types = "all")
+get_metaphlan_locators(uuids, data_type = "unknown")
 }
 \arguments{
 \item{uuids}{Vector of strings: sample UUID(s) to get output for}
 
-\item{data_types}{Single string or vector of strings: values found in the
-'data_type' column of listMetagenomicData() or 'all', indicating which output
-files to get, Default: 'all'}
+\item{data_type}{Single string: value found in the data_type' column of
+listMetagenomicData(), indicating which output files to get, Default: 'unknown'}
 }
 \value{
 Vector of strings: names of requested Google Bucket objects
 }
 \description{
-'get_metaphan_locators' gives the names of objects within the
+'get_metaphlan_locators' gives the names of objects within the
 Google Bucket gs://metagenomics-mac that contain MetaPhlAn output. Output is
 requested by associated sample UUID and type of MetaPhlAn output file.
-}
-\details{
-'data_types' can be supplied as a single string, to be applied to
-all provided values in 'uuids', or as a vector of strings the same length as
-'uuids' to supply individual values for each UUID.
 }
 \examples{
 \dontrun{
 if(interactive()){
  get_metaphlan_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                        data_types = "all")
+                        data_type = "unknown")
  }
 }
 }
