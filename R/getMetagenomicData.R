@@ -32,18 +32,18 @@ pMD_get_cache <- function() {
 #' requested by associated sample UUID and type of MetaPhlAn output file.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
 #' @param data_type Single string: value found in the data_type' column of
-#' listMetagenomicData(), indicating which output files to get, Default: 'unknown'
+#' listMetagenomicData(), indicating which output files to get, Default: 'microbe_abundance'
 #' @return Vector of strings: names of requested Google Bucket objects
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  get_metaphlan_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                         data_type = "unknown")
+#'                         data_type = "microbe_abundance")
 #'  }
 #' }
 #' @rdname get_metaphlan_locators
 #' @export
-get_metaphlan_locators <- function(uuids, data_type = "unknown") {
+get_metaphlan_locators <- function(uuids, data_type = "microbe_abundance") {
     ## Get available data_type values
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
@@ -144,8 +144,8 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' again through this function, they will not be re-downloaded unless explicitly
 #' specified, in order to reduce excessive downloads.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
-#' @param data_type Single string: 'bugs', 'viruses', or 'unknown', indicating
-#' which output files to get, Default: 'unknown'
+#' @param data_type Single string: 'microbe_abundance' or 'viruses', indicating
+#' which output files to get, Default: 'microbe_abundance'
 #' @param ask_on_update Boolean: should the function ask the user before
 #' re-downloading a file that is already present in the cache, Default: TRUE
 #' @return A tibble with information on the cached files, including UUID, data
@@ -154,7 +154,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' \dontrun{
 #' if(interactive()){
 #'  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       data_type = "unknown")
+#'                       data_type = "microbe_abundance")
 #'  }
 #' }
 #' @seealso
@@ -165,7 +165,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' @importFrom stringr str_split
 #' @importFrom tibble tibble
 cacheMetagenomicData <- function(uuids,
-                                 data_type = "unknown",
+                                 data_type = "microbe_abundance",
                                  ask_on_update = TRUE) {
     ## Get Google Bucket locators for requested files
     locators <- get_metaphlan_locators(uuids, data_type)
@@ -332,7 +332,7 @@ listMetagenomicData <- function() {
 #' @importFrom SummarizedExperiment SummarizedExperiment
 parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     ## Slight differences in output file format
-    if (data_type %in% c("bugs", "unknown")) {
+    if (data_type == "microbe_abundance") {
         ## Convert commented header lines to metadata
         meta <- readLines(file_path, n = 3)
         meta <- gsub("#| reads processed", "", meta)
@@ -358,7 +358,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
         ## Set relative abundance as assay
         relabundance <- as.matrix(load_file$relative_abundance)
         alist <- list(relabundance)
-        names(alist) <- paste0(data_type, "_relative_abundance")
+        names(alist) <- "microbe_relative_abundance"
 
     } else if (data_type == "viruses") {
         ## Convert commented header lines to metadata
@@ -398,7 +398,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
                           "viral_depth_of_coverage_median")
     } else {
         ## Notify if output file is not able to be parsed by this function
-        stop(paste0("data_type '", data_type, "' is not 'bugs', 'viruses', or 'unknown'. Please enter one of these values or use a different parsing function."))
+        stop(paste0("data_type '", data_type, "' is not 'microbe_abundance' or 'viruses'. Please enter one of these values or use a different parsing function."))
     }
 
     ## Combine process metadata, row data, sample ID, and assays into
