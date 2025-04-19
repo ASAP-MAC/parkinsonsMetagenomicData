@@ -4,13 +4,17 @@
 \alias{cacheMetagenomicData}
 \title{Retrieve and cache MetaPhlAn output files}
 \usage{
-cacheMetagenomicData(uuids, data_type = "unknown", ask_on_update = TRUE)
+cacheMetagenomicData(
+  uuids,
+  data_type = "relative_abundance",
+  ask_on_update = TRUE
+)
 }
 \arguments{
 \item{uuids}{Vector of strings: sample UUID(s) to get output for}
 
-\item{data_type}{Single string: 'bugs', 'viruses', or 'unknown', indicating
-which output files to get, Default: 'unknown'}
+\item{data_type}{Single string: 'relative_abundance' or 'viral_clusters', indicating
+which output files to get, Default: 'relative_abundance'}
 
 \item{ask_on_update}{Boolean: should the function ask the user before
 re-downloading a file that is already present in the cache, Default: TRUE}
@@ -30,7 +34,7 @@ specified, in order to reduce excessive downloads.
 \dontrun{
 if(interactive()){
  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                      data_type = "unknown")
+                      data_type = "relative_abundance")
  }
 }
 }

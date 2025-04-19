@@ -1,5 +1,5 @@
 data_type,file_name,subdir
-viruses,metaphlan_viruses_list.tsv.gz,metaphlan_lists/
-microbe_abundance,metaphlan_unknown_list.tsv.gz,metaphlan_lists/
+viral_clusters,metaphlan_viruses_list.tsv.gz,metaphlan_lists/
+relative_abundance,metaphlan_unknown_list.tsv.gz,metaphlan_lists/
 marker_abundance,marker_abundance.tsv.gz,metaphlan_markers/
 marker_presence,marker_presence.tsv.gz,metaphlan_markers/

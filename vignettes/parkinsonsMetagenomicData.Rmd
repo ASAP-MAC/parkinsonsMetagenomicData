@@ -121,7 +121,7 @@ returns a tibble of cached file paths and cache IDs for each requested file.
 ```{r}
 cache_tbl <- cacheMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
                                             "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
-                                  data_type = "microbe_abundance")
+                                  data_type = "relative_abundance")
 ```
 
 ```{r, echo=FALSE}
@@ -147,35 +147,35 @@ Alternatively, we can parse the files, add metadata, and merge the
 SummarizedExperiment objects in separate steps.
 
 `parse_metaphlan_list` completes the first step for files with
-'data_type' equal to "microbe_abundance" or "viruses".
+'data_type' equal to "relative_abundance" or "viral_clusters".
 
 ```{r}
-parsed_microbe_list <- vector("list", 2)
-names(parsed_microbe_list) <- cache_tbl$UUID
-parsed_microbe_list[[1]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[1],
-                                                 file_path = cache_tbl$cache_path[1],
-                                                 data_type = cache_tbl$data_type[1])
+parsed_rel_ab_list <- vector("list", 2)
+names(parsed_rel_ab_list) <- cache_tbl$UUID
+parsed_rel_ab_list[[1]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[1],
+                                                file_path = cache_tbl$cache_path[1],
+                                                data_type = cache_tbl$data_type[1])
 
-parsed_microbe_list[[2]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[2],
-                                                 file_path = cache_tbl$cache_path[2],
-                                                 data_type = cache_tbl$data_type[2])
-parsed_microbe_list
+parsed_rel_ab_list[[2]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[2],
+                                                file_path = cache_tbl$cache_path[2],
+                                                data_type = cache_tbl$data_type[2])
+parsed_rel_ab_list
 ```
 
 Once the files have been loaded as SummarizedExperiment objects, matching assays
-from multiple samples can be merged together with `merge_experiments`.
+from multiple samples can be merged together with `mergeExperiments`.
 
 ```{r}
-merged_microbes <- merge_experiments(parsed_microbe_list)
-merged_microbes
+merged_rel_abs <- mergeExperiments(parsed_rel_ab_list)
+merged_rel_abs
 ```
 
 The corresponding metadata from sampleMetadata is then added as colData with
 the function `add_metadata`.
 
 ```{r}
-microbes_with_metadata <- add_metadata(sample_ids = colnames(merged_microbes),
-                                       id_col = "uuid",
-                                       experiment = merged_microbes)
-microbes_with_metadata
+rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
+                                      id_col = "uuid",
+                                      experiment = merged_rel_abs)
+rel_abs_with_metadata
 ```
