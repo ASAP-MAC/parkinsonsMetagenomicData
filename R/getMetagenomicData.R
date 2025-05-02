@@ -47,7 +47,7 @@ get_metaphlan_locators <- function(uuids, data_type = "relative_abundance") {
     ## Get available data_type values
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath)
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
 
     allowed_types <- ftable$data_type
 
@@ -107,7 +107,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
     bfcres <- BiocFileCache::bfcquery(x = bfc,
                                       query = locator,
                                       field = "rname")
-    rid <- bfcres$rid
+    rid <- bfcres$rid[bfcres$create_time == max(bfcres$create_time)]
 
     ## Cached file not found
     if (!length(rid)) {
@@ -117,13 +117,14 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
                                          fname = "exact")
         rid <- names(newpath)
         googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
-    } else { ## Cached file found, ask whether to overwrite cache
-        if (interactive()) {
+    } else if (length(rid)) { ## Cached file found, ask whether to overwrite cache
+        if (ask_on_update & interactive()) {
             over <- readline(prompt = paste0("Resource with rname = '", locator, "' found in cache. Redownload and overwrite? (yes/no): "))
             response <- substr(tolower(over), 1, 1)
             doit <- switch(response, y = TRUE, n = FALSE, NA)
         } else {
             doit <- FALSE
+            message(paste0("Resource with rname = '", locator, "' found in cache, proceeding with most recent version."))
         }
 
         if (doit) {
@@ -184,7 +185,7 @@ cacheMetagenomicData <- function(uuids,
     parsed_filenames <- unlist(lapply(parsed_locators, function(x) x[5]))
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath)
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
     parsed_data_types <- ftable$data_type[match(parsed_filenames, ftable$file_name)]
 
     cache_tbl <- tibble::tibble(UUID = parsed_uuids,
@@ -194,7 +195,6 @@ cacheMetagenomicData <- function(uuids,
                                 cache_path = cache_paths)
 
     return(cache_tbl)
-
 }
 
 #' @title Load cached files into R as a merged SummarizedExperiment object
