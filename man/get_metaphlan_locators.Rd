@@ -4,13 +4,13 @@
 \alias{get_metaphlan_locators}
 \title{Retrieve locators for MetaPhlAn output}
 \usage{
-get_metaphlan_locators(uuids, data_type = "unknown")
+get_metaphlan_locators(uuids, data_type = "relative_abundance")
 }
 \arguments{
 \item{uuids}{Vector of strings: sample UUID(s) to get output for}
 
 \item{data_type}{Single string: value found in the data_type' column of
-listMetagenomicData(), indicating which output files to get, Default: 'unknown'}
+listMetagenomicData(), indicating which output files to get, Default: 'relative_abundance'}
 }
 \value{
 Vector of strings: names of requested Google Bucket objects
@@ -24,7 +24,7 @@ requested by associated sample UUID and type of MetaPhlAn output file.
 \dontrun{
 if(interactive()){
  get_metaphlan_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                        data_type = "unknown")
+                        data_type = "relative_abundance")
  }
 }
 }

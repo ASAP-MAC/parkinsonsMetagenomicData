@@ -25,7 +25,9 @@ objects are merged into a single SummarizedExperiment object.
 \examples{
 \dontrun{
 if(interactive()){
- #EXAMPLE1
+ cache_table <- cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+                                     data_type = "relative_abundance")
+ loadMetagenomicData(cache_table = cache_table)
  }
 }
 }

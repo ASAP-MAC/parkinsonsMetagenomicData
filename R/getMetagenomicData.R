@@ -32,22 +32,22 @@ pMD_get_cache <- function() {
 #' requested by associated sample UUID and type of MetaPhlAn output file.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
 #' @param data_type Single string: value found in the data_type' column of
-#' listMetagenomicData(), indicating which output files to get, Default: 'unknown'
+#' listMetagenomicData(), indicating which output files to get, Default: 'relative_abundance'
 #' @return Vector of strings: names of requested Google Bucket objects
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  get_metaphlan_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                         data_type = "unknown")
+#'                         data_type = "relative_abundance")
 #'  }
 #' }
 #' @rdname get_metaphlan_locators
 #' @export
-get_metaphlan_locators <- function(uuids, data_type = "unknown") {
+get_metaphlan_locators <- function(uuids, data_type = "relative_abundance") {
     ## Get available data_type values
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath)
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
 
     allowed_types <- ftable$data_type
 
@@ -107,7 +107,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
     bfcres <- BiocFileCache::bfcquery(x = bfc,
                                       query = locator,
                                       field = "rname")
-    rid <- bfcres$rid
+    rid <- bfcres$rid[bfcres$create_time == max(bfcres$create_time)]
 
     ## Cached file not found
     if (!length(rid)) {
@@ -117,13 +117,14 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
                                          fname = "exact")
         rid <- names(newpath)
         googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
-    } else { ## Cached file found, ask whether to overwrite cache
-        if (interactive()) {
+    } else if (length(rid)) { ## Cached file found, ask whether to overwrite cache
+        if (ask_on_update & interactive()) {
             over <- readline(prompt = paste0("Resource with rname = '", locator, "' found in cache. Redownload and overwrite? (yes/no): "))
             response <- substr(tolower(over), 1, 1)
             doit <- switch(response, y = TRUE, n = FALSE, NA)
         } else {
             doit <- FALSE
+            message(paste0("Resource with rname = '", locator, "' found in cache, proceeding with most recent version."))
         }
 
         if (doit) {
@@ -144,8 +145,8 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' again through this function, they will not be re-downloaded unless explicitly
 #' specified, in order to reduce excessive downloads.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
-#' @param data_type Single string: 'bugs', 'viruses', or 'unknown', indicating
-#' which output files to get, Default: 'unknown'
+#' @param data_type Single string: 'relative_abundance' or 'viral_clusters', indicating
+#' which output files to get, Default: 'relative_abundance'
 #' @param ask_on_update Boolean: should the function ask the user before
 #' re-downloading a file that is already present in the cache, Default: TRUE
 #' @return A tibble with information on the cached files, including UUID, data
@@ -154,7 +155,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' \dontrun{
 #' if(interactive()){
 #'  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       data_type = "unknown")
+#'                       data_type = "relative_abundance")
 #'  }
 #' }
 #' @seealso
@@ -165,7 +166,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' @importFrom stringr str_split
 #' @importFrom tibble tibble
 cacheMetagenomicData <- function(uuids,
-                                 data_type = "unknown",
+                                 data_type = "relative_abundance",
                                  ask_on_update = TRUE) {
     ## Get Google Bucket locators for requested files
     locators <- get_metaphlan_locators(uuids, data_type)
@@ -184,7 +185,7 @@ cacheMetagenomicData <- function(uuids,
     parsed_filenames <- unlist(lapply(parsed_locators, function(x) x[5]))
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath)
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
     parsed_data_types <- ftable$data_type[match(parsed_filenames, ftable$file_name)]
 
     cache_tbl <- tibble::tibble(UUID = parsed_uuids,
@@ -194,7 +195,6 @@ cacheMetagenomicData <- function(uuids,
                                 cache_path = cache_paths)
 
     return(cache_tbl)
-
 }
 
 #' @title Load cached files into R as a merged SummarizedExperiment object
@@ -211,7 +211,9 @@ cacheMetagenomicData <- function(uuids,
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'  cache_table <- cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                                      data_type = "relative_abundance")
+#'  loadMetagenomicData(cache_table = cache_table)
 #'  }
 #' }
 #' @rdname loadMetagenomicData
@@ -228,7 +230,7 @@ loadMetagenomicData <- function(cache_table) {
     names(se_list) <- paste(cache_table$UUID, cache_table$data_type, sep = "_")
 
     ## Merge into single SummarizedExperiment object
-    merged_se <- merge_experiments(se_list)
+    merged_se <- mergeExperiments(se_list)
 
     ## Add sample metadata
     merged_se <- add_metadata(colnames(merged_se),
@@ -332,7 +334,7 @@ listMetagenomicData <- function() {
 #' @importFrom SummarizedExperiment SummarizedExperiment
 parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     ## Slight differences in output file format
-    if (data_type %in% c("bugs", "unknown")) {
+    if (data_type == "relative_abundance") {
         ## Convert commented header lines to metadata
         meta <- readLines(file_path, n = 3)
         meta <- gsub("#| reads processed", "", meta)
@@ -358,9 +360,9 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
         ## Set relative abundance as assay
         relabundance <- as.matrix(load_file$relative_abundance)
         alist <- list(relabundance)
-        names(alist) <- paste0(data_type, "_relative_abundance")
+        names(alist) <- "relative_abundance"
 
-    } else if (data_type == "viruses") {
+    } else if (data_type == "viral_clusters") {
         ## Convert commented header lines to metadata
         meta <- readLines(file_path, n = 2)
         meta <- gsub("#", "", meta)
@@ -398,7 +400,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
                           "viral_depth_of_coverage_median")
     } else {
         ## Notify if output file is not able to be parsed by this function
-        stop(paste0("data_type '", data_type, "' is not 'bugs', 'viruses', or 'unknown'. Please enter one of these values or use a different parsing function."))
+        stop(paste0("data_type '", data_type, "' is not 'relative_abundance' or 'viral_clusters'. Please enter one of these values or use a different parsing function."))
     }
 
     ## Combine process metadata, row data, sample ID, and assays into
@@ -499,7 +501,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 }
 
 #' @title Merge SummarizedExperiment objects with the same assay types together
-#' @description 'merge_experiments' takes a list of SummarizedExperiment objects
+#' @description 'mergeExperiments' takes a list of SummarizedExperiment objects
 #' with the same assays but different samples, and combines them into a single
 #' SummarizedExperiment object.
 #' @param merge_list List of SummarizedExperiment objects: to be merged into a
@@ -516,7 +518,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #'                     "sample_experiment_list.Rds")
 #'  sample_experiment_list <- readRDS(fpath)
 #'
-#'  merge_experiments(sample_experiment_list)
+#'  mergeExperiments(sample_experiment_list)
 #'  }
 #' }
 #' @seealso
@@ -528,7 +530,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #'  \code{\link[tidyr]{replace_na}}
 #'  \code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{c("DataFrame-class", "S4VectorsOverview")}}
 #'  \code{\link[magrittr]{extract}}
-#' @rdname merge_experiments
+#' @rdname mergeExperiments
 #' @export
 #' @importFrom purrr map_chr map reduce
 #' @importFrom SummarizedExperiment assayNames assay rowData colData SummarizedExperiment
@@ -538,7 +540,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' @importFrom tidyr replace_na
 #' @importFrom S4Vectors SimpleList DataFrame
 #' @importFrom magrittr set_names
-merge_experiments <- function(merge_list) {
+mergeExperiments <- function(merge_list) {
     ## Check that list contains more than one SummarizedExperiment
     if (length(merge_list) == 1) {
         return(merge_list[[1]])
