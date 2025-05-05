@@ -129,7 +129,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 
         if (doit) {
             rpath <- BiocFileCache::bfcrpath(bfc, rids = rid)
-            googleCloudStorageR::gcs_get_object(locator, saveToDisk = rpath)
+            googleCloudStorageR::gcs_get_object(locator, saveToDisk = rpath, overwrite = TRUE)
         }
     }
 
