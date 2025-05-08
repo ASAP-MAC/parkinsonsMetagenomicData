@@ -1,11 +1,13 @@
 library(purrr)
 library(dplyr)
+library(readr)
+library(readxl)
 
 # file structure
 curation_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsonsManualCuration"
 curated_dir <- file.path(curation_dir, "curated_metadata")
 original_dir <- file.path(curation_dir, "original_metadata")
-map_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsonsMetagenomicData/shotgun_samples/sample_uuid_maps"
+map_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsons_data_search/shotgun_samples/sample_uuid_maps"
 accession_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/pipeline/data/ParkinsonAccessions/ParkinsonAccessions/"
 
 # curated metadata
@@ -284,4 +286,26 @@ final_metas <- lapply(final_metas, function(x) x %>%
 sampleMetadata <- bind_rows(final_metas)
 #write.csv(merged_metadata, file = "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsonsMetagenomicData/shotgun_samples/merged_metadata.csv", row.names = FALSE)
 
+## Temporary simple sampleMetadata for Mazmanian projects
+uuid_map_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/pipeline/data/uuid_maps/"
+temp <- list.files(path = uuid_map_dir, pattern="^MazmanianS_*")
+mazmanian_meta <- lapply(file.path(uuid_map_dir, temp), read_delim)
+names(mazmanian_meta) <- gsub(".tsv", "", temp)
+
+for (sname in names(mazmanian_meta)) {
+    mazmanian_meta[[sname]] <- mazmanian_meta[[sname]] %>%
+        select(-file_paths) %>%
+        mutate(study_name = sname)
+}
+
+final_mazmanian <- lapply(mazmanian_meta, function(x) x %>%
+                              mutate(across(everything(), as.character)))
+bind_mazmanian <- bind_rows(final_mazmanian)
+
+sampleMetadata <- sampleMetadata %>%
+    mutate(across(everything(), as.character))
+
+sampleMetadata <- bind_rows(sampleMetadata, bind_mazmanian)
+
+# Create package data object
 usethis::use_data(sampleMetadata, overwrite = TRUE)
