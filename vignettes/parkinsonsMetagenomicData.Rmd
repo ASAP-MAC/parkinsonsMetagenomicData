@@ -53,9 +53,11 @@ prefixed by "uncurated_". Curated features include the following at this time:
  * uuid
 
 ```{r}
-sampleMetadata |>
+selected_samples <- sampleMetadata |>
     filter(study_name == "BedarfJR_2017") |>
-    select(where(~ !any(is.na(.x)))) |>
+    select(where(~ !any(is.na(.x))))
+
+selected_samples |>
     slice(1:10) |>
     select(1:10) |>
     datatable(options = list(dom = "t"), extensions = "Responsive")
@@ -128,8 +130,7 @@ to reduce excessive downloads. `cacheMetagenomicData` returns a tibble of cached
 file paths and cache IDs for each requested file.
 
 ```{r}
-cache_tbl <- cacheMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
-                                            "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
+cache_tbl <- cacheMetagenomicData(uuids = selected_samples$uuid,
                                   data_type = "relative_abundance")
 ```
 
@@ -143,7 +144,8 @@ datatable(cache_tbl, options = list(dom = "t"), extensions = "Responsive")
 
 The above table can then be supplied to `loadMetagenomicData` and the cached
 files will be parsed into a single SummarizedExperiment object with sample
-metadata.
+metadata. At this point, only the `metaphlan_lists` data types,
+`viral_clusters` and `relative_abundance`, are compatible with this function.
 
 ```{r}
 merged_experiment <- loadMetagenomicData(cache_tbl)
@@ -188,7 +190,3 @@ rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
                                       experiment = merged_rel_abs)
 rel_abs_with_metadata
 ```
-
-# Standard Workflow
-
-To summarize, the standard workflow for loading 
