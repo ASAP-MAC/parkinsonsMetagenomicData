@@ -53,20 +53,31 @@ prefixed by "uncurated_". Curated features include the following at this time:
  * uuid
 
 ```{r}
-sampleMetadata |>
+selected_samples <- sampleMetadata |>
     filter(study_name == "BedarfJR_2017") |>
-    select(where(~ !any(is.na(.x)))) |>
+    select(where(~ !any(is.na(.x))))
+
+selected_samples |>
     slice(1:10) |>
     select(1:10) |>
     datatable(options = list(dom = "t"), extensions = "Responsive")
 ```
 
-# MetaPhlAn Results
+# Output files
 
-The UUID(s) of any sample(s) of interest may be then used to access MetaPhlAn
-output files.
+The UUID(s) of any sample(s) of interest may be then used to access
+output files. Available data types and information about their full file paths
+can be found with `output_file_types()`
 
-## Google Bucket Setup
+```{r}
+output_file_types()
+```
+
+At the moment, only the `metaphlan_lists` data types, `viral_clusters` and
+`relative_abundance`, have parsing functions for automatically loading into
+SummarizedExperiment objects.
+
+# Google Bucket Setup
 
 Output files are contained in the private Google Cloud Bucket
 `gs://metagenomics-mac` at the moment, the user must authenticate with a service
@@ -90,7 +101,7 @@ the following:
 googleCloudStorageR::gcs_global_bucket("metagenomics-mac")
 ```
 
-## Data Retrieval
+# Data Retrieval
 
 All objects stored in `gs://metagenomics-mac` can then be viewed with the
 following. This operation can take several minutes due to the number of objects
@@ -119,8 +130,7 @@ to reduce excessive downloads. `cacheMetagenomicData` returns a tibble of cached
 file paths and cache IDs for each requested file.
 
 ```{r}
-cache_tbl <- cacheMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
-                                            "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
+cache_tbl <- cacheMetagenomicData(uuids = selected_samples$uuid,
                                   data_type = "relative_abundance")
 ```
 
@@ -128,20 +138,21 @@ cache_tbl <- cacheMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb54
 datatable(cache_tbl, options = list(dom = "t"), extensions = "Responsive")
 ```
 
-## Data Handling
+# Data Handling
 
-### Automatic Experiment Setup (MetaPhlAn output files only)
+## Automatic Experiment Setup (MetaPhlAn output files only)
 
 The above table can then be supplied to `loadMetagenomicData` and the cached
 files will be parsed into a single SummarizedExperiment object with sample
-metadata.
+metadata. At this point, only the `metaphlan_lists` data types,
+`viral_clusters` and `relative_abundance`, are compatible with this function.
 
 ```{r}
 merged_experiment <- loadMetagenomicData(cache_tbl)
 merged_experiment
 ```
 
-### Stepwise Experiment Setup
+## Stepwise Experiment Setup
 
 Alternatively, we can parse the files, add metadata, and merge the
 SummarizedExperiment objects in separate steps.
