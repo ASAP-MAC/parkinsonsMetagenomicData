@@ -54,7 +54,7 @@ prefixed by "uncurated_". Curated features include the following at this time:
 
 ```{r}
 selected_samples <- sampleMetadata |>
-    filter(study_name == "BedarfJR_2017") |>
+    filter(study_name == "ZhangM_2023") |>
     select(where(~ !any(is.na(.x))))
 
 selected_samples |>
