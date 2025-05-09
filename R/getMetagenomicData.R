@@ -1,31 +1,5 @@
 #### Download and cache raw output files from cloud storage
 
-#' @title Get location of dedicated file cache
-#' @description 'pMD_get_cache' returns the location of the dedicated
-#' parkinsonsMetagenomicData file cache or creates it if it does not exist.
-#' @return BiocFileCache cache object
-#' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  pMD_get_cache()
-#'  }
-#' }
-#' @seealso
-#'  \code{\link[tools]{userdir}}
-#'  \code{\link[BiocFileCache]{BiocFileCache-class}}, \code{\link[BiocFileCache]{BiocFileCache}}
-#' @rdname pMD_get_cache
-#' @export
-#' @importFrom tools R_user_dir
-#' @importFrom BiocFileCache BiocFileCache
-pMD_get_cache <- function() {
-    ## Create a directory for cached data
-    cache <- tools::R_user_dir("parkinsonsMetagenomicData", "cache")
-    if (!dir.exists(cache)) {dir.create(cache)}
-
-    ## Directory path of cache
-    BiocFileCache::BiocFileCache(cache = cache)
-}
-
 #' @title Retrieve locators for MetaPhlAn output
 #' @description 'get_metaphlan_locators' gives the names of objects within the
 #' Google Bucket gs://metagenomics-mac that contain MetaPhlAn output. Output is

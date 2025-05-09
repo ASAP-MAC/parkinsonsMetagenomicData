@@ -61,12 +61,21 @@ sampleMetadata |>
     datatable(options = list(dom = "t"), extensions = "Responsive")
 ```
 
-# MetaPhlAn Results
+# Output files
 
-The UUID(s) of any sample(s) of interest may be then used to access MetaPhlAn
-output files.
+The UUID(s) of any sample(s) of interest may be then used to access
+output files. Available data types and information about their full file paths
+can be found with `output_file_types()`
 
-## Google Bucket Setup
+```{r}
+output_file_types()
+```
+
+At the moment, only the `metaphlan_lists` data types, `viral_clusters` and
+`relative_abundance`, have parsing functions for automatically loading into
+SummarizedExperiment objects.
+
+# Google Bucket Setup
 
 Output files are contained in the private Google Cloud Bucket
 `gs://metagenomics-mac` at the moment, the user must authenticate with a service
@@ -90,7 +99,7 @@ the following:
 googleCloudStorageR::gcs_global_bucket("metagenomics-mac")
 ```
 
-## Data Retrieval
+# Data Retrieval
 
 All objects stored in `gs://metagenomics-mac` can then be viewed with the
 following. This operation can take several minutes due to the number of objects
@@ -128,9 +137,9 @@ cache_tbl <- cacheMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb54
 datatable(cache_tbl, options = list(dom = "t"), extensions = "Responsive")
 ```
 
-## Data Handling
+# Data Handling
 
-### Automatic Experiment Setup
+## Automatic Experiment Setup
 
 The above table can then be supplied to `loadMetagenomicData` and the cached
 files will be parsed into a single SummarizedExperiment object with sample
@@ -141,7 +150,7 @@ merged_experiment <- loadMetagenomicData(cache_tbl)
 merged_experiment
 ```
 
-### Stepwise Experiment Setup
+## Stepwise Experiment Setup
 
 Alternatively, we can parse the files, add metadata, and merge the
 SummarizedExperiment objects in separate steps.
@@ -179,3 +188,7 @@ rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
                                       experiment = merged_rel_abs)
 rel_abs_with_metadata
 ```
+
+# Standard Workflow
+
+To summarize, the standard workflow for loading 
