@@ -30,3 +30,9 @@ output_file_types <- function() {
     ftable <- readr::read_csv(fpath, show_col_types = FALSE)
     return(ftable)
 }
+
+get_exts <- function(file_path) {
+    bname <- basename(file_path)
+    exts <- paste0(".", stringr::str_split_fixed(bname, "\\.", 2)[2])
+    return(exts)
+}

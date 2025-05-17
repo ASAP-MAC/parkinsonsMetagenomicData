@@ -24,3 +24,5 @@ pathabundance_relab_unstratified,out_pathabundance_relab_unstratified.tsv.gz,hum
 pathcoverage_unstratified,out_pathcoverage_unstratified.tsv.gz,humann/
 pathcoverage_stratified,out_pathcoverage_stratified.tsv.gz,humann/
 pathcoverage,out_pathcoverage.tsv.gz,humann/
+fastqc,fastqc_data.txt,fasterq_dump/out_sample_fastqc/
+kneaddata_log,out_kneaddata.log,kneaddata/kneaddata_output/

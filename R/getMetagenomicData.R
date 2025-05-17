@@ -87,7 +87,7 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
     if (!length(rid)) {
         newpath <- BiocFileCache::bfcnew(x = bfc,
                                          rname = locator,
-                                         ext = ".tsv.gz",
+                                         ext = get_exts(locator),
                                          fname = "exact")
         rid <- names(newpath)
         googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
@@ -267,124 +267,6 @@ listMetagenomicData <- function() {
                                size = objs$size,
                                updated = objs$updated)
     return(data_tbl)
-}
-
-#' @title Parse basic MetaPhlAn output for a single sample as a
-#' SummarizedExperiment object
-#' @description 'parse_metaphlan_list' reads a file obtained from running
-#' MetaPhlAn for microbial profiling (with or without unclassified fraction
-#' estimation) or viral sequence cluster analysis. This file is parsed into a
-#' SummarizedExperiment object.
-#' @param sample_id String: A sample identifier
-#' @param file_path String: Path to a locally stored MetaPhlAn output file in
-#' TSV format
-#' @param data_type String: The type of MetaPhlAn output file to be parsed, as
-#' found in the 'data_type' column of listMetagenomicData()
-#' @return A SummarizedExperiment object with process metadata, row data, column
-#' names, and relevant assays.
-#' @details This function does not integrate sample metadata as column data. The
-#' provided sample_id is used as the column name for assays within the
-#' SummarizedExperiment object and is intended to be used for integration of
-#' sample metadata.
-#' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_metaphlan_bugs_list.tsv.gz")
-#'  parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       file_path = fpath,
-#'                       data_type = "bugs")
-#'  }
-#' }
-#' @seealso
-#'  \code{\link[readr]{read_delim}}
-#'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-#' @rdname parse_metaphlan_list
-#' @export
-#' @importFrom readr read_tsv
-#' @importFrom S4Vectors DataFrame
-#' @importFrom SummarizedExperiment SummarizedExperiment
-parse_metaphlan_list <- function(sample_id, file_path, data_type) {
-    ## Slight differences in output file format
-    if (data_type == "relative_abundance") {
-        ## Convert commented header lines to metadata
-        meta <- readLines(file_path, n = 3)
-        meta <- gsub("#| reads processed", "", meta)
-        meta_list <- as.list(meta)
-        names(meta_list) <- c("metaphlan_database",
-                              "command",
-                              "reads_processed")
-
-        ## Read remainder of output file
-        load_file <- readr::read_tsv(file_path, skip = 4)
-        colnames(load_file) <- c("clade_name", "ncbi_tax_id",
-                                 "relative_abundance", "additional_species")
-
-        ## Separate out row data
-        rdata_cols <- c("ncbi_tax_id", "additional_species")
-        rdata <- S4Vectors::DataFrame(load_file[,rdata_cols])
-        rownames(rdata) <- load_file$clade_name
-
-        ## Set sample ID as column name
-        cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
-        rownames(cdata) <- sample_id
-
-        ## Set relative abundance as assay
-        relabundance <- as.matrix(load_file$relative_abundance)
-        alist <- list(relabundance)
-        names(alist) <- "relative_abundance"
-
-    } else if (data_type == "viral_clusters") {
-        ## Convert commented header lines to metadata
-        meta <- readLines(file_path, n = 2)
-        meta <- gsub("#", "", meta)
-        meta_list <- as.list(meta)
-        names(meta_list) <- c("metaphlan_database",
-                              "command")
-
-        ## Read remainder of output file
-        load_file <- readr::read_tsv(file_path, skip = 3)
-        colnames(load_file) <- c("m_group_cluster", "genome_name", "length",
-                                 "breadth_of_coverage",
-                                 "depth_of_coverage_mean",
-                                 "depth_of_coverage_median", "m_group_type_k_u",
-                                 "first_genome_in_cluster", "other_genomes")
-
-        ## Separate out row data
-        rdata_cols <- c("m_group_cluster", "length", "m_group_type_k_u",
-                        "first_genome_in_cluster", "other_genomes")
-        rdata <- S4Vectors::DataFrame(load_file[,rdata_cols])
-        rownames(rdata) <- load_file$genome_name
-
-        ## Set sample ID as column name
-        cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
-        rownames(cdata) <- sample_id
-
-        ## Set breadth and depth of coverage measurements as separate assays
-        breadth <- as.matrix(load_file$breadth_of_coverage)
-        depth_mean <- as.matrix(load_file$depth_of_coverage_mean)
-        depth_median <- as.matrix(load_file$depth_of_coverage_median)
-        alist <- list(breadth,
-                      depth_mean,
-                      depth_median)
-        names(alist) <- c("viral_breadth_of_coverage",
-                          "viral_depth_of_coverage_mean",
-                          "viral_depth_of_coverage_median")
-    } else {
-        ## Notify if output file is not able to be parsed by this function
-        stop(paste0("data_type '", data_type, "' is not 'relative_abundance' or 'viral_clusters'. Please enter one of these values or use a different parsing function."))
-    }
-
-    ## Combine process metadata, row data, sample ID, and assays into
-    ## SummarizedExperiment object
-    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
-                                                     rowData = rdata,
-                                                     colData = cdata,
-                                                     metadata = meta_list)
-
-    return(ex)
 }
 
 #' @title Add sample metadata to SummarizedExperiment object as colData
