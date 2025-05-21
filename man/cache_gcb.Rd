@@ -4,13 +4,16 @@
 \alias{cache_gcb}
 \title{Cache Google Bucket object}
 \usage{
-cache_gcb(locator, ask_on_update = TRUE)
+cache_gcb(locator, redownload = "no", custom_cache = NULL)
 }
 \arguments{
 \item{locator}{String: the name of a Google Bucket object}
 
-\item{ask_on_update}{Boolean: should the function ask the user before
-re-downloading a file that is already present in the cache, Default: TRUE}
+\item{redownload}{String: "yes", "no", or "ask"; should the function
+re-download a file that is already present in the cache, Default: 'no'}
+
+\item{custom_cache}{BiocFileCache object: a custom cache object may be
+specified instead of the default created by pMD_get_cache(), Default: NULL}
 }
 \value{
 Named vector of strings: Names are the rids of cached files, values
@@ -25,7 +28,7 @@ needed, and returns the path of the cached file.
 \dontrun{
 if(interactive()){
  cache_gcb(locator = "results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz",
-           ask_on_update = TRUE)
+           redownload = "ask")
  }
 }
 }
