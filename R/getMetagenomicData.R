@@ -169,6 +169,10 @@ cacheMetagenomicData <- function(uuids,
                                  data_type = "relative_abundance",
                                  redownload = "no",
                                  custom_cache = NULL) {
+    ## Confirm inputs are valid
+    confirm_uuids(uuids)
+    confirm_data_type(data_type)
+
     ## Check redownload value
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)

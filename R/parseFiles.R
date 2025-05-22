@@ -38,6 +38,9 @@
 #' @importFrom S4Vectors DataFrame
 #' @importFrom SummarizedExperiment SummarizedExperiment
 parse_metaphlan_list <- function(sample_id, file_path, data_type) {
+    ## Confirm data_type input is valid
+    confirm_data_type(data_type)
+
     ## Slight differences in output file format
     if (data_type == "relative_abundance") {
         ## Convert commented header lines to metadata
