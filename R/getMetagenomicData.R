@@ -24,6 +24,7 @@ get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
     confirm_data_type(data_type)
 
     ## Create locator(s)
+    ftable <- output_file_types()
     filerow <- ftable[ftable$data_type == data_type,]
     file_name <- filerow$file_name
     subdir <- filerow$subdir
