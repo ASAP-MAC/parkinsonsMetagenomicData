@@ -1,0 +1,18 @@
+##FastQC	0.12.1
+>>Basic Statistics	pass
+#Measure	Value
+Filename	out_sample.fastq
+File type	Conventional base calls
+Encoding	Sanger / Illumina 1.9
+Total Sequences	50000
+Total Bases	7.2 Mbp
+Sequences flagged as poor quality	0
+Sequence length	99-150
+%GC	52
+>>END_MODULE
+>>Per base sequence quality	pass
+#Base	Mean	Median	Lower Quartile	Upper Quartile	10th Percentile	90th Percentile
+1	36.03172	37.0	37.0	37.0	37.0	37.0
+2	36.21164	37.0	37.0	37.0	37.0	37.0
+3	36.31168	37.0	37.0	37.0	37.0	37.0
+>>END_MODULE

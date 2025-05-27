@@ -1,40 +1,27 @@
 #### Download and cache raw output files from cloud storage
 
-#' @title Retrieve locators for MetaPhlAn output
-#' @description 'get_metaphlan_locators' gives the names of objects within the
-#' Google Bucket gs://metagenomics-mac that contain MetaPhlAn output. Output is
-#' requested by associated sample UUID and type of MetaPhlAn output file.
+#' @title Retrieve Google Bucket locators for output
+#' @description 'get_bucket_locators' gives the names of objects within the
+#' Google Bucket gs://metagenomics-mac. Output is requested by associated sample
+#' UUID and type of output file.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
 #' @param data_type Single string: value found in the data_type' column of
-#' listMetagenomicData(), indicating which output files to get, Default: 'relative_abundance'
+#' output_file_types(), indicating which output files to get,
+#' Default: 'relative_abundance'
 #' @return Vector of strings: names of requested Google Bucket objects
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  get_metaphlan_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                         data_type = "relative_abundance")
+#'  get_bucket_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                      data_type = "relative_abundance")
 #'  }
 #' }
-#' @rdname get_metaphlan_locators
+#' @rdname get_bucket_locators
 #' @export
-get_metaphlan_locators <- function(uuids, data_type = "relative_abundance") {
-    ## Get available data_type values
-    fpath <- system.file("extdata", "output_files.csv",
-                         package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
-
-    allowed_types <- ftable$data_type
-
-    ## Check that data_type is valid
-    # length
-    if (length(data_type) > 1) {
-        stop(paste0("'data_type' should be a single value."))
-    }
-
-    # values
-    if (!data_type %in% allowed_types) {
-        stop(paste0("'", data_type, "' is not an allowed value for 'data_type'. Please enter a value found in listMetagenomicData()."))
-    }
+get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
+    ## Confirm inputs are valid
+    confirm_uuids(uuids)
+    confirm_data_type(data_type)
 
     ## Create locator(s)
     filerow <- ftable[ftable$data_type == data_type,]
@@ -55,15 +42,17 @@ get_metaphlan_locators <- function(uuids, data_type = "relative_abundance") {
 #' the presence of a Google Bucket object, downloads or updates the file as
 #' needed, and returns the path of the cached file.
 #' @param locator String: the name of a Google Bucket object
-#' @param ask_on_update Boolean: should the function ask the user before
-#' re-downloading a file that is already present in the cache, Default: TRUE
+#' @param redownload String: "yes", "no", or "ask"; should the function
+#' re-download a file that is already present in the cache, Default: 'no'
+#' @param custom_cache BiocFileCache object: a custom cache object may be
+#' specified instead of the default created by pMD_get_cache(), Default: NULL
 #' @return Named vector of strings: Names are the rids of cached files, values
 #' are the paths to the cached files
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  cache_gcb(locator = "results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz",
-#'            ask_on_update = TRUE)
+#'            redownload = "ask")
 #'  }
 #' }
 #' @seealso
@@ -72,31 +61,64 @@ get_metaphlan_locators <- function(uuids, data_type = "relative_abundance") {
 #' @rdname cache_gcb
 #' @export
 #' @importFrom googleCloudStorageR gcs_get_object
-#' @importFrom BiocFileCache bfcquery bfcnew bfcrpath
-cache_gcb <- function(locator, ask_on_update = TRUE) {
-    ## Get cache
-    bfc <- pMD_get_cache()
+#' @importFrom BiocFileCache bfcquery bfcnew bfcremove bfcrpath
+cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
+    ## Check redownload value
+    allowed_redown <- c("y", "n", "a")
+    p_redown <- substr(tolower(redownload), 1, 1)
+    if (!p_redown %in% allowed_redown) {
+        stop(paste0("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'"))
+    }
 
-    # Check if file already cached
+    ## Get cache
+    if (!is.null(custom_cache)) {
+        stopifnot(class(custom_cache)[1] == "BiocFileCache")
+        bfc <- custom_cache
+    } else {
+        bfc <- pMD_get_cache()
+    }
+
+    ## Check if file already cached
     bfcres <- BiocFileCache::bfcquery(x = bfc,
                                       query = locator,
                                       field = "rname")
-    rid <- bfcres$rid[bfcres$create_time == max(bfcres$create_time)]
+
+    if (nrow(bfcres) > 0) {
+        rid <- bfcres$rid[bfcres$create_time == max(bfcres$create_time)]
+    } else {
+        rid <- bfcres$rid
+    }
 
     ## Cached file not found
     if (!length(rid)) {
+        ## Create cache location
         newpath <- BiocFileCache::bfcnew(x = bfc,
                                          rname = locator,
-                                         ext = ".tsv.gz",
+                                         ext = get_exts(locator),
                                          fname = "exact")
         rid <- names(newpath)
-        googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
-    } else if (length(rid)) { ## Cached file found, ask whether to overwrite cache
-        if (ask_on_update & interactive()) {
+
+        ## Download file
+        tryCatch({
+            googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
+        }, error = function(e) {
+            ## Remove cache location if download fails
+            BiocFileCache::bfcremove(bfc, rid)
+            stop(paste0("There was an error in downloading the file: ",
+                        conditionMessage(e)))
+        })
+
+    ## Cached file found, follow "redownload" instructions
+    } else if (length(rid)) {
+
+        if (p_redown == "a" & interactive()) {
             over <- readline(prompt = paste0("Resource with rname = '", locator, "' found in cache. Redownload and overwrite? (yes/no): "))
             response <- substr(tolower(over), 1, 1)
             doit <- switch(response, y = TRUE, n = FALSE, NA)
-        } else {
+        } else if (p_redown == "y") {
+            doit <- TRUE
+            message(paste0("Resource with rname = '", locator, "' found in cache, redownloading."))
+        } else if (p_redown == "n") {
             doit <- FALSE
             message(paste0("Resource with rname = '", locator, "' found in cache, proceeding with most recent version."))
         }
@@ -112,24 +134,28 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
     return(res)
 }
 
-#' @title Retrieve and cache MetaPhlAn output files
+#' @title Retrieve and cache output files
 #' @description 'cacheMetagenomicData' takes UUID and data type arguments,
-#' downloads the corresponding MetaPhlAn output files, and stores them in a
-#' local parkinsonsMetagenomicData cache. If the same files are requested
-#' again through this function, they will not be re-downloaded unless explicitly
+#' downloads the corresponding output files, and stores them in a local
+#' parkinsonsMetagenomicData cache. If the same files are requested again
+#' through this function, they will not be re-downloaded unless explicitly
 #' specified, in order to reduce excessive downloads.
 #' @param uuids Vector of strings: sample UUID(s) to get output for
-#' @param data_type Single string: 'relative_abundance' or 'viral_clusters', indicating
-#' which output files to get, Default: 'relative_abundance'
-#' @param ask_on_update Boolean: should the function ask the user before
-#' re-downloading a file that is already present in the cache, Default: TRUE
+#' @param data_type Single string: value found in the data_type' column of
+#' output_file_types(), indicating which output files to get,
+#' Default: 'relative_abundance'
+#' @param redownload String: "yes", "no", or "ask"; should the function
+#' re-download a file that is already present in the cache, Default: 'no'
+#' @param custom_cache BiocFileCache object: a custom cache object may be
+#' specified instead of the default created by pMD_get_cache(), Default: NULL
 #' @return A tibble with information on the cached files, including UUID, data
 #' type, Google Cloud Bucket object name, local cache ID, and cached file path
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       data_type = "relative_abundance")
+#'                       data_type = "relative_abundance",
+#'                       redownload = "ask")
 #'  }
 #' }
 #' @seealso
@@ -141,14 +167,39 @@ cache_gcb <- function(locator, ask_on_update = TRUE) {
 #' @importFrom tibble tibble
 cacheMetagenomicData <- function(uuids,
                                  data_type = "relative_abundance",
-                                 ask_on_update = TRUE) {
+                                 redownload = "no",
+                                 custom_cache = NULL) {
+    ## Confirm inputs are valid
+    confirm_uuids(uuids)
+    confirm_data_type(data_type)
+
+    ## Check redownload value
+    allowed_redown <- c("y", "n", "a")
+    p_redown <- substr(tolower(redownload), 1, 1)
+    if (!p_redown %in% allowed_redown) {
+        stop(paste0("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'"))
+    }
+
+    ## Check custom_cache
+    if (!is.null(custom_cache)) {
+        stopifnot(class(custom_cache)[1] == "BiocFileCache")
+    }
+
     ## Get Google Bucket locators for requested files
-    locators <- get_metaphlan_locators(uuids, data_type)
+    locators <- get_bucket_locators(uuids, data_type)
 
     ## Download and cache requested files
     cache_paths <- c()
-    for (locator in locators) {
-        current_file <- cache_gcb(locator, ask_on_update = ask_on_update)
+    errors <- c()
+    for (i in seq_along(locators)) {
+        tryCatch({
+            current_file <- cache_gcb(locators[i], redownload = p_redown,
+                                      custom_cache = custom_cache)
+        }, error = function(e) {
+            current_error <- paste0("Unable to cache ", locators[i], ": ", e)
+            errors <<- c(errors, current_error)
+            current_file <<- NA |> setNames(NA)
+        })
         cache_paths <- c(cache_paths, current_file)
     }
 
@@ -156,17 +207,24 @@ cacheMetagenomicData <- function(uuids,
     parsed_locators <- stringr::str_split(locators, "/")
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
-    parsed_filenames <- unlist(lapply(parsed_locators, function(x) x[5]))
+    parsed_filenames <- unlist(lapply(parsed_locators,
+                                      function(x) x[length(x)]))
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE)
-    parsed_data_types <- ftable$data_type[match(parsed_filenames, ftable$file_name)]
+    parsed_data_types <- ftable$data_type[match(parsed_filenames,
+                                                ftable$file_name)]
 
     cache_tbl <- tibble::tibble(UUID = parsed_uuids,
                                 data_type = parsed_data_types,
                                 gcb_object = locators,
                                 cache_id = names(cache_paths),
                                 cache_path = cache_paths)
+
+    ## Print any errors and return cache information
+    if (length(errors) > 0) {
+        warning(errors)
+    }
 
     return(cache_tbl)
 }
@@ -193,6 +251,16 @@ cacheMetagenomicData <- function(uuids,
 #' @rdname loadMetagenomicData
 #' @export
 loadMetagenomicData <- function(cache_table) {
+    ## Check input table
+    stopifnot(any(class(cache_table) == "data.frame"))
+    req_cols <- c("UUID", "cache_path", "data_type")
+    missing_cols <- req_cols[!req_cols %in% colnames(cache_table)]
+    if (length(missing_cols) > 0) {
+        print_missing <- paste(missing_cols, collapse = "\n")
+        stop(paste0("One or more columns are not present in the input data frame.\n",
+                    print_missing))
+    }
+
     ## Load data as SummarizedExperiment objects
     se_list <- vector("list", nrow(cache_table))
 
@@ -269,124 +337,6 @@ listMetagenomicData <- function() {
     return(data_tbl)
 }
 
-#' @title Parse basic MetaPhlAn output for a single sample as a
-#' SummarizedExperiment object
-#' @description 'parse_metaphlan_list' reads a file obtained from running
-#' MetaPhlAn for microbial profiling (with or without unclassified fraction
-#' estimation) or viral sequence cluster analysis. This file is parsed into a
-#' SummarizedExperiment object.
-#' @param sample_id String: A sample identifier
-#' @param file_path String: Path to a locally stored MetaPhlAn output file in
-#' TSV format
-#' @param data_type String: The type of MetaPhlAn output file to be parsed, as
-#' found in the 'data_type' column of listMetagenomicData()
-#' @return A SummarizedExperiment object with process metadata, row data, column
-#' names, and relevant assays.
-#' @details This function does not integrate sample metadata as column data. The
-#' provided sample_id is used as the column name for assays within the
-#' SummarizedExperiment object and is intended to be used for integration of
-#' sample metadata.
-#' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_metaphlan_bugs_list.tsv.gz")
-#'  parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       file_path = fpath,
-#'                       data_type = "bugs")
-#'  }
-#' }
-#' @seealso
-#'  \code{\link[readr]{read_delim}}
-#'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-#' @rdname parse_metaphlan_list
-#' @export
-#' @importFrom readr read_tsv
-#' @importFrom S4Vectors DataFrame
-#' @importFrom SummarizedExperiment SummarizedExperiment
-parse_metaphlan_list <- function(sample_id, file_path, data_type) {
-    ## Slight differences in output file format
-    if (data_type == "relative_abundance") {
-        ## Convert commented header lines to metadata
-        meta <- readLines(file_path, n = 3)
-        meta <- gsub("#| reads processed", "", meta)
-        meta_list <- as.list(meta)
-        names(meta_list) <- c("metaphlan_database",
-                              "command",
-                              "reads_processed")
-
-        ## Read remainder of output file
-        load_file <- readr::read_tsv(file_path, skip = 4)
-        colnames(load_file) <- c("clade_name", "ncbi_tax_id",
-                                 "relative_abundance", "additional_species")
-
-        ## Separate out row data
-        rdata_cols <- c("ncbi_tax_id", "additional_species")
-        rdata <- S4Vectors::DataFrame(load_file[,rdata_cols])
-        rownames(rdata) <- load_file$clade_name
-
-        ## Set sample ID as column name
-        cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
-        rownames(cdata) <- sample_id
-
-        ## Set relative abundance as assay
-        relabundance <- as.matrix(load_file$relative_abundance)
-        alist <- list(relabundance)
-        names(alist) <- "relative_abundance"
-
-    } else if (data_type == "viral_clusters") {
-        ## Convert commented header lines to metadata
-        meta <- readLines(file_path, n = 2)
-        meta <- gsub("#", "", meta)
-        meta_list <- as.list(meta)
-        names(meta_list) <- c("metaphlan_database",
-                              "command")
-
-        ## Read remainder of output file
-        load_file <- readr::read_tsv(file_path, skip = 3)
-        colnames(load_file) <- c("m_group_cluster", "genome_name", "length",
-                                 "breadth_of_coverage",
-                                 "depth_of_coverage_mean",
-                                 "depth_of_coverage_median", "m_group_type_k_u",
-                                 "first_genome_in_cluster", "other_genomes")
-
-        ## Separate out row data
-        rdata_cols <- c("m_group_cluster", "length", "m_group_type_k_u",
-                        "first_genome_in_cluster", "other_genomes")
-        rdata <- S4Vectors::DataFrame(load_file[,rdata_cols])
-        rownames(rdata) <- load_file$genome_name
-
-        ## Set sample ID as column name
-        cdata <- S4Vectors::DataFrame(matrix(nrow = 1, ncol = 0))
-        rownames(cdata) <- sample_id
-
-        ## Set breadth and depth of coverage measurements as separate assays
-        breadth <- as.matrix(load_file$breadth_of_coverage)
-        depth_mean <- as.matrix(load_file$depth_of_coverage_mean)
-        depth_median <- as.matrix(load_file$depth_of_coverage_median)
-        alist <- list(breadth,
-                      depth_mean,
-                      depth_median)
-        names(alist) <- c("viral_breadth_of_coverage",
-                          "viral_depth_of_coverage_mean",
-                          "viral_depth_of_coverage_median")
-    } else {
-        ## Notify if output file is not able to be parsed by this function
-        stop(paste0("data_type '", data_type, "' is not 'relative_abundance' or 'viral_clusters'. Please enter one of these values or use a different parsing function."))
-    }
-
-    ## Combine process metadata, row data, sample ID, and assays into
-    ## SummarizedExperiment object
-    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
-                                                     rowData = rdata,
-                                                     colData = cdata,
-                                                     metadata = meta_list)
-
-    return(ex)
-}
-
 #' @title Add sample metadata to SummarizedExperiment object as colData
 #' @description 'add_metadata' uses the IDs of samples included in a
 #' SummarizedExperiment object to attach sample metadata as colData. This new
@@ -430,6 +380,9 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     if (length(sample_ids) != ncol(experiment)) {
         stop("'sample_ids' has a different number of samples than 'experiment'.")
     }
+
+    ## Check that 'experiment' is a SummarizedExperiment object
+    stopifnot(class(experiment)[1] == "SummarizedExperiment")
 
     ## Retrieve sample metadata
     meta <- sampleMetadata
@@ -518,6 +471,12 @@ mergeExperiments <- function(merge_list) {
     ## Check that list contains more than one SummarizedExperiment
     if (length(merge_list) == 1) {
         return(merge_list[[1]])
+    }
+
+    for (i in seq_along(merge_list)) {
+        if (class(merge_list[[i]])[1] != "SummarizedExperiment") {
+            stop(paste0("The list item at index = ", i, " is not a SummarizedExperiment object."))
+        }
     }
 
     ## Check that assays match

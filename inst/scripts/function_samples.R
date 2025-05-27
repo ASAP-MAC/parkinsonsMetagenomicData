@@ -57,3 +57,43 @@ extdata_path <- file.path(system.file("extdata",
                                       package = "parkinsonsMetagenomicData"),
                           "sample_experiment_list.Rds")
 saveRDS(sample_experiments, extdata_path)
+
+## sample_fastc_data
+basic_stats_header <- c("##FastQC	0.12.1",
+                        ">>Basic Statistics	pass",
+                        "#Measure	Value",
+                        "Filename	out_sample.fastq",
+                        "File type	Conventional base calls",
+                        "Encoding	Sanger / Illumina 1.9",
+                        "Total Sequences	50000",
+                        "Total Bases	7.2 Mbp",
+                        "Sequences flagged as poor quality	0",
+                        "Sequence length	99-150",
+                        "%GC	52",
+                        ">>END_MODULE")
+accessory_module <- c(">>Per base sequence quality	pass",
+                      "#Base	Mean	Median	Lower Quartile	Upper Quartile	10th Percentile	90th Percentile",
+                      "1	36.03172	37.0	37.0	37.0	37.0	37.0",
+                      "2	36.21164	37.0	37.0	37.0	37.0	37.0",
+                      "3	36.31168	37.0	37.0	37.0	37.0	37.0",
+                      ">>END_MODULE")
+
+# write to inst/extdata/sample_fastqc_data.txt
+extdata_path <- file.path(system.file("extdata",
+                                      package = "parkinsonsMetagenomicData"),
+                          "sample_fastqc_data.txt")
+writeLines(c(basic_stats_header, accessory_module), extdata_path)
+
+## sample_out_kneaddata
+lines_to_parse <- c("04/22/2025 05:35:37 AM - kneaddata.utilities - DEBUG: b\"TrimmomaticSE: Started with arguments: -threads 16 -phred33 /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/d2/801204c79cabd605fb1b59819c46a4/kneaddata_output/reformatted_identifiers6p450jvr_decompressed_gvl7_alr_out /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/d2/801204c79cabd605fb1b59819c46a4/kneaddata_output/out_kneaddata.trimmed.fastq MINLEN:60 ILLUMINACLIP:/usr/local/lib/python3.9/site-packages/kneaddata/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:4:20 MINLEN:74Using PrefixPair: 'AGATGTGTATAAGAGACAG' and 'AGATGTGTATAAGAGACAG'Using Long Clipping Sequence: 'GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAG'Using Long Clipping Sequence: 'TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG'Using Long Clipping Sequence: 'CTGTCTCTTATACACATCTCCGAGCCCACGAGAC'Using Long Clipping Sequence: 'CTGTCTCTTATACACATCTGACGCTGCCGACGA'ILLUMINACLIP: Using 1 prefix pairs, 4 forward/reverse sequences, 0 forward only sequences, 0 reverse only sequencesInput Reads: 39080984 Surviving: 37985114 (97.20%) Dropped: 1095870 (2.80%)TrimmomaticSE: Completed successfully\"",
+                    "04/22/2025 05:43:50 AM - kneaddata.run - INFO: Total contaminate sequences in file ( /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/d2/801204c79cabd605fb1b59819c46a4/kneaddata_output/out_kneaddata_hg37dec_v0.1_bowtie2_contam.fastq ) : 70118.0",
+                    "04/22/2025 05:43:51 AM - kneaddata.run - INFO: Total contaminate sequences in file ( /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/d2/801204c79cabd605fb1b59819c46a4/kneaddata_output/out_kneaddata_SILVA_128_LSUParc_SSUParc_ribosomal_RNA_bowtie2_contam.fastq ) : 266052.0",
+                    "04/22/2025 05:45:10 AM - kneaddata.utilities - INFO: READ COUNT: decontaminated hg37dec_v0.1 single : Total reads after removing those found in reference database ( /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/d2/801204c79cabd605fb1b59819c46a4/kneaddata_output/out_kneaddata_hg37dec_v0.1_bowtie2_clean.fastq ): 37914996.0",
+                    "04/22/2025 05:46:10 AM - kneaddata.utilities - INFO: READ COUNT: decontaminated SILVA_128_LSUParc_SSUParc_ribosomal_RNA single : Total reads after removing those found in reference database ( /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/d2/801204c79cabd605fb1b59819c46a4/kneaddata_output/out_kneaddata_SILVA_128_LSUParc_SSUParc_ribosomal_RNA_bowtie2_clean.fastq ): 37719062.0",
+                    "04/22/2025 05:51:18 AM - kneaddata.utilities - INFO: READ COUNT: final single : Total reads after merging results from multiple databases ( /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/d2/801204c79cabd605fb1b59819c46a4/kneaddata_output/out_kneaddata.fastq ): 37909213.0")
+
+# write to inst/extdata/sample_fastqc_data.txt
+extdata_path <- file.path(system.file("extdata",
+                                      package = "parkinsonsMetagenomicData"),
+                          "sample_out_kneaddata.log")
+writeLines(lines_to_parse, extdata_path)

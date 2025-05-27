@@ -2,22 +2,27 @@
 % Please edit documentation in R/getMetagenomicData.R
 \name{cacheMetagenomicData}
 \alias{cacheMetagenomicData}
-\title{Retrieve and cache MetaPhlAn output files}
+\title{Retrieve and cache output files}
 \usage{
 cacheMetagenomicData(
   uuids,
   data_type = "relative_abundance",
-  ask_on_update = TRUE
+  redownload = "no",
+  custom_cache = NULL
 )
 }
 \arguments{
 \item{uuids}{Vector of strings: sample UUID(s) to get output for}
 
-\item{data_type}{Single string: 'relative_abundance' or 'viral_clusters', indicating
-which output files to get, Default: 'relative_abundance'}
+\item{data_type}{Single string: value found in the data_type' column of
+output_file_types(), indicating which output files to get,
+Default: 'relative_abundance'}
 
-\item{ask_on_update}{Boolean: should the function ask the user before
-re-downloading a file that is already present in the cache, Default: TRUE}
+\item{redownload}{String: "yes", "no", or "ask"; should the function
+re-download a file that is already present in the cache, Default: 'no'}
+
+\item{custom_cache}{BiocFileCache object: a custom cache object may be
+specified instead of the default created by pMD_get_cache(), Default: NULL}
 }
 \value{
 A tibble with information on the cached files, including UUID, data
@@ -25,16 +30,17 @@ type, Google Cloud Bucket object name, local cache ID, and cached file path
 }
 \description{
 'cacheMetagenomicData' takes UUID and data type arguments,
-downloads the corresponding MetaPhlAn output files, and stores them in a
-local parkinsonsMetagenomicData cache. If the same files are requested
-again through this function, they will not be re-downloaded unless explicitly
+downloads the corresponding output files, and stores them in a local
+parkinsonsMetagenomicData cache. If the same files are requested again
+through this function, they will not be re-downloaded unless explicitly
 specified, in order to reduce excessive downloads.
 }
 \examples{
 \dontrun{
 if(interactive()){
  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                      data_type = "relative_abundance")
+                      data_type = "relative_abundance",
+                      redownload = "ask")
  }
 }
 }
