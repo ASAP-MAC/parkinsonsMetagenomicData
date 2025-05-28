@@ -1,8 +1,7 @@
 ---
 title: "parkinsonsMetagenomicData"
 output: 
-  rmarkdown::html_vignette:
-      keep_md: TRUE
+  rmarkdown::github_document
 vignette: >
   %\VignetteIndexEntry{parkinsonsMetagenomicData}
   %\VignetteEncoding{UTF-8}
@@ -23,11 +22,10 @@ options(dplyr.summarise.inform = FALSE)
 suppressPackageStartupMessages({
     library(parkinsonsMetagenomicData)
     library(dplyr)
-    library(DT)
 })
 
 # If rendering, replace the below with the path to your own service account key
-googleCloudStorageR::gcs_auth("../../curatedmetagenomicdata-232f4a306d1d.json")
+googleCloudStorageR::gcs_auth("../curatedmetagenomicdata-232f4a306d1d.json")
 ```
 
 ## Sample Metadata
@@ -66,10 +64,6 @@ selected_samples <- sampleMetadata |>
     select(where(~ !any(is.na(.x))))
 ```
 
-```{r, echo=FALSE}
-datatable(selected_samples, extensions = "Responsive")
-```
-
 ## Output files
 
 The UUID(s) of any sample(s) of interest may be then used to access
@@ -78,10 +72,6 @@ can be found with `output_file_types()`
 
 ```{r}
 ftypes <- output_file_types()
-```
-
-```{r, echo=FALSE}
-datatable(ftypes, extensions = "Responsive")
 ```
 
 At the moment, only the `metaphlan_lists` data types, `viral_clusters` and
@@ -129,10 +119,6 @@ with the `cacheMetagenomicData` streamlined downloading and caching function.
 file_tbl <- listMetagenomicData()
 ```
 
-```{r, echo=FALSE}
-datatable(slice_sample(file_tbl, n = 10), extensions = "Responsive")
-```
-
 To access output files, use `cacheMetagenomicData`. This function takes UUID and
 data type arguments, downloads the corresponding output files, and
 stores them in a local cache. If the same files are requested again through this
@@ -143,10 +129,6 @@ file paths and cache IDs for each requested file.
 ```{r}
 cache_tbl <- cacheMetagenomicData(uuids = selected_samples$uuid,
                                   data_type = "relative_abundance")
-```
-
-```{r, echo=FALSE}
-datatable(cache_tbl, extensions = "Responsive")
 ```
 
 ## Data Handling
@@ -160,10 +142,6 @@ metadata. At this point, only the `metaphlan_lists` data types,
 
 ```{r, message=FALSE}
 merged_experiment <- loadMetagenomicData(cache_tbl)
-```
-
-```{r, echo=FALSE}
-merged_experiment
 ```
 
 ### Stepwise Experiment Setup
