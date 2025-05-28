@@ -42,7 +42,8 @@ pMD_get_cache <- function() {
 output_file_types <- function() {
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
     return(ftable)
 }
 

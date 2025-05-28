@@ -1,25 +1,33 @@
 ---
 title: "parkinsonsMetagenomicData"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    keep_md: true
 vignette: >
   %\VignetteIndexEntry{parkinsonsMetagenomicData}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#|"
 )
+options(dplyr.summarise.inform = FALSE)
 ```
 
-```{r setup}
+```{r setup, include=FALSE}
 suppressPackageStartupMessages({
     library(parkinsonsMetagenomicData)
     library(dplyr)
     library(DT)
 })
+
+# If rendering, replace the below with the path to your own service account key
+googleCloudStorageR::gcs_auth("../../curatedmetagenomicdata-232f4a306d1d.json")
 ```
 
 # Sample Metadata
@@ -56,11 +64,10 @@ prefixed by "uncurated_". Curated features include the following at this time:
 selected_samples <- sampleMetadata |>
     filter(study_name == "ZhangM_2023") |>
     select(where(~ !any(is.na(.x))))
+```
 
-selected_samples |>
-    slice(1:10) |>
-    select(1:10) |>
-    datatable(options = list(dom = "t"), extensions = "Responsive")
+```{r, echo=FALSE}
+datatable(selected_samples, extensions = "Responsive")
 ```
 
 # Output files
@@ -70,7 +77,11 @@ output files. Available data types and information about their full file paths
 can be found with `output_file_types()`
 
 ```{r}
-output_file_types()
+ftypes <- output_file_types()
+```
+
+```{r, echo=FALSE}
+datatable(ftypes, extensions = "Responsive")
 ```
 
 At the moment, only the `metaphlan_lists` data types, `viral_clusters` and
@@ -114,12 +125,12 @@ googleCloudStorageR::gcs_list_objects()
 Alternatively, `listMetagenomicData` will provide a table of objects that are compatible
 with the `cacheMetagenomicData` streamlined downloading and caching function.
 
-```{r}
+```{r, message=FALSE}
 file_tbl <- listMetagenomicData()
 ```
 
 ```{r, echo=FALSE}
-datatable(file_tbl[1:10,], options = list(dom = "t"), extensions = "Responsive")
+datatable(slice_sample(file_tbl, n = 10), extensions = "Responsive")
 ```
 
 To access output files, use `cacheMetagenomicData`. This function takes UUID and
@@ -135,7 +146,7 @@ cache_tbl <- cacheMetagenomicData(uuids = selected_samples$uuid,
 ```
 
 ```{r, echo=FALSE}
-datatable(cache_tbl, options = list(dom = "t"), extensions = "Responsive")
+datatable(cache_tbl, extensions = "Responsive")
 ```
 
 # Data Handling
@@ -147,8 +158,11 @@ files will be parsed into a single SummarizedExperiment object with sample
 metadata. At this point, only the `metaphlan_lists` data types,
 `viral_clusters` and `relative_abundance`, are compatible with this function.
 
-```{r}
+```{r, message=FALSE}
 merged_experiment <- loadMetagenomicData(cache_tbl)
+```
+
+```{r, echo=FALSE}
 merged_experiment
 ```
 
@@ -157,20 +171,19 @@ merged_experiment
 Alternatively, we can parse the files, add metadata, and merge the
 SummarizedExperiment objects in separate steps.
 
-`parse_metaphlan_list` completes the first step for files with
-'data_type' equal to "relative_abundance" or "viral_clusters".
+`parse_metaphlan_list` completes the first step for files with 'data_type' equal
+to "relative_abundance" or "viral_clusters". 
 
-```{r}
-parsed_rel_ab_list <- vector("list", 2)
+```{r, message=FALSE}
+parsed_rel_ab_list <- vector("list", nrow(cache_tbl))
 names(parsed_rel_ab_list) <- cache_tbl$UUID
-parsed_rel_ab_list[[1]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[1],
-                                                file_path = cache_tbl$cache_path[1],
-                                                data_type = cache_tbl$data_type[1])
 
-parsed_rel_ab_list[[2]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[2],
-                                                file_path = cache_tbl$cache_path[2],
-                                                data_type = cache_tbl$data_type[2])
-parsed_rel_ab_list
+for (i in 1:nrow(cache_tbl)) {
+    parsed_rel_ab_list[[i]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[i],
+                                                file_path = cache_tbl$cache_path[i],
+                                                data_type = cache_tbl$data_type[i])
+    
+}
 ```
 
 Once the files have been loaded as SummarizedExperiment objects, matching assays
@@ -178,6 +191,9 @@ from multiple samples can be merged together with `mergeExperiments`.
 
 ```{r}
 merged_rel_abs <- mergeExperiments(parsed_rel_ab_list)
+```
+
+```{r, echo=FALSE}
 merged_rel_abs
 ```
 
@@ -188,5 +204,8 @@ the function `add_metadata`.
 rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
                                       id_col = "uuid",
                                       experiment = merged_rel_abs)
+```
+
+```{r, echo=FALSE}
 rel_abs_with_metadata
 ```

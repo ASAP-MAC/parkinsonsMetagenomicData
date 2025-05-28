@@ -313,9 +313,7 @@ listMetagenomicData <- function() {
     objs <- googleCloudStorageR::gcs_list_objects()
 
     ## Get output file types to list
-    fpath <- system.file("extdata", "output_files.csv",
-                         package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath)
+    ftable <- output_file_types()
     fdetect <- paste(ftable$file_name, collapse = "|")
 
     ## Filter for allowed file types
@@ -326,7 +324,8 @@ listMetagenomicData <- function() {
     parsed_locators <- stringr::str_split(objs$name, "/")
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
-    parsed_data_types <- unlist(lapply(parsed_locators, function(x) x[5]))
+    parsed_data_types <- unlist(lapply(parsed_locators,
+                                       function(x) x[length(x)]))
     parsed_shorthand <- ftable$data_type[match(parsed_data_types,
                                                ftable$file_name)]
 
