@@ -120,9 +120,19 @@ confirm_uuids <- function(uuids) {
 #' }
 #' @rdname confirm_data_type
 #' @export
-confirm_data_type <- function(data_type) {
+confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL) {
     ## Get allowed types
-    allowed_types <- output_file_types()$data_type
+    types <- output_file_types()
+    all_types <- types$data_type
+
+    if (!is.null(filter_col) & !is.null(filter_string)) {
+        filter_ind <- TRUE
+        filtered_types <- types %>%
+            filter(grepl(filter_string, .data[[filter_col]])) %>%
+            pull(data_type)
+    } else {
+        filter_ind <- FALSE
+    }
 
     ## Check that data_type is valid
     # length
@@ -131,7 +141,17 @@ confirm_data_type <- function(data_type) {
     }
 
     # values
-    if (!data_type %in% allowed_types) {
-        stop(paste0("'", data_type, "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types()."))
+    if (filter_ind) {
+        if (!data_type %in% filtered_types) {
+            print_filtered <- paste(filtered_types, collapse = ", ")
+            stop(paste0("'", data_type,
+                        "' is not an allowed value for this function. Please enter one of the following values: ",
+                        print_filtered))
+        }
+    } else {
+        if (!data_type %in% all_types) {
+            stop(paste0("'", data_type,
+                        "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types()."))
+        }
     }
 }
