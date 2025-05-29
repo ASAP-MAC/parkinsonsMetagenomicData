@@ -252,7 +252,7 @@ cacheMetagenomicData <- function(uuids,
 #' @rdname loadMetagenomicData
 #' @export
 loadMetagenomicData <- function(cache_table) {
-    ## Check input table
+    ## Check input table format
     stopifnot(any(class(cache_table) == "data.frame"))
     req_cols <- c("UUID", "cache_path", "data_type")
     missing_cols <- req_cols[!req_cols %in% colnames(cache_table)]
@@ -262,13 +262,29 @@ loadMetagenomicData <- function(cache_table) {
                     print_missing))
     }
 
+    ## Check that all data_type values are the same and valid
+    data_type <- unique(cache_table$data_type)
+    if (length(data_type) > 1) {
+        stop("Multiple 'data_type' values detected. Please provide a table where all rows have the same value for 'data_type'.")
+    }
+    # confirm_data_type(data_type)
+
     ## Load data as SummarizedExperiment objects
     se_list <- vector("list", nrow(cache_table))
+    humann_types <- output_file_types("tool", "humann")$data_type
+    metaphlan_types <- output_file_types("tool", "metaphlan")$data_type
 
     for (i in 1:nrow(cache_table)) {
-        se_list[[i]] <- parse_metaphlan_list(cache_table$UUID[i],
-                                             cache_table$cache_path[i],
-                                             cache_table$data_type[i])
+        if (data_type %in% metaphlan_types) {
+            se_list[[i]] <- parse_metaphlan_list(cache_table$UUID[i],
+                                                 cache_table$cache_path[i],
+                                                 cache_table$data_type[i])
+
+        } else if (data_type %in% humann_types) {
+            se_list[[i]] <- parse_humann(cache_table$UUID[i],
+                                         cache_table$cache_path[i],
+                                         cache_table$data_type[i])
+        }
     }
     names(se_list) <- paste(cache_table$UUID, cache_table$data_type, sep = "_")
 

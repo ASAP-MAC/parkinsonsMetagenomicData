@@ -39,11 +39,17 @@ pMD_get_cache <- function() {
 #' @rdname output_file_types
 #' @export
 #' @importFrom readr read_csv
-output_file_types <- function() {
+output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
+
+    if (!is.null(filter_col) & !is.null(filter_string)) {
+        ftable <- ftable %>%
+            filter(grepl(filter_string, .data[[filter_col]], ignore.case = TRUE))
+    }
+
     return(ftable)
 }
 
@@ -122,14 +128,11 @@ confirm_uuids <- function(uuids) {
 #' @export
 confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL) {
     ## Get allowed types
-    types <- output_file_types()
-    all_types <- types$data_type
+    all_types <- output_file_types()$data_type
 
     if (!is.null(filter_col) & !is.null(filter_string)) {
         filter_ind <- TRUE
-        filtered_types <- types %>%
-            filter(grepl(filter_string, .data[[filter_col]])) %>%
-            pull(data_type)
+        filtered_types <- output_file_types(filter_col, filter_string)$data_type
     } else {
         filter_ind <- FALSE
     }

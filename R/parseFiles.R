@@ -128,12 +128,19 @@ parse_humann <- function(sample_id, file_path, data_type) {
     ## Load in file
     load_file <- readr::read_tsv(file_path)
 
-    ## Parse header row as assay name
-    aname <- colnames(load_file) |>
+    ## Parse header row and data_type as assay name
+    header_prefix <- colnames(load_file) |>
         paste(collapse = "_") |>
         tolower() |>
         gsub(pattern = "#\\s|out_|s$", replacement = "") |>
         gsub(pattern = "\\s|-", replacement = "_")
+
+    type_suffix <- gsub(data_type,
+                        pattern = "^[^_]+(?=_|$)",
+                        replacement = "",
+                        perl = TRUE)
+
+    aname <- paste0(header_prefix, type_suffix)
 
     ## Set sample ID as column name
     cdata <- S4Vectors::make_zero_col_DFrame(1)
