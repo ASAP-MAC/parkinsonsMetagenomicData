@@ -13,8 +13,8 @@ parse_metaphlan_list(sample_id, file_path, data_type)
 \item{file_path}{String: Path to a locally stored MetaPhlAn output file in
 TSV format}
 
-\item{data_type}{String: The type of MetaPhlAn output file to be parsed, as
-found in the 'data_type' column of listMetagenomicData()}
+\item{data_type}{String: The type of MetaPhlAn output file to be parsed,
+either 'relative_abundance' or 'viral_clusters'}
 }
 \value{
 A SummarizedExperiment object with process metadata, row data, column
@@ -40,7 +40,7 @@ if(interactive()){
                     "sample_metaphlan_bugs_list.tsv.gz")
  parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
                       file_path = fpath,
-                      data_type = "bugs")
+                      data_type = "relative_abundance")
  }
 }
 }

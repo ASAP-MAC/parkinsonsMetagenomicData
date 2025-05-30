@@ -121,6 +121,36 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     return(ex)
 }
 
+#' @title Parse HUMAnN output for a single sample as a SummarizedExperiment
+#' object
+#' @description 'parse_humann' reads a file obtained from running HUMAnN on a
+#' single sample. This file is parsed into a SummarizedExperiment object.
+#' @param sample_id String: A sample identifier
+#' @param file_path String: Path to a locally stored HUMAnN output file in
+#' gzipped TSV format
+#' @param data_type String: The type of HUMAnN output file to be parsed, as
+#' found in output_file_types("tool", "humann")
+#' @return A SummarizedExperiment object with process metadata, row names,
+#' column names, and relevant assays.
+#' @details This function does not integrate sample metadata as column data. The
+#' provided sample_id is used as the column name for assays within the
+#' SummarizedExperiment object and is intended to be used for integration of
+#' sample metadata.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
+#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#' @rdname parse_humann
+#' @export
+#' @importFrom readr read_tsv
+#' @importFrom S4Vectors make_zero_col_DFrame
+#' @importFrom SummarizedExperiment SummarizedExperiment
 parse_humann <- function(sample_id, file_path, data_type) {
     ## Confirm data_type input is valid
     confirm_data_type(data_type, "tool", "humann")

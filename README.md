@@ -49,8 +49,9 @@ ftypes <- output_file_types()
 ```
 
 At the moment, only the `metaphlan_lists` data types, `viral_clusters`
-and `relative_abundance`, have parsing functions for automatically
-loading into SummarizedExperiment objects.
+and `relative_abundance`, as well as the `humann` data types, have
+parsing functions for automatically loading into SummarizedExperiment
+objects.
 
 ## Google Bucket Setup
 
@@ -134,13 +135,13 @@ cache_tbl <- cacheMetagenomicData(uuids = selected_samples$uuid,
 
 ## Data Handling
 
-### Automatic Experiment Setup (MetaPhlAn output files only)
+### Automatic Experiment Setup (MetaPhlAn and HUMAnN output files only)
 
 The above table can then be supplied to `loadMetagenomicData` and the
 cached files will be parsed into a single SummarizedExperiment object
 with sample metadata. At this point, only the `metaphlan_lists` data
-types, `viral_clusters` and `relative_abundance`, are compatible with
-this function.
+types, `viral_clusters` and `relative_abundance`, as well as all
+`humann` data_types, are compatible with this function.
 
 ``` r
 merged_experiment <- loadMetagenomicData(cache_tbl)
@@ -153,6 +154,7 @@ SummarizedExperiment objects in separate steps.
 
 `parse_metaphlan_list` completes the first step for files with
 ‘data_type’ equal to “relative_abundance” or “viral_clusters”.
+`parse_humann` is also available for HUMAnN output files.
 
 ``` r
 parsed_rel_ab_list <- vector("list", nrow(cache_tbl))
