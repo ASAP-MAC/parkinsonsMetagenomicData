@@ -9,8 +9,8 @@
 #' @param sample_id String: A sample identifier
 #' @param file_path String: Path to a locally stored MetaPhlAn output file in
 #' TSV format
-#' @param data_type String: The type of MetaPhlAn output file to be parsed, as
-#' found in the 'data_type' column of listMetagenomicData()
+#' @param data_type String: The type of MetaPhlAn output file to be parsed,
+#' either 'relative_abundance' or 'viral_clusters'
 #' @return A SummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @details This function does not integrate sample metadata as column data. The
@@ -25,7 +25,7 @@
 #'                     "sample_metaphlan_bugs_list.tsv.gz")
 #'  parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
 #'                       file_path = fpath,
-#'                       data_type = "bugs")
+#'                       data_type = "relative_abundance")
 #'  }
 #' }
 #' @seealso
@@ -39,7 +39,7 @@
 #' @importFrom SummarizedExperiment SummarizedExperiment
 parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     ## Confirm data_type input is valid
-    confirm_data_type(data_type)
+    confirm_data_type(data_type, "subdir", "metaphlan_lists")
 
     ## Slight differences in output file format
     if (data_type == "relative_abundance") {
@@ -117,6 +117,80 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
                                                      rowData = rdata,
                                                      colData = cdata,
                                                      metadata = meta_list)
+
+    return(ex)
+}
+
+#' @title Parse HUMAnN output for a single sample as a SummarizedExperiment
+#' object
+#' @description 'parse_humann' reads a file obtained from running HUMAnN on a
+#' single sample. This file is parsed into a SummarizedExperiment object.
+#' @param sample_id String: A sample identifier
+#' @param file_path String: Path to a locally stored HUMAnN output file in
+#' gzipped TSV format
+#' @param data_type String: The type of HUMAnN output file to be parsed, as
+#' found in output_file_types("tool", "humann")
+#' @return A SummarizedExperiment object with process metadata, row names,
+#' column names, and relevant assays.
+#' @details This function does not integrate sample metadata as column data. The
+#' provided sample_id is used as the column name for assays within the
+#' SummarizedExperiment object and is intended to be used for integration of
+#' sample metadata.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
+#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#' @rdname parse_humann
+#' @export
+#' @importFrom readr read_tsv
+#' @importFrom S4Vectors make_zero_col_DFrame
+#' @importFrom SummarizedExperiment SummarizedExperiment
+parse_humann <- function(sample_id, file_path, data_type) {
+    ## Confirm data_type input is valid
+    confirm_data_type(data_type, "tool", "humann")
+
+    ## Load in file
+    load_file <- readr::read_tsv(file_path)
+
+    ## Parse header row and data_type as assay name
+    header_prefix <- colnames(load_file) |>
+        paste(collapse = "_") |>
+        tolower() |>
+        gsub(pattern = "#\\s|out_|s$", replacement = "") |>
+        gsub(pattern = "\\s|-", replacement = "_")
+
+    type_suffix <- gsub(data_type,
+                        pattern = "^[^_]+(?=_|$)",
+                        replacement = "",
+                        perl = TRUE)
+
+    aname <- paste0(header_prefix, type_suffix)
+
+    ## Set sample ID as column name
+    cdata <- S4Vectors::make_zero_col_DFrame(1)
+    rownames(cdata) <- sample_id
+
+    ## Set rownames
+    rdata <- S4Vectors::make_zero_col_DFrame(nrow(load_file))
+    rownames(rdata) <- as.vector(unlist(load_file[,1]))
+
+    ## Create assay
+    thisassay <- as.matrix(load_file[,2])
+    colnames(thisassay) <- NULL
+    alist <- list(thisassay)
+    names(alist) <- aname
+
+    ## Combine sample ID, assays, and row names into SummarizedExperiment object
+    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
+                                                     rowData = rdata,
+                                                     colData = cdata)
+
 
     return(ex)
 }

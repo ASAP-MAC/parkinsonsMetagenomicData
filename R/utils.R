@@ -25,13 +25,15 @@ pMD_get_cache <- function() {
 }
 
 #' @title Read in extdata/output_files.csv
-#' @description 'output_file_types' reduces the lines of code needed to read in
-#' extdata/output_files.csv.
-#' @return Tibble with columns 'data_type', 'file_name', and 'subdir'
+#' @description 'output_file_types' reads in the table extdata/output_files.csv.
+#' The table can optionally be filtered by providing a column name to filter by
+#' and a string/regular expression to filter the selected column with.
+#' @return Tibble with columns 'tool', 'data_type', 'file_name', and 'subdir'
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  output_file_types()
+#'  output_file_types("tool", "metaphlan")
 #'  }
 #' }
 #' @seealso
@@ -39,10 +41,24 @@ pMD_get_cache <- function() {
 #' @rdname output_file_types
 #' @export
 #' @importFrom readr read_csv
-output_file_types <- function() {
+output_file_types <- function(filter_col = NULL, filter_string = NULL) {
+    ## Read file
     fpath <- system.file("extdata", "output_files.csv",
                          package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
+
+    ## Filter table if requested
+    if (!is.null(filter_col) & !is.null(filter_string)) {
+        if (!filter_col %in% colnames(ftable)) {
+            print_colnames <- paste(colnames(ftable), collapse = ", ")
+            stop(paste0("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames))
+        }
+
+        ftable <- ftable %>%
+            filter(grepl(filter_string, .data[[filter_col]], ignore.case = TRUE))
+    }
+
     return(ftable)
 }
 
@@ -103,7 +119,9 @@ confirm_uuids <- function(uuids) {
 #' used as a 'data_type' argument for various functions in
 #' parkinsonsMetagenomicData. Specifically, the input should be a single value
 #' that is found in the 'data_type' column of the output data frame from
-#' output_file_types().
+#' output_file_types(). The allowed values can optionally be restricted by
+#' providing a column name and string/regular expression to filter the
+#' output_file_types() data frame with.
 #' @param data_type String: input to be validated
 #' @return NULL
 #' @details This function is intended to be used within another function as
@@ -113,15 +131,28 @@ confirm_uuids <- function(uuids) {
 #' \dontrun{
 #' if(interactive()){
 #'  confirm_data_type("relative_abundance")
+#'  confirm_data_type("realtive_abundance", "tool", "humann")
 #'  confirm_data_type(c("relative_abundance", "viral_clusters"))
 #'  confirm_data_type("horse")
 #'  }
 #' }
 #' @rdname confirm_data_type
 #' @export
-confirm_data_type <- function(data_type) {
+confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL) {
     ## Get allowed types
-    allowed_types <- output_file_types()$data_type
+    all_types <- output_file_types()$data_type
+
+    if (!is.null(filter_col) & !is.null(filter_string)) {
+        if (!filter_col %in% colnames(ftable)) {
+            print_colnames <- paste(colnames(ftable), collapse = ", ")
+            stop(paste0("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames))
+        }
+
+        filter_ind <- TRUE
+        filtered_types <- output_file_types(filter_col, filter_string)$data_type
+    } else {
+        filter_ind <- FALSE
+    }
 
     ## Check that data_type is valid
     # length
@@ -130,7 +161,17 @@ confirm_data_type <- function(data_type) {
     }
 
     # values
-    if (!data_type %in% allowed_types) {
-        stop(paste0("'", data_type, "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types()."))
+    if (filter_ind) {
+        if (!data_type %in% filtered_types) {
+            print_filtered <- paste(filtered_types, collapse = ", ")
+            stop(paste0("'", data_type,
+                        "' is not an allowed value for this function. Please enter one of the following values: ",
+                        print_filtered))
+        }
+    } else {
+        if (!data_type %in% all_types) {
+            stop(paste0("'", data_type,
+                        "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types()."))
+        }
     }
 }

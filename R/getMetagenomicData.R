@@ -252,7 +252,7 @@ cacheMetagenomicData <- function(uuids,
 #' @rdname loadMetagenomicData
 #' @export
 loadMetagenomicData <- function(cache_table) {
-    ## Check input table
+    ## Check input table format
     stopifnot(any(class(cache_table) == "data.frame"))
     req_cols <- c("UUID", "cache_path", "data_type")
     missing_cols <- req_cols[!req_cols %in% colnames(cache_table)]
@@ -262,13 +262,29 @@ loadMetagenomicData <- function(cache_table) {
                     print_missing))
     }
 
+    ## Check that all data_type values are the same and valid
+    data_type <- unique(cache_table$data_type)
+    if (length(data_type) > 1) {
+        stop("Multiple 'data_type' values detected. Please provide a table where all rows have the same value for 'data_type'.")
+    }
+    # confirm_data_type(data_type)
+
     ## Load data as SummarizedExperiment objects
     se_list <- vector("list", nrow(cache_table))
+    humann_types <- output_file_types("tool", "humann")$data_type
+    metaphlan_types <- output_file_types("tool", "metaphlan")$data_type
 
     for (i in 1:nrow(cache_table)) {
-        se_list[[i]] <- parse_metaphlan_list(cache_table$UUID[i],
-                                             cache_table$cache_path[i],
-                                             cache_table$data_type[i])
+        if (data_type %in% metaphlan_types) {
+            se_list[[i]] <- parse_metaphlan_list(cache_table$UUID[i],
+                                                 cache_table$cache_path[i],
+                                                 cache_table$data_type[i])
+
+        } else if (data_type %in% humann_types) {
+            se_list[[i]] <- parse_humann(cache_table$UUID[i],
+                                         cache_table$cache_path[i],
+                                         cache_table$data_type[i])
+        }
     }
     names(se_list) <- paste(cache_table$UUID, cache_table$data_type, sep = "_")
 
@@ -313,9 +329,7 @@ listMetagenomicData <- function() {
     objs <- googleCloudStorageR::gcs_list_objects()
 
     ## Get output file types to list
-    fpath <- system.file("extdata", "output_files.csv",
-                         package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath)
+    ftable <- output_file_types()
     fdetect <- paste(ftable$file_name, collapse = "|")
 
     ## Filter for allowed file types
@@ -326,7 +340,8 @@ listMetagenomicData <- function() {
     parsed_locators <- stringr::str_split(objs$name, "/")
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
-    parsed_data_types <- unlist(lapply(parsed_locators, function(x) x[5]))
+    parsed_data_types <- unlist(lapply(parsed_locators,
+                                       function(x) x[length(x)]))
     parsed_shorthand <- ftable$data_type[match(parsed_data_types,
                                                ftable$file_name)]
 

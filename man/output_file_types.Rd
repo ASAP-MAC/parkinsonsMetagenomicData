@@ -4,19 +4,21 @@
 \alias{output_file_types}
 \title{Read in extdata/output_files.csv}
 \usage{
-output_file_types()
+output_file_types(filter_col = NULL, filter_string = NULL)
 }
 \value{
-Tibble with columns 'data_type', 'file_name', and 'subdir'
+Tibble with columns 'tool', 'data_type', 'file_name', and 'subdir'
 }
 \description{
-'output_file_types' reduces the lines of code needed to read in
-extdata/output_files.csv.
+'output_file_types' reads in the table extdata/output_files.csv.
+The table can optionally be filtered by providing a column name to filter by
+and a string/regular expression to filter the selected column with.
 }
 \examples{
 \dontrun{
 if(interactive()){
  output_file_types()
+ output_file_types("tool", "metaphlan")
  }
 }
 }
