@@ -140,7 +140,8 @@ confirm_uuids <- function(uuids) {
 #' @export
 confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL) {
     ## Get allowed types
-    all_types <- output_file_types()$data_type
+    ftable <- output_file_types()
+    all_types <- ftable$data_type
 
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
