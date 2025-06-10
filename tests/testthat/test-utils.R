@@ -32,3 +32,9 @@ test_that("multiple or invalid data_type values throw error", {
     expect_error(confirm_data_type(c("relative_abundance", "viral_clusters")))
     expect_error(confirm_data_type("horse"))
 })
+
+test_that("filtering works", {
+    expect_no_error(confirm_data_type("pathcoverage_stratified", "tool", "humann"))
+    expect_error(confirm_data_type("relative_abundance", "tool", "humann"))
+    expect_error(confirm_data_type("pathcoverage_stratified", "horse", "humann"))
+})

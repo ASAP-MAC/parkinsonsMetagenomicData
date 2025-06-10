@@ -267,7 +267,7 @@ loadMetagenomicData <- function(cache_table) {
     if (length(data_type) > 1) {
         stop("Multiple 'data_type' values detected. Please provide a table where all rows have the same value for 'data_type'.")
     }
-    # confirm_data_type(data_type)
+    confirm_data_type(data_type)
 
     ## Load data as SummarizedExperiment objects
     se_list <- vector("list", nrow(cache_table))
