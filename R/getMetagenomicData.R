@@ -241,6 +241,10 @@ cacheMetagenomicData <- function(uuids,
 #' 'data_type', with appropriate entries for each file to be loaded in.
 #' @return A SummarizedExperiment object with relevant sample metadata attached
 #' as colData.
+#' @details At the moment, only the `metaphlan_lists` data types,
+#' `viral_clusters` and `relative_abundance`, as well as the `humann` data
+#' types, have parsing functions for automatically loading into
+#' SummarizedExperiment objects.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
