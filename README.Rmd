@@ -28,6 +28,14 @@ suppressPackageStartupMessages({
 googleCloudStorageR::gcs_auth("../curatedmetagenomicdata-232f4a306d1d.json")
 ```
 
+## Package Overview
+
+This package is dedicated to retrieving, storing, and handling specific output
+files produced with the [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
+pipeline. For additional utility functions surrounding the analysis of the data
+in these files, including the handling of taxonomy and statistical tests, go to
+[biobakeryUtils](https://github.com/g-antonello/biobakeryUtils/tree/main)
+
 ## Sample Metadata
 
 Metadata for all samples present within `parkinsonsMetagenomicData` is available
