@@ -55,7 +55,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
         load_file <- readr::read_tsv(file_path, skip = 5, 
                                      col_names = c("clade_name", "ncbi_tax_id",
                                                                         "relative_abundance", "additional_species"), 
-                                     col_types = "ffdf")
+                                     col_types = cols("factor", "factor", "double", "factor"))
 
         ## Separate out row data
         rdata_cols <- c("ncbi_tax_id", "additional_species")
