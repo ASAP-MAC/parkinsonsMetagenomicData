@@ -52,9 +52,10 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
                               "reads_processed")
 
         ## Read remainder of output file
-        load_file <- readr::read_tsv(file_path, skip = 4)
-        colnames(load_file) <- c("clade_name", "ncbi_tax_id",
-                                 "relative_abundance", "additional_species")
+        load_file <- readr::read_tsv(file_path, skip = 4, 
+                                     col_names = c("clade_name", "ncbi_tax_id",
+                                                                        "relative_abundance", "additional_species"), 
+                                     col_types = c("factor", "factor", "double", "factor"))
 
         ## Separate out row data
         rdata_cols <- c("ncbi_tax_id", "additional_species")
@@ -113,7 +114,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 
     ## Combine process metadata, row data, sample ID, and assays into
     ## SummarizedExperiment object
-    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
+    ex <- TreeSummarizedExperiment::::TreeSummarizedExperiment(assays = alist,
                                                      rowData = rdata,
                                                      colData = cdata,
                                                      metadata = meta_list)
