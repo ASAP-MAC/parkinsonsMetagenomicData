@@ -114,7 +114,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 
     ## Combine process metadata, row data, sample ID, and assays into
     ## SummarizedExperiment object
-    ex <- TreeSummarizedExperiment::::TreeSummarizedExperiment(assays = alist,
+    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
                                                      rowData = rdata,
                                                      colData = cdata,
                                                      metadata = meta_list)
