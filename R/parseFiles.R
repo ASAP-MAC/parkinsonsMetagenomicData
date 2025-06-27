@@ -52,10 +52,23 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
                               "reads_processed")
 
         ## Read remainder of output file
-        load_file <- readr::read_tsv(file_path, skip = 5, 
+        load_file <- readr::read_tsv(file_path, skip = 5,
                                      col_names = c("clade_name", "ncbi_tax_id",
-                                                                        "relative_abundance", "additional_species"), 
+                                                                        "relative_abundance", "additional_species"),
                                      col_types = cols("factor", "factor", "double", "factor"))
+
+        ## Standardize "additional_species" ordering
+        species_delim <- ","
+        load_file$additional_species <- lapply(load_file$additional_species,
+                                        function(x) {
+                                            if (!is.na(x)) {
+                                                str_split(x, pattern = species_delim) |>
+                                                    unlist() |>
+                                                    sort() |>
+                                                    paste(collapse = species_delim)
+                                            } else { x }
+                                            }) |>
+                                        unlist()
 
         ## Separate out row data
         rdata_cols <- c("ncbi_tax_id", "additional_species")
