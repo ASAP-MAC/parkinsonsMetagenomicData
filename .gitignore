@@ -49,3 +49,6 @@ po/*~
 rsconnect/
 .Rproj.user
 inst/doc
+
+# DuckDB database files
+*.duckdb
