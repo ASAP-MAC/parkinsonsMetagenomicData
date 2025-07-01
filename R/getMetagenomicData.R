@@ -542,6 +542,8 @@ mergeExperiments <- function(merge_list) {
         tibble::column_to_rownames() |>
         S4Vectors::DataFrame()
 
+    rowData <- rowData[match(rownames(assay_list[[1]]), rownames(rowData)),]
+
     ## Merge column data
     colData <-
         purrr::map(merge_list, SummarizedExperiment::colData) |>
