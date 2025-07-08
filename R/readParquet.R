@@ -118,11 +118,18 @@ filter_parquet <- function(con, db_table, filter_column, filter_string) {
 
     #return(set)
 
-    set <- tbl(con, db_table) |>
-        filter(grepl(filter_string, .data[[filter_column]])) |>
-        collect()
+    set <- dplyr::tbl(con, db_table) |>
+        dplyr::filter(grepl(filter_string, .data[[filter_column]])) |>
+        dplyr::collect()
 
     return(set)
+}
+
+load_parquet <- function(con, db_table) {
+    tb <- dplyr::tbl(con, db_table) |>
+        dplyr::collect()
+
+    return(tb)
 }
 
 transform_parquet <- function(parquet_table, data_type) {
@@ -139,8 +146,8 @@ transform_parquet <- function(parquet_table, data_type) {
         rowwise() %>%
         mutate(uuid = unlist(strsplit(filename, "/"))[6]) %>%
         select(-filename) %>%
-        pivot_wider(names_from = uuid, values_from = out_Coverage) %>%
-        column_to_rownames("pathway")
+        tidyr::pivot_wider(names_from = uuid, values_from = out_Coverage) %>%
+        column_to_rownames("# Pathway")
 
     ## Separate out row data
     rdata <- S4Vectors::DataFrame(matrix(nrow = nrow(se), ncol = 0))
