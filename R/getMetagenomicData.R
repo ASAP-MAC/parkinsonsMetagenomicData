@@ -216,7 +216,7 @@ cacheMetagenomicData <- function(uuids,
     parsed_data_types <- ftable$data_type[match(parsed_filenames,
                                                 ftable$file_name)]
 
-    cache_tbl <- tibble::tibble(UUID = parsed_uuids,
+    cache_tbl <- tibble::tibble(uuid = parsed_uuids,
                                 data_type = parsed_data_types,
                                 gcb_object = locators,
                                 cache_id = names(cache_paths),
@@ -237,7 +237,7 @@ cacheMetagenomicData <- function(uuids,
 #' Associated sample metadata is automatically attached as colData, and the
 #' objects are merged into a single SummarizedExperiment object.
 #' @param cache_table A data.frame or tibble: structured like
-#' cacheMetagenomicData() output; contains the columns 'UUID', 'cache_path', and
+#' cacheMetagenomicData() output; contains the columns 'uuid', 'cache_path', and
 #' 'data_type', with appropriate entries for each file to be loaded in.
 #' @return A SummarizedExperiment object with relevant sample metadata attached
 #' as colData.
@@ -258,7 +258,7 @@ cacheMetagenomicData <- function(uuids,
 loadMetagenomicData <- function(cache_table) {
     ## Check input table format
     stopifnot(any(class(cache_table) == "data.frame"))
-    req_cols <- c("UUID", "cache_path", "data_type")
+    req_cols <- c("uuid", "cache_path", "data_type")
     missing_cols <- req_cols[!req_cols %in% colnames(cache_table)]
     if (length(missing_cols) > 0) {
         print_missing <- paste(missing_cols, collapse = "\n")
@@ -280,17 +280,17 @@ loadMetagenomicData <- function(cache_table) {
 
     for (i in 1:nrow(cache_table)) {
         if (data_type %in% metaphlan_types) {
-            se_list[[i]] <- parse_metaphlan_list(cache_table$UUID[i],
+            se_list[[i]] <- parse_metaphlan_list(cache_table$uuid[i],
                                                  cache_table$cache_path[i],
                                                  cache_table$data_type[i])
 
         } else if (data_type %in% humann_types) {
-            se_list[[i]] <- parse_humann(cache_table$UUID[i],
+            se_list[[i]] <- parse_humann(cache_table$uuid[i],
                                          cache_table$cache_path[i],
                                          cache_table$data_type[i])
         }
     }
-    names(se_list) <- paste(cache_table$UUID, cache_table$data_type, sep = "_")
+    names(se_list) <- paste(cache_table$uuid, cache_table$data_type, sep = "_")
 
     ## Merge into single SummarizedExperiment object
     merged_se <- mergeExperiments(se_list)
@@ -349,7 +349,7 @@ listMetagenomicData <- function() {
     parsed_shorthand <- ftable$data_type[match(parsed_data_types,
                                                ftable$file_name)]
 
-    data_tbl <- tibble::tibble(UUID = parsed_uuids,
+    data_tbl <- tibble::tibble(uuid = parsed_uuids,
                                data_type = parsed_shorthand,
                                gcb_object = objs$name,
                                size = objs$size,
