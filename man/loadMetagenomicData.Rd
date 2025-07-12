@@ -8,7 +8,7 @@ loadMetagenomicData(cache_table)
 }
 \arguments{
 \item{cache_table}{A data.frame or tibble: structured like
-cacheMetagenomicData() output; contains the columns 'UUID', 'cache_path', and
+cacheMetagenomicData() output; contains the columns 'uuid', 'cache_path', and
 'data_type', with appropriate entries for each file to be loaded in.}
 }
 \value{
@@ -21,6 +21,12 @@ files, including paths to the cached files as well as associated UUIDs and
 data types, and loads the files into R as SummarizedExperiment objects.
 Associated sample metadata is automatically attached as colData, and the
 objects are merged into a single SummarizedExperiment object.
+}
+\details{
+At the moment, only the \code{metaphlan_lists} data types,
+\code{viral_clusters} and \code{relative_abundance}, as well as the \code{humann} data
+types, have parsing functions for automatically loading into
+SummarizedExperiment objects.
 }
 \examples{
 \dontrun{

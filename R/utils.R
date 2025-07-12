@@ -123,6 +123,9 @@ confirm_uuids <- function(uuids) {
 #' providing a column name and string/regular expression to filter the
 #' output_file_types() data frame with.
 #' @param data_type String: input to be validated
+#' @param filter_col String (optional): name of column to filter by
+#' @param filter_string String (optional): string to filter for within
+#' 'filter_col'
 #' @return NULL
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
