@@ -8,6 +8,11 @@ confirm_data_type(data_type, filter_col = NULL, filter_string = NULL)
 }
 \arguments{
 \item{data_type}{String: input to be validated}
+
+\item{filter_col}{String (optional): name of column to filter by}
+
+\item{filter_string}{String (optional): string to filter for within
+'filter_col'}
 }
 \description{
 'confirm_data_type' checks that a single string is valid to be
