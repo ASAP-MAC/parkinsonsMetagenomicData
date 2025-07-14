@@ -299,7 +299,9 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
     }
 
     ## Transform into SummarizedExperiment
-    exp <- transform_parquet(collected_view, data_type)
+    exp <- parquet_to_se(collected_view, data_type)
 
     return(exp)
 }
+
+
