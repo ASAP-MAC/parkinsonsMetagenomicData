@@ -121,9 +121,9 @@ retrieve_all <- function(con) {
 #' if(interactive()){
 #' con <- db_connect()
 #' view_parquet(con, "pathcoverage_unstratified")
-#' p_tbl <- tbl(con, "pathcoverage_unstratified") |>
+#' p_tbl <- dplyr::tbl(con, "pathcoverage_unstratified") |>
 #'          head() |>
-#'          collect()
+#'          dplyr::collect()
 #'
 #' se <- parquet_to_se(p_tbl, "pathcoverage_unstratified")
 #' se
