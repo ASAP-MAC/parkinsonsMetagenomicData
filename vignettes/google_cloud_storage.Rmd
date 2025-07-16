@@ -1,25 +1,22 @@
 ---
-title: "parkinsonsMetagenomicData"
-output: 
-  rmarkdown::html_vignette:
-      keep_md: TRUE
+title: "Working With Data Hosted on Google Cloud Storage"
+output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{parkinsonsMetagenomicData}
-  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{google_cloud_storage}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: inline
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include=FALSE}
+---
+
+```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#|"
+  comment = "#>"
 )
-options(dplyr.summarise.inform = FALSE)
 ```
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 suppressPackageStartupMessages({
     library(parkinsonsMetagenomicData)
     library(dplyr)
@@ -29,72 +26,6 @@ suppressPackageStartupMessages({
 # If rendering, replace the below with the path to your own service account key
 googleCloudStorageR::gcs_auth("../../curatedmetagenomicdata-232f4a306d1d.json")
 ```
-
-## Package Overview
-
-This package is dedicated to retrieving, storing, and handling specific output
-files produced with the [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
-pipeline. For additional utility functions surrounding the analysis of the data
-in these files, including the handling of taxonomy and statistical tests, go to
-[biobakeryUtils](https://github.com/g-antonello/biobakeryUtils/tree/main)
-
-## Sample Metadata
-
-Metadata for all samples present within `parkinsonsMetagenomicData` is available
-through the included `data.frame` `sampleMetadata`. Both curated and uncurated
-features are included in this `data.frame`, with uncurated features being
-prefixed by "uncurated_". Curated features include the following at this time:
-
- * curation_id
- * study_name
- * sample_id
- * subject_id
- * target_condition
- * target_condition_ontology_term_id
- * control
- * control_ontology_term_id
- * age
- * age_group
- * age_group_ontology_term_id
- * age_unit
- * age_unit_ontology_term_id
- * sex
- * sex_ontology_term_id
- * disease
- * disease_ontology_term_id
- * curator
- * BioProject
- * BioSample
- * NCBI_accession
- * uuid
-
-```{r}
-selected_samples <- sampleMetadata |>
-    filter(study_name == "ZhangM_2023") |>
-    select(where(~ !any(is.na(.x))))
-```
-
-```{r, echo=FALSE}
-datatable(selected_samples, extensions = "Responsive")
-```
-
-## Output files
-
-The UUID(s) of any sample(s) of interest may be then used to access
-output files. Available data types and information about their full file paths
-can be found with `output_file_types()`
-
-```{r}
-ftypes <- output_file_types()
-```
-
-```{r, echo=FALSE}
-datatable(ftypes, extensions = "Responsive")
-```
-
-At the moment, only the `metaphlan_lists` data types, `viral_clusters` and
-`relative_abundance`, as well as the `humann` data types, have parsing functions
-for automatically loading into SummarizedExperiment objects.
 
 ## Google Bucket Setup
 
@@ -148,6 +79,20 @@ function, they will not be re-downloaded unless explicitly specified, in order
 to reduce excessive downloads. `cacheMetagenomicData` returns a tibble of cached
 file paths and cache IDs for each requested file.
 
+We will first select samples from a particular study that we want to investigate:
+
+```{r}
+selected_samples <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !any(is.na(.x))))
+```
+
+```{r, echo=FALSE}
+datatable(selected_samples, extensions = "Responsive")
+```
+
+Then we will supply these to `cacheMetagenomicData`.
+
 ```{r}
 cache_tbl <- cacheMetagenomicData(uuids = selected_samples$uuid,
                                   data_type = "relative_abundance")
@@ -186,10 +131,10 @@ for HUMAnN output files.
 
 ```{r, message=FALSE}
 parsed_rel_ab_list <- vector("list", nrow(cache_tbl))
-names(parsed_rel_ab_list) <- cache_tbl$UUID
+names(parsed_rel_ab_list) <- cache_tbl$uuid
 
 for (i in 1:nrow(cache_tbl)) {
-    parsed_rel_ab_list[[i]] <- parse_metaphlan_list(sample_id = cache_tbl$UUID[i],
+    parsed_rel_ab_list[[i]] <- parse_metaphlan_list(sample_id = cache_tbl$uuid[i],
                                                 file_path = cache_tbl$cache_path[i],
                                                 data_type = cache_tbl$data_type[i])
     
@@ -219,3 +164,4 @@ rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
 ```{r, echo=FALSE}
 rel_abs_with_metadata
 ```
+
