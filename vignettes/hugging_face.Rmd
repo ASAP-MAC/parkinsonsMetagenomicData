@@ -72,12 +72,12 @@ Relevant tools:
 
 # Standard Workflow
 
-Ihe standard workflow, we have two main wrapper functions `accessParquetData`
+In the standard workflow, we have two main wrapper functions `accessParquetData`
 and `loadParquetData`. `accessParquetData` sets up a DuckDB connection to the
 parquet files hosted in Hugging Face. `loadParquetData` then takes an argument
 for data type, and optionally arguments for specific sample UUIDs or a custom
 filtering function and loads the requested data into R as a Summarized
-Experimen.
+Experiment.
 
 ## Selecting Samples
 
