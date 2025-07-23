@@ -124,7 +124,8 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 
 #' @title Convert tabulated parquet file data to a Summarized Experiment
 #' @description 'parquet_to_se' takes tabulated data from a parquet file to a
-#' Summarized Experiment object.
+#' Summarized Experiment object. Associated sample metadata is automatically
+#' attached as colData.
 #' @param parquet_table Table or data frame: data taken directly from a parquet
 #' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
 #' @param data_type Single string: value found in the data_type' column of
@@ -208,7 +209,12 @@ parquet_to_se <- function(parquet_table, data_type) {
                                                      rowData = rdata,
                                                      colData = cdata)
 
-    return(ex)
+    ## Add sample metadata
+    meta_ex <- add_metadata(colnames(ex),
+                            id_col = "uuid",
+                            ex)
+
+    return(meta_ex)
 }
 
 #' @title Set up DuckDB connection with views for available data types
@@ -250,7 +256,11 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
 }
 
 #' @title Retrieve data from a DuckDB view and convert to Summarized Experiment
-#' @description 'loadParquetData' accesses a view created
+#' @description 'loadParquetData' accesses a DuckDB view created by
+#' 'accessParquetData' and loads it into R as a Summarized Experiment object.
+#' Arguments can be provided to filter the DuckDB view, either by providing a
+#' list of UUIDs or a saved sequence of function calls using dplyr::tbl to
+#' access the view.
 #' @param con DuckDB connection object of class 'duckdb_connection'
 #' @param data_type Single string: value found in the data_type' column of
 #' output_file_types() and also as the name of a view found in
