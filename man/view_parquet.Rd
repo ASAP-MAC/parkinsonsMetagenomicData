@@ -4,29 +4,28 @@
 \alias{view_parquet}
 \title{Create a database view of a specific data type}
 \usage{
-view_parquet(con, data_type)
+view_parquet(con, httpfs_url = NULL, data_type)
 }
 \arguments{
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
 
 \item{data_type}{Single string: value found in the data_type' column of
-output_file_types() and also as the name of a file in the repo
-https://huggingface.co/datasets/waldronlab/metagenomics_mac, indicating which
-output file to retrieve.}
+output_file_types() and also as the name of a file in the repo of interest,
+indicating which output file to retrieve.}
 }
 \description{
 'view_parquet' creates a database view with the provided DuckDB
-connection object. The view is created from a parquet file hosted at
-https://huggingface.co/datasets/waldronlab/metagenomics_mac. The specific
+connection object. The view is created from a parquet file hosted at a
+repo of interest (see inst/extdata/parquet_repos.csv). The specific
 file is specified via the file name.
 }
 \examples{
 \dontrun{
 if(interactive()){
-con <- db_connect()
+ con <- db_connect()
 
-view_parquet(con, "pathcoverage_unstratified")
-DBI::dbListTables(con)
+ view_parquet(con, "pathcoverage_unstratified")
+ DBI::dbListTables(con)
  }
 }
 }

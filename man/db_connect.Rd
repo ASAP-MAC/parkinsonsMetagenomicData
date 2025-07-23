@@ -21,8 +21,8 @@ specified or in memory, and confirms that the 'httpfs' extension is installed.
 \examples{
 \dontrun{
 if(interactive()){
-connection <- db_connect(dbdir = ":memory:")
-class(connection)
+ connection <- db_connect(dbdir = ":memory:")
+ class(connection)
  }
 }
 }
