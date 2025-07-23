@@ -14,7 +14,8 @@ accession_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/pipeline/data/ParkinsonAcce
 temp <- list.files(path = curated_dir, pattern="\\.csv$")
 curated_meta <- lapply(file.path(curated_dir, temp), read.csv)
 names(curated_meta) <- c("bedarf", "boktor1", "boktor2", "duru", "jo", "lee",
-                         "mao", "nishiwaki", "qian", "wallen", "zhang")
+                         "mao", "decastro", "dumitrescu", "moiseyenko",
+                         "schonhoff", "nishiwaki", "qian", "wallen", "zhang")
 #all_curated <- bind_rows(curated_meta)
 
 # UUID maps
@@ -44,6 +45,10 @@ all_metas <- list("bedarf" = NULL,
                   "jo" = NULL,
                   "lee" = NULL,
                   "mao" = NULL,
+                  "decastro" = NULL,
+                  "dumitrescu" = NULL,
+                  "moiseyenko" = NULL,
+                  "schonhoff" = NULL,
                   "nishiwaki" = NULL,
                   "qian" = NULL,
                   "wallen" = NULL,
@@ -55,6 +60,10 @@ final_metas <- list("bedarf" = NULL,
                     "jo" = NULL,
                     "lee" = NULL,
                     "mao" = NULL,
+                    "decastro" = NULL,
+                    "dumitrescu" = NULL,
+                    "moiseyenko" = NULL,
+                    "schonhoff" = NULL,
                     "nishiwaki" = NULL,
                     "qian" = NULL,
                     "wallen" = NULL,
@@ -66,6 +75,10 @@ curated_cols <- c("curation_id",
                   "subject_id",
                   "target_condition",
                   "target_condition_ontology_term_id",
+                  "body_site",
+                  "body_site_ontology_term_id",
+                  "host_species",
+                  "host_species_ontology_term_id",
                   "control",
                   "control_ontology_term_id",
                   "age",
@@ -199,6 +212,68 @@ final_metas$mao <- uuid_maps$mao %>%
               suffix = c("", ""),
               keep = TRUE)
 
+# decastro
+decastro1 <- read.csv(file.path(original_dir, "MazmanianS_DeCastroFonsecaM_metadata_project1.tsv"),
+                      sep = "\t") %>%
+    rename_with( ~ paste0("uncurated_", .x)) %>%
+    mutate(across(everything(), as.character))
+decastro2 <- read.csv(file.path(original_dir, "MazmanianS_DeCastroFonsecaM_metadata_project2.tsv"),
+                      sep = "\t") %>%
+    rename_with( ~ paste0("uncurated_", .x)) %>%
+    mutate(across(everything(), as.character))
+decastro3 <- read.csv(file.path(original_dir, "MazmanianS_DeCastroFonsecaM_metadata_project3.tsv"),
+                      sep = "\t") %>%
+    rename_with( ~ paste0("uncurated_", .x)) %>%
+    mutate(across(everything(), as.character))
+decastro4 <- read.csv(file.path(original_dir, "MazmanianS_DeCastroFonsecaM_metadata_project4.tsv"),
+                      sep = "\t") %>%
+    rename_with( ~ paste0("uncurated_", .x)) %>%
+    mutate(across(everything(), as.character))
+decastro_all <- bind_rows(decastro1, decastro2, decastro3, decastro4) %>%
+    rename(uuid = uncurated_uuid)
+all_metas$decastro <- curated_meta$decastro %>%
+    left_join(decastro_all,
+              by = join_by(sample_id == uncurated_sample_name),
+              suffix = c("", ""),
+              keep = TRUE)
+final_metas$decastro <- all_metas$decastro
+
+# dumitrescu
+dumitrescu <- read.csv(file.path(original_dir, "MazmanianS_DumitrescuDG_metadata_4.0.tsv"),
+                      sep = "\t") %>%
+    rename_with( ~ paste0("uncurated_", .x)) %>%
+    rename(uuid = uncurated_uuid)
+all_metas$dumitrescu <- curated_meta$dumitrescu %>%
+    left_join(dumitrescu,
+              by = join_by(sample_id == uncurated_sample_name),
+              suffix = c("", ""),
+              keep = TRUE)
+final_metas$dumitrescu <- all_metas$dumitrescu
+
+# moiseyenko
+moiseyenko <- read.csv(file.path(original_dir, "MazmanianS_MoiseyenkoA_metadata_4.0.tsv"),
+                       sep = "\t") %>%
+    rename_with( ~ paste0("uncurated_", .x)) %>%
+    rename(uuid = uncurated_uuid)
+all_metas$moiseyenko <- curated_meta$moiseyenko %>%
+    left_join(moiseyenko,
+              by = join_by(sample_id == uncurated_sample_name),
+              suffix = c("", ""),
+              keep = TRUE)
+final_metas$moiseyenko <- all_metas$moiseyenko
+
+# schonhoff
+schonhoff <- read.csv(file.path(original_dir, "MazmanianS_SchonhoffA_metadata_4.0.tsv"),
+                       sep = "\t") %>%
+    rename_with( ~ paste0("uncurated_", .x)) %>%
+    rename(uuid = uncurated_uuid)
+all_metas$schonhoff <- curated_meta$schonhoff %>%
+    left_join(schonhoff,
+              by = join_by(sample_id == uncurated_sample_name),
+              suffix = c("", ""),
+              keep = TRUE)
+final_metas$schonhoff <- all_metas$schonhoff
+
 # nishiwaki
 nishiwaki <- read_xlsx(file.path(original_dir, "NishiwakiH_2024_rawMetadata.xlsx"),
                        sheet = "Sheet2")[,1:43] %>%
@@ -285,27 +360,6 @@ final_metas <- lapply(final_metas, function(x) x %>%
                           mutate(across(-any_of(curated_cols), as.character)))
 sampleMetadata <- bind_rows(final_metas)
 #write.csv(merged_metadata, file = "/home/kaelyn/Desktop/Work/ASAP_MAC/parkinsonsMetagenomicData/shotgun_samples/merged_metadata.csv", row.names = FALSE)
-
-## Temporary simple sampleMetadata for Mazmanian projects
-uuid_map_dir <- "/home/kaelyn/Desktop/Work/ASAP_MAC/pipeline/data/uuid_maps/"
-temp <- list.files(path = uuid_map_dir, pattern="^MazmanianS_*")
-mazmanian_meta <- lapply(file.path(uuid_map_dir, temp), read_delim)
-names(mazmanian_meta) <- gsub(".tsv", "", temp)
-
-for (sname in names(mazmanian_meta)) {
-    mazmanian_meta[[sname]] <- mazmanian_meta[[sname]] %>%
-        select(-file_paths) %>%
-        mutate(study_name = sname)
-}
-
-final_mazmanian <- lapply(mazmanian_meta, function(x) x %>%
-                              mutate(across(everything(), as.character)))
-bind_mazmanian <- bind_rows(final_mazmanian)
-
-sampleMetadata <- sampleMetadata %>%
-    mutate(across(everything(), as.character))
-
-sampleMetadata <- bind_rows(sampleMetadata, bind_mazmanian)
 
 # Create package data object
 usethis::use_data(sampleMetadata, overwrite = TRUE)

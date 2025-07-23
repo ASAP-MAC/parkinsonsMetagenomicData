@@ -1,0 +1,148 @@
+---
+title: "Working With Data Hosted on Hugging Face"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Working With Data Hosted on Hugging Face}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+---
+
+```{r knitr_setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r general_setup, include=FALSE}
+library(parkinsonsMetagenomicData)
+library(dplyr)
+library(DT)
+```
+
+# Hugging Face Overview and Setup
+
+## Hugging Face
+
+Individual pipeline output files have been combined into parquet files
+and hosted in the
+[metagenomics_mac](https://huggingface.co/datasets/waldronlab/metagenomics_mac)
+repo on Hugging Face. *Note: some output file types are still pending.*
+These are publicly accessible, and are able to be easily read using
+DuckDB.
+
+## Parquet Creation
+
+To create the individual parquet files, one needs credentials to access the
+`gs://metagenomics-mac` Google Bucket. Instructions on obtaining these can be
+found in the [Google Cloud Storage vignette](). These credentials are then
+substituted into the following code for the `KEY_ID` and `SECRET` parameters.
+Running the following code with [DuckDB](https://duckdb.org/) will generate a
+single parquet file containing all of the data from the
+`out_pathabundance_cpm_stratified.tsv.gz` files belonging to each sample. For
+other output file types, simply change the file path arguments. *Note:
+non-HUMAnN file types may have additional changes that will be detailed here as
+they are discovered.*
+
+```{sql parquet_creation, eval=FALSE}
+install httpfs;
+load httpfs;
+CREATE SECRET metagenomics_mac (
+    TYPE gcs,
+    KEY_ID 'KEY_ID',
+    SECRET 'SECRET'
+);
+copy (select * from read_csv_auto('gs://metagenomics-mac/results/cMDv4/*/humann/out_pathabundance_cpm_stratified.tsv.gz', filename=True)) to './parquets/pathabundance_cpm_stratified.parquet' (format parquet, compression 'zstd');
+```
+
+## DuckDB in R
+
+DuckDB is very easy to use in R through the `duckdb` R package. The `DBI` and
+`dplyr`/`dbplyr` packages combine with it to provide a streamlined way to work
+with remote data by selectively querying it before bringing it into your R
+session.
+
+Relevant tools:
+
+ - [DuckDB R Client](https://duckdb.org/docs/stable/clients/r.html)
+ - [DBI](https://dbi.r-dbi.org/)
+ - [dplyr](https://dplyr.tidyverse.org/)/[dbplyr](https://dbplyr.tidyverse.org/)
+
+# Standard Workflow
+
+In the standard workflow, we have two main wrapper functions `accessParquetData`
+and `loadParquetData`. `accessParquetData` sets up a DuckDB connection to the
+parquet files hosted in Hugging Face. `loadParquetData` then takes an argument
+for data type, and optionally arguments for specific sample UUIDs or a custom
+filtering function and loads the requested data into R as a Summarized
+Experiment.
+
+## Selecting Samples
+
+First we select samples by browsing the `sampleMetadata` object.
+
+```{r pick_metadata}
+selected_samples <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !any(is.na(.x))))
+```
+
+```{r show_metadata, echo=FALSE}
+datatable(selected_samples, extensions = "Responsive")
+```
+
+The `uuid` column contains the UUIDs we will need for `loadParquetData`.
+
+```{r pull_uuids}
+selected_uuids <- selected_samples$uuid
+selected_uuids
+```
+
+## Hugging Face and DuckDB Connection
+
+We then run `accessParquetData`, which creates the DuckDB connection and sets
+up DuckDB "VIEW" objects for each available file type. It returns a DuckDB
+connection object.
+
+```{r access_wrapper}
+con <- accessParquetData()
+```
+
+## Loading into R
+
+We then provide that DuckDB connection object, our choice of data type/view, and
+our list of UUIDs to `loadParquetData` and receive a Summarized Experiment
+object.
+
+```{r load_wrapper}
+basic_se <- loadParquetData(con,
+                            data_type = "pathcoverage_unstratified",
+                            uuids = selected_uuids)
+basic_se
+```
+
+## Optional View Customization
+
+Additionally, it is possible to use `dplyr` to preview the data view of interest
+and perform more advanced functions on the data prior to using `loadParquetData`
+or the `collect()` function to load it into R. Here we use the `tbl()` function
+to access the data view of choice, and pipe it into a `filter()` call to select
+only the pathways related to UMP biosynthesis. We can then save these calls to a
+variable prior to loading them into R, and supply this to `loadParquetData`
+either instead of or alongside our UUID list.
+
+```{r custom_view}
+custom_filter <- tbl(con, "pathcoverage_unstratified") |>
+    filter(grepl("UMP biosynthesis", `# Pathway`))
+custom_filter
+```
+
+```{r load_custom}
+custom_se <- loadParquetData(con,
+                            data_type = "pathcoverage_unstratified",
+                            uuids = selected_uuids,
+                            custom_view = custom_filter)
+custom_se
+```

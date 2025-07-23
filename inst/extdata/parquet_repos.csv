@@ -1,0 +1,2 @@
+repo_url,file_url,httpfs_url,version,latest
+https://huggingface.co/datasets/waldronlab/metagenomics_mac/tree/main,https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/,hf://datasets/waldronlab/metagenomics_mac/,1,Y

@@ -1,0 +1,31 @@
+"general_data_type","col_name","col_class","description","se_role","position"
+"viral_clusters","M-Group/Cluster",NA,NA,"rdata",1
+"viral_clusters","genomeName",NA,NA,"rname",2
+"viral_clusters","len",NA,NA,"rdata",3
+"viral_clusters","breadth_of_coverage",NA,NA,"assay",4
+"viral_clusters","depth_of_coverage_mean",NA,NA,"assay",5
+"viral_clusters","depth_of_coverage_median",NA,NA,"assay",6
+"viral_clusters","M-Group-Type [k|u]",NA,NA,"rdata",7
+"viral_clusters","First Genome in Cluster",NA,NA,"rdata",8
+"viral_clusters","Other Genomes",NA,NA,"rdata",9
+"viral_clusters","filename",NA,NA,"cname",10
+"relative_abundance","clade_name",NA,NA,"rname",1
+"relative_abundance","NCBI_tax_id",NA,NA,"rdata",2
+"relative_abundance","relative_abundance",NA,NA,"assay",3
+"relative_abundance","additional_species",NA,NA,"rdata",4
+"relative_abundance","filename",NA,NA,"cname",5
+"marker_abundance","marker",NA,NA,"rname",1
+"marker_abundance","abundance",NA,NA,"assay",2
+"marker_abundance","filename",NA,NA,"cname",3
+"marker_presence","marker",NA,NA,"rname",1
+"marker_presence","presence",NA,NA,"assay",2
+"marker_presence","filename",NA,NA,"cname",3
+"genefamilies","Gene Family",NA,NA,"rname",1
+"genefamilies","out_Abundance-RPKs",NA,NA,"assay",2
+"genefamilies","filename",NA,NA,"cname",3
+"pathabundance","Pathway",NA,NA,"rname",1
+"pathabundance","out_Abundance",NA,NA,"assay",2
+"pathabundance","filename",NA,NA,"cname",3
+"pathcoverage","Pathway",NA,NA,"rname",1
+"pathcoverage","out_Coverage",NA,NA,"assay",2
+"pathcoverage","filename",NA,NA,"cname",3

@@ -8,11 +8,10 @@ parquet_to_se(parquet_table, data_type)
 }
 \arguments{
 \item{parquet_table}{Table or data frame: data taken directly from a parquet
-file found in the repo
-https://huggingface.co/datasets/waldronlab/metagenomics_mac.}
+file found in the repo of interest (see inst/extdata/parquet_repos.csv).}
 
 \item{data_type}{Single string: value found in the data_type' column of
-output_file_types() and also as the name of a file in the repo}
+output_file_types() and also as the name of a file in the repo of interest.}
 }
 \value{
 A SummarizedExperiment object with process metadata, row data, column
@@ -22,20 +21,17 @@ names, and relevant assays.
 'parquet_to_se' takes tabulated data from a parquet file to a
 Summarized Experiment object.
 }
-\details{
-Currently only output files from HUMAnN are supported.
-}
 \examples{
 \dontrun{
 if(interactive()){
-con <- db_connect()
-view_parquet(con, "pathcoverage_unstratified")
-p_tbl <- tbl(con, "pathcoverage_unstratified") |>
-         head() |>
-         collect()
+ con <- db_connect()
+ view_parquet(con, "pathcoverage_unstratified")
+ p_tbl <- dplyr::tbl(con, "pathcoverage_unstratified") |>
+          head() |>
+          dplyr::collect()
 
-se <- parquet_to_se(p_tbl, "pathcoverage_unstratified")
-se
+ se <- parquet_to_se(p_tbl, "pathcoverage_unstratified")
+ se
  }
 }
 }

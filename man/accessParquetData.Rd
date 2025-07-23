@@ -2,29 +2,38 @@
 % Please edit documentation in R/readParquet.R
 \name{accessParquetData}
 \alias{accessParquetData}
-\title{Set up DuckDB connection with views for all available data types}
+\title{Set up DuckDB connection with views for available data types}
 \usage{
-accessParquetData(dbdir = ":memory:")
+accessParquetData(
+  dbdir = ":memory:",
+  repo_version = "latest",
+  data_types = NULL
+)
 }
 \arguments{
 \item{dbdir}{Location for database files. Should be a path to an existing
 directory in the file system or the value ':memory:' to keep data in RAM.
 Default: ':memory:'}
+
+\item{data_types}{Character vector (optional): list of data types to
+estalish database views for. If NULL, views will be created for all available
+data types. Default: NULL}
 }
 \value{
 DuckDB connection object of class 'duckdb_connection'
 }
 \description{
 'accessParquetData' is a wrapper function for 'db_connect' and
-'retrieve_all'. A DuckDB connection is established and views are created for
-all data types available in the repo
-https://huggingface.co/datasets/waldronlab/metagenomics_mac.
+'retrieve_views'. A DuckDB connection is established and views are created for
+all data types available in a repo of interest
+(see inst/extdata/parquet_repos.csv). A vector of specific data types can be
+supplied as doing this for all data types can take longer.
 }
 \examples{
 \dontrun{
 if(interactive()){
-prepared_db <- accessParquetData(dbdir = ":memory:")
-DBI::dbListTables(prepared_db)
+ prepared_db <- accessParquetData(dbdir = ":memory:")
+ DBI::dbListTables(prepared_db)
  }
 }
 }

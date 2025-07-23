@@ -62,6 +62,109 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     return(ftable)
 }
 
+#' @title Retrieve column info for parquet files based on original file type
+#' @description 'parquet_colinfo' returns the column info associated with a
+#' parquet file made from a particular output file type.
+#' @param data_type Single string: value found in the data_type' column of
+#' output_file_types() and also as the name of a file in the repo
+#' https://huggingface.co/datasets/waldronlab/metagenomics_mac.
+#' @return Data frame with columns 'general_data_type', 'col_name', 'col_class',
+#' 'description', 'se_role', and 'position'
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  parquet_colinfo("viral_clusters")
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{arrange}}
+#' @rdname parquet_colinfo
+#' @export
+#' @importFrom readr read_csv
+#' @importFrom dplyr filter arrange
+parquet_colinfo <- function(data_type) {
+    ## Load in parquet column dictionary
+    fpath <- system.file("extdata", "parquet_dictionary.csv",
+                         package = "parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
+
+    ## Validate data_type
+    g_types <- unique(ftable$general_data_type)
+    type_string <- paste(g_types, collapse = "|")
+    confirm_data_type(data_type,
+                      filter_col = "general_data_type",
+                      filter_string = type_string)
+
+    ## Find corresponding general_data_type
+    gen_type <- output_file_types(filter_col = "data_type",
+                                  filter_string = data_type)$general_data_type
+
+    ## Pull and return column info in order
+    rel_cols <- ftable %>%
+        dplyr::filter(general_data_type == gen_type) %>%
+        dplyr::arrange(position)
+
+    return(rel_cols)
+}
+
+#' @title Return a URL associated with repo of parquet files
+#' @description 'get_parquet_url' returns a URL associated with a repo that
+#' holds data in the form of parquet files. The version can be specified, or the
+#' latest version can be automatically returned.
+#' @param url_type String: either 'repo', 'file', or 'httpfs'. Indicates which type of URL
+#' to return. 'repo' is the URL of the full repo, 'file' is the prefix to use
+#' when downloading files through standard protocols, and 'httpfs' is the prefix
+#' to use when using DuckDB/DBI to download files.
+#' @param version String: which numbered version of the repo to retrieve, or the
+#' string 'latest' to return the latest version. Default: 'latest'
+#' @return String: URL associated with a parquet file repo
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  get_parquet_url("repo", "latest")
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#' @rdname get_parquet_url
+#' @export
+#' @importFrom readr read_csv
+get_parquet_url <- function(url_type, version = "latest") {
+    ## Confirm url_type
+    url_ind <- substr(tolower(url_type), 1, 1)
+
+    if (!url_ind %in% c("r", "f", "h")) {
+        stop(paste0("'", url_type, "' is not a valid 'url_type'. Please enter 'repo', 'file', or 'httpfs'."))
+    }
+
+    ## Load in parquet repo URL table
+    fpath <- system.file("extdata", "parquet_repos.csv",
+                         package = "parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
+
+    if (version == "latest") {
+        p_row <- ftable[ftable$latest == "Y"]
+    } else {
+        if (!version %in% ftable$version) {
+            stop(paste0("'", version, "' is not a valid version. Please enter a different version or 'latest'."))
+        }
+        p_row <- ftable[ftable$version == version]
+    }
+
+    if (url_ind == "h") {
+        p_url <- p_row$httpfs_url
+    } else if (url_ind == "f") {
+        p_url <- p_row$file_url
+    } else if (url_ind == "r") {
+        p_url <- p_row$repo_url
+    }
+
+    return(p_url)
+}
+
 #' @title Return all "extensions" from a file path
 #' @description 'get_exts' returns the extension of a file name or path,
 #' including pseudo-extensions such as ".tsv" in "file.tsv.gz".
@@ -167,9 +270,9 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
     # values
     if (filter_ind) {
         if (!data_type %in% filtered_types) {
-            print_filtered <- paste(filtered_types, collapse = ", ")
+            print_filtered <- paste(filtered_types, collapse = "\n")
             stop(paste0("'", data_type,
-                        "' is not an allowed value for this function. Please enter one of the following values: ",
+                        "' is not an allowed value for this function. Please enter one of the following values:\n",
                         print_filtered))
         }
     } else {
@@ -177,5 +280,29 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
             stop(paste0("'", data_type,
                         "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types()."))
         }
+    }
+}
+
+#' @title Validate DuckDB connection argument
+#' @description 'confirm_duckdb_con' checks that an object is a valid DuckDB
+#' connection object.
+#' @param con Object to validate
+#' @return NULL
+#' @details This function is intended to be used within another function as
+#' input validation. If the input is valid, nothing will happen. If it is not,
+#' the function will throw a 'stop()' error.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  con <- db_connect()
+#'  confirm_duckdb_con(con)
+#'  confirm_duckdb_con("horse")
+#'  }
+#' }
+#' @rdname confirm_duckdb_con
+#' @export
+confirm_duckdb_con <- function(con) {
+    if (class(con)[1] != "duckdb_connection") {
+        stop("Please provide a valid 'duckdb_connection' object.")
     }
 }

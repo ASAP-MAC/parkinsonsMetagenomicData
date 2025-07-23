@@ -38,16 +38,16 @@ If 'custom_view' is provided, it must use the view indicated by
 \examples{
 \dontrun{
 if(interactive()){
-prepared_db <- accessParquetData(dbdir = ":memory:")
-DBI::dbListTables(prepared_db)
-custom_filter <- tbl(prepared_db, "pathcoverage_unstratified") |>
-               filter(`# Pathway` == "PWY-5686: UMP biosynthesis I")
+ prepared_db <- accessParquetData(dbdir = ":memory:")
+ DBI::dbListTables(prepared_db)
+ custom_filter <- tbl(prepared_db, "pathcoverage_unstratified") |>
+                filter(`# Pathway` == "PWY-5686: UMP biosynthesis I")
 
-se <- loadParquetData(con = prepared_db,
-                      data_type = "pathcoverage_unstratified",
-                      uuids = c("0807eb2a-a15e-4647-8e19-2600d8fda378",
-                                "e0fbb54f-0249-4917-a4d7-bd68acb89c62"),
-                      custom_view = custom_filter)
+ se <- loadParquetData(con = prepared_db,
+                       data_type = "pathcoverage_unstratified",
+                       uuids = c("0807eb2a-a15e-4647-8e19-2600d8fda378",
+                                 "e0fbb54f-0249-4917-a4d7-bd68acb89c62"),
+                       custom_view = custom_filter)
  }
 }
 }

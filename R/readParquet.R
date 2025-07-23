@@ -10,8 +10,8 @@
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#' connection <- db_connect(dbdir = ":memory:")
-#' class(connection)
+#'  connection <- db_connect(dbdir = ":memory:")
+#'  class(connection)
 #'  }
 #' }
 #' @seealso
@@ -31,22 +31,21 @@ db_connect <- function(dbdir = ":memory:") {
 
 #' @title Create a database view of a specific data type
 #' @description 'view_parquet' creates a database view with the provided DuckDB
-#' connection object. The view is created from a parquet file hosted at
-#' https://huggingface.co/datasets/waldronlab/metagenomics_mac. The specific
+#' connection object. The view is created from a parquet file hosted at a
+#' repo of interest (see inst/extdata/parquet_repos.csv). The specific
 #' file is specified via the file name.
 #' @param con DuckDB connection object of class 'duckdb_connection'
 #' @param data_type Single string: value found in the data_type' column of
-#' output_file_types() and also as the name of a file in the repo
-#' https://huggingface.co/datasets/waldronlab/metagenomics_mac, indicating which
-#' output file to retrieve.
+#' output_file_types() and also as the name of a file in the repo of interest,
+#' indicating which output file to retrieve.
 #' @return NULL
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#' con <- db_connect()
+#'  con <- db_connect()
 #'
-#' view_parquet(con, "pathcoverage_unstratified")
-#' DBI::dbListTables(con)
+#'  view_parquet(con, "pathcoverage_unstratified")
+#'  DBI::dbListTables(con)
 #'  }
 #' }
 #' @seealso
@@ -54,54 +53,72 @@ db_connect <- function(dbdir = ":memory:") {
 #' @rdname view_parquet
 #' @export
 #' @importFrom DBI dbExecute
-view_parquet <- function(con, data_type) {
+view_parquet <- function(con, httpfs_url = NULL, data_type) {
+    ## Check input
+    # con
+    confirm_duckdb_con(con)
+
+    # data_type
+    confirm_data_type(data_type)
+
     ## Create data_type-specific view
     statement <- paste0("CREATE VIEW IF NOT EXISTS ", data_type,
-                        " AS (SELECT * FROM read_parquet('hf://datasets/waldronlab/metagenomics_mac/",
+                        " AS (SELECT * FROM read_parquet('", httpfs_url,
                         data_type, ".parquet'));")
     DBI::dbExecute(con, statement)
 
     ## Notify of success
-    message(paste0("Data view can be found at '", data_type, "'"))
+    message(paste0("'", data_type, "' data has been saved as a database view named '", data_type, "'."))
 }
 
 #' @title Create database views for all available data types
-#' @description 'retrieve_all' creates database views for all of the data types
-#' available in the repo
-#' https://huggingface.co/datasets/waldronlab/metagenomics_mac.
+#' @description 'retrieve_views' creates database views for all of the data types
+#' available in a repo of interest (see inst/extdata/parquet_repos.csv).
 #' @param con DuckDB connection object of class 'duckdb_connection'
 #' @return NULL
-#' @details 'retrieve_all' uses 'output_file_types' as the initial list of data
+#' @details 'retrieve_views' uses 'output_file_types' as the initial list of data
 #' types to retrieve, and checks if they exist as parquet files in the repo
-#' https://huggingface.co/datasets/waldronlab/metagenomics_mac. If they do not,
-#' they are simply skipped.
+#' of interest. If they do not, they are simply skipped.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#' con <- db_connect()
+#'  con <- db_connect()
 #'
-#' retrieve_all(con)
-#' DBI::dbListTables(con)
+#'  retrieve_views(con, repo_version = "latest")
+#'  DBI::dbListTables(con)
 #'  }
 #' }
 #' @seealso
 #'  \code{\link[RCurl]{url.exists}}
-#' @rdname retrieve_all
+#' @rdname retrieve_views
 #' @export
 #' @importFrom RCurl url.exists
-retrieve_all <- function(con) {
+retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
+    ## Check input
+    # con
+    confirm_duckdb_con(con)
+
+    # data_types
+    for (dt in data_types) confirm_data_type(dt)
+
     ## Get all data types
-    data_types <- output_file_types()$data_type
+    if (is.null(data_types)) {
+        data_types <- output_file_types()$data_type
+    }
+
+    ## Get repo base URLs
+    web_url <- get_parquet_url("web", repo_version)
+    httpfs_url <- get_parquet_url("httpfs", repo_version)
 
     ## Create view for each type if it exists
     for (type in data_types) {
-        test_url <- paste0("https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/", type, ".parquet")
+        test_url <- paste0(web_url, type, ".parquet")
         exists <- RCurl::url.exists(test_url)
         if (!exists) {
-            message(paste0("'", type, "' is not currently available in the dataset waldronlab/metagenomics_mac, skipping."))
+            message(paste0("'", type, "' is not currently available in the repo '", web_url, "', skipping."))
             next
         }
-        view_parquet(con, type)
+        view_parquet(con, httpfs_url, type)
     }
 }
 
@@ -109,24 +126,22 @@ retrieve_all <- function(con) {
 #' @description 'parquet_to_se' takes tabulated data from a parquet file to a
 #' Summarized Experiment object.
 #' @param parquet_table Table or data frame: data taken directly from a parquet
-#' file found in the repo
-#' https://huggingface.co/datasets/waldronlab/metagenomics_mac.
+#' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
 #' @param data_type Single string: value found in the data_type' column of
-#' output_file_types() and also as the name of a file in the repo
+#' output_file_types() and also as the name of a file in the repo of interest.
 #' @return A SummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
-#' @details Currently only output files from HUMAnN are supported.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#' con <- db_connect()
-#' view_parquet(con, "pathcoverage_unstratified")
-#' p_tbl <- tbl(con, "pathcoverage_unstratified") |>
-#'          head() |>
-#'          collect()
+#'  con <- db_connect()
+#'  view_parquet(con, "pathcoverage_unstratified")
+#'  p_tbl <- dplyr::tbl(con, "pathcoverage_unstratified") |>
+#'           head() |>
+#'           dplyr::collect()
 #'
-#' se <- parquet_to_se(p_tbl, "pathcoverage_unstratified")
-#' se
+#'  se <- parquet_to_se(p_tbl, "pathcoverage_unstratified")
+#'  se
 #'  }
 #' }
 #' @seealso
@@ -143,67 +158,92 @@ retrieve_all <- function(con) {
 #' @importFrom S4Vectors DataFrame
 #' @importFrom SummarizedExperiment SummarizedExperiment
 parquet_to_se <- function(parquet_table, data_type) {
-    ## Get parameters by data type
-    cnames <- colnames(parquet_table)
-
-    htypes <- output_file_types("tool", "humann")$data_type
-    if (data_type %in% htypes) {
-        rnames_col <- gsub("# ", "", cnames[1]) |> tolower()
-        assay_col <- gsub("out_", "", cnames[2]) |> tolower()
-        file_col <- cnames[3]
-        colnames(parquet_table) <- c(rnames_col, assay_col, file_col)
+    ## Check input
+    # parquet_table
+    if (!is.data.frame(parquet_table)) {
+        stop("'parquet_table' should be a data.frame.")
     }
 
-    ## Expand parquet by filename
-    se <- parquet_table %>%
+    # data_type
+    confirm_data_type(data_type)
+
+    ## Get parameters by data type
+    colinfo <- parquet_colinfo(data_type)
+
+    colnames(parquet_table) <- colinfo$col_name
+    file_col <- colinfo$col_name[colinfo$se_role == "cname"]
+    rnames_col <- colinfo$col_name[colinfo$se_role == "rname"]
+    rdata_cols <- colinfo$col_name[colinfo$se_role == "rdata"]
+    assay_cols <- colinfo$col_name[colinfo$se_role == "assay"]
+
+    ## Convert filename to uuid
+    converted_table <- parquet_table %>%
         dplyr::rowwise() %>%
         dplyr::mutate(uuid = unlist(strsplit(get(file_col), "/"))[6]) %>%
-        dplyr::select(-all_of(file_col)) %>%
-        tidyr::pivot_wider(names_from = uuid, values_from = all_of(assay_col)) %>%
+        dplyr::select(-all_of(file_col))
+
+    ## Create rowData table
+    rdata <- converted_table %>%
+        select(all_of(c(rnames_col, rdata_cols))) %>%
+        dplyr::distinct() %>%
         tibble::column_to_rownames({{rnames_col}})
 
-    ## Separate out row data
-    rdata <- S4Vectors::DataFrame(matrix(nrow = nrow(se), ncol = 0))
-    rownames(rdata) <- rownames(se)
+    ## Create assay table(s)
+    alist <- vector("list", length(assay_cols)) |>
+        setNames(assay_cols)
+    for (acol in assay_cols) {
+        aframe <- converted_table %>%
+            select(all_of(c(rnames_col, acol, "uuid"))) %>%
+            tidyr::pivot_wider(names_from = uuid, values_from = all_of(acol)) %>%
+            tibble::column_to_rownames({{rnames_col}})
+        alist[[acol]] <- aframe
+    }
 
-    ## Set sample ID as column name
-    cdata <- S4Vectors::DataFrame(matrix(nrow = ncol(se), ncol = 0))
-    rownames(cdata) <- colnames(se)
+    ## Set sample IDs as column name
+    cdata <- S4Vectors::DataFrame(matrix(nrow = ncol(alist[[1]]), ncol = 0))
+    rownames(cdata) <- colnames(alist[[1]])
 
-    ## Set relative abundance as assay
-    upcoverage <- as.matrix(se)
-    alist <- list(upcoverage)
-    names(alist) <- data_type
-
+    ## Create and return Summarized Experiment object
     ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
                                                      rowData = rdata,
                                                      colData = cdata)
+
+    return(ex)
 }
 
-#' @title Set up DuckDB connection with views for all available data types
+#' @title Set up DuckDB connection with views for available data types
 #' @description 'accessParquetData' is a wrapper function for 'db_connect' and
-#' 'retrieve_all'. A DuckDB connection is established and views are created for
-#' all data types available in the repo
-#' https://huggingface.co/datasets/waldronlab/metagenomics_mac.
+#' 'retrieve_views'. A DuckDB connection is established and views are created for
+#' all data types available in a repo of interest
+#' (see inst/extdata/parquet_repos.csv). A vector of specific data types can be
+#' supplied as doing this for all data types can take longer.
 #' @param dbdir Location for database files. Should be a path to an existing
 #' directory in the file system or the value ':memory:' to keep data in RAM.
 #' Default: ':memory:'
+#' @param data_types Character vector (optional): list of data types to
+#' estalish database views for. If NULL, views will be created for all available
+#' data types. Default: NULL
 #' @return DuckDB connection object of class 'duckdb_connection'
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#' prepared_db <- accessParquetData(dbdir = ":memory:")
-#' DBI::dbListTables(prepared_db)
+#'  prepared_db <- accessParquetData(dbdir = ":memory:")
+#'  DBI::dbListTables(prepared_db)
 #'  }
 #' }
 #' @rdname accessParquetData
 #' @export
-accessParquetData <- function(dbdir = ":memory:") {
+accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
+                              data_types = NULL) {
+    ## Check input
+    # data_types
+    for (dt in data_types) confirm_data_type(dt)
+
     ## Connect to database
     con <- db_connect(dbdir)
 
     ## Create views from Hugging Face repo
-    retrieve_all(con)
+    retrieve_views(con, repo_version, data_types)
 
     ## Return connection
     return(con)
@@ -231,16 +271,16 @@ accessParquetData <- function(dbdir = ":memory:") {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#' prepared_db <- accessParquetData(dbdir = ":memory:")
-#' DBI::dbListTables(prepared_db)
-#' custom_filter <- tbl(prepared_db, "pathcoverage_unstratified") |>
-#'                filter(`# Pathway` == "PWY-5686: UMP biosynthesis I")
+#'  prepared_db <- accessParquetData(dbdir = ":memory:")
+#'  DBI::dbListTables(prepared_db)
+#'  custom_filter <- tbl(prepared_db, "pathcoverage_unstratified") |>
+#'                 filter(`# Pathway` == "PWY-5686: UMP biosynthesis I")
 #'
-#' se <- loadParquetData(con = prepared_db,
-#'                       data_type = "pathcoverage_unstratified",
-#'                       uuids = c("0807eb2a-a15e-4647-8e19-2600d8fda378",
-#'                                 "e0fbb54f-0249-4917-a4d7-bd68acb89c62"),
-#'                       custom_view = custom_filter)
+#'  se <- loadParquetData(con = prepared_db,
+#'                        data_type = "pathcoverage_unstratified",
+#'                        uuids = c("0807eb2a-a15e-4647-8e19-2600d8fda378",
+#'                                  "e0fbb54f-0249-4917-a4d7-bd68acb89c62"),
+#'                        custom_view = custom_filter)
 #'  }
 #' }
 #' @seealso
@@ -253,9 +293,7 @@ accessParquetData <- function(dbdir = ":memory:") {
 loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
     ## Check input
     # con
-    if (class(con)[1] != "duckdb_connection") {
-        stop("Please provide a valid 'duckdb_connection' object.")
-    }
+    confirm_duckdb_con(con)
 
     # data_type
     confirm_data_type(data_type)
@@ -299,7 +337,9 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
     }
 
     ## Transform into SummarizedExperiment
-    exp <- transform_parquet(collected_view, data_type)
+    exp <- parquet_to_se(collected_view, data_type)
 
     return(exp)
 }
+
+
