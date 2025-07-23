@@ -107,15 +107,15 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
     }
 
     ## Get repo base URLs
-    web_url <- get_parquet_url("web", repo_version)
+    file_url <- get_parquet_url("file", repo_version)
     httpfs_url <- get_parquet_url("httpfs", repo_version)
 
     ## Create view for each type if it exists
     for (type in data_types) {
-        test_url <- paste0(web_url, type, ".parquet")
+        test_url <- paste0(file_url, type, ".parquet")
         exists <- RCurl::url.exists(test_url)
         if (!exists) {
-            message(paste0("'", type, "' is not currently available in the repo '", web_url, "', skipping."))
+            message(paste0("'", type, "' is not currently available in the repo '", file_url, "', skipping."))
             next
         }
         view_parquet(con, httpfs_url, type)
