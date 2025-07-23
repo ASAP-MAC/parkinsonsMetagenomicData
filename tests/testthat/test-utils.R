@@ -2,6 +2,31 @@
 
 
 ## output_file_types
+test_that("correct file is read", {
+    fpath <- system.file("extdata", "output_files.csv",
+                         package="parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
+
+    test_table <- output_file_types()
+
+    expect_equal(test_table, ftable)
+})
+
+test_that("simple filter works", {
+    ftable <- output_file_types() |>
+        dplyr::filter(grepl("rel", data_type))
+
+    test_table <- output_file_types(filter_col = "data_type",
+                                    filter_string = "rel")
+
+    expect_equal(test_table, ftable)
+})
+
+## parquet_colinfo
+
+
+## get_parquet_url
 
 
 ## get_exts
@@ -38,3 +63,5 @@ test_that("filtering works", {
     expect_error(confirm_data_type("relative_abundance", "tool", "humann"))
     expect_error(confirm_data_type("pathcoverage_stratified", "horse", "humann"))
 })
+
+## confirm_duckdb_con
