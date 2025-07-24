@@ -22,30 +22,48 @@ test_that("httpfs installed", {
 
 
 ## parquet_to_tse - humann
+con <- suppressMessages(accessParquetData())
+test_meta <- dplyr::filter(sampleMetadata, study_name == "MazmanianS_DeCastroFonsecaM_1")
+tse_basic <- loadParquetData(con, uuids = test_meta$uuid, data_type = "pathabundance_unstratified")
+
 test_that("parquet to TreeSummarizedExperiment (parquet_to_tse())", {
-  con <- suppressMessages(accessParquetData())
-  test_meta <- dplyr::filter(sampleMetadata, study_name == "MazmanianS_DeCastroFonsecaM_1")
-  tse_basic <- loadParquetData(con, uuids = test_meta$uuid, data_type = "pathabundance_unstratified")
   expect_true(
     inherits(tse_basic, "TreeSummarizedExperiment")
   )
 })
 # feature tables must not have NAs
 test_that("TSE assays don't have NAs", {
-  con <- suppressMessages(accessParquetData())
-  test_meta <- dplyr::filter(sampleMetadata, study_name == "MazmanianS_DeCastroFonsecaM_1")
-  tse_basic <- loadParquetData(con, uuids = test_meta$uuid, data_type = "pathabundance_unstratified")
-  
   expect_true(
     all(sapply(assays(tse_basic), function(x) all(!is.na(x))))
   )
 })
 # assays should be matrices
 test_that("TSE assays don't have NAs", {
-  con <- suppressMessages(accessParquetData())
-  test_meta <- dplyr::filter(sampleMetadata, study_name == "MazmanianS_DeCastroFonsecaM_1")
-  tse_basic <- loadParquetData(con, uuids = test_meta$uuid, data_type = "pathabundance_unstratified")
-  
+  expect_true(
+    all(sapply(assays(tse_basic), function(x) inherits(x, "matrix")))
+  )
+})
+
+## parquet_to_tse - metaphlan
+
+con <- suppressMessages(accessParquetData())
+test_meta <- dplyr::filter(sampleMetadata, study_name == "MazmanianS_DeCastroFonsecaM_1")
+tse_basic <- loadParquetData(con, uuids = test_meta$uuid, data_type = "relative_abundance")
+
+test_that("parquet to TreeSummarizedExperiment with MetaPhlAn data", {
+  expect_true(
+    inherits(tse_basic, "TreeSummarizedExperiment")
+  )
+})
+
+# feature tables must not have NAs
+test_that("TSE assays don't have NAs with MetaPhlAn data", {
+  expect_true(
+    all(sapply(assays(tse_basic), function(x) all(!is.na(x))))
+  )
+})
+# assays should be matrices
+test_that("TSE assays don't have NAs with MetaPhlAn data", {
   expect_true(
     all(sapply(assays(tse_basic), function(x) inherits(x, "matrix")))
   )
