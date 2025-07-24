@@ -123,7 +123,7 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 }
 
 #' @title Convert tabulated parquet file data to a Summarized Experiment
-#' @description 'parquet_to_se' takes tabulated data from a parquet file to a
+#' @description 'parquet_to_tse' takes tabulated data from a parquet file to a
 #' Summarized Experiment object.
 #' @param parquet_table Table or data frame: data taken directly from a parquet
 #' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
@@ -140,7 +140,7 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 #'           head() |>
 #'           dplyr::collect()
 #'
-#'  se <- parquet_to_se(p_tbl, "pathcoverage_unstratified")
+#'  se <- parquet_to_tse(p_tbl, "pathcoverage_unstratified")
 #'  se
 #'  }
 #' }
@@ -150,14 +150,14 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 #'  \code{\link[tibble]{rownames}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
 #'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
-#' @rdname parquet_to_se
+#' @rdname parquet_to_tse
 #' @export
 #' @importFrom dplyr rowwise mutate select
 #' @importFrom tidyr pivot_wider
 #' @importFrom tibble column_to_rownames
 #' @importFrom S4Vectors DataFrame
-#' @importFrom SummarizedExperiment SummarizedExperiment
-parquet_to_se <- function(parquet_table, data_type) {
+#' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
+parquet_to_tse <- function(parquet_table, data_type) {
     ## Check input
     # parquet_table
     if (!is.data.frame(parquet_table)) {
@@ -204,7 +204,7 @@ parquet_to_se <- function(parquet_table, data_type) {
     rownames(cdata) <- colnames(alist[[1]])
 
     ## Create and return Summarized Experiment object
-    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
+    ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
                                                      rowData = rdata,
                                                      colData = cdata)
 
@@ -264,7 +264,7 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
 #' particular sequence of function calls can be saved and provided to this
 #' function for collection and formatting as a Summarized Experiment. See the
 #' function example. Default: NULL
-#' @return A SummarizedExperiment object with process metadata, row data, column
+#' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @details If 'custom_view' is provided, it must use the view indicated by
 #' 'data_type'.
@@ -337,7 +337,7 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
     }
 
     ## Transform into SummarizedExperiment
-    exp <- parquet_to_se(collected_view, data_type)
+    exp <- parquet_to_tse(collected_view, data_type)
 
     return(exp)
 }
