@@ -203,9 +203,9 @@ parquet_to_tse <- function(parquet_table, data_type) {
     }, USE.NAMES = TRUE, simplify = FALSE)
 
     ## Set sample IDs as column name
-    cdata <- S4Vectors::DataFrame(matrix(nrow = ncol(alist[[1]]), ncol = 0))
-    rownames(cdata) <- colnames(alist[[1]])
-
+    cdata <- sampleMetadata %>% 
+      filter(uuid %in% unique(converted_table$uuid))
+    
     ## Create and return Summarized Experiment object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
                                                      rowData = rdata,
