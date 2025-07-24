@@ -1,20 +1,15 @@
 Package: parkinsonsMetagenomicData
-Title: What the Package Does (One Line, Title Case)
+Title: Suite of Functions to Retrieve Parkinson's Metagenomics Data from the Google Cloud Bucket and Hugging Face
 Version: 0.1.1
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Authors@R: person("Kaelyn", "Long", email = "kaleyn.long@sph.cuny.edu", role = c("aut", "cre"))
+Maintainer: Kaelyn Long <kaleyn.long@sph.cuny.edu>
+Description: Provides functions to retrieve raw tabular data from Google Cloud Bucket or Hugging Face, starting from a pre-built sample metadata file. Outputs a TreeSummarizedExperiment object as the final result.
+License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Depends: 
-    R (>= 3.5)
-LazyData: true
-Suggests: 
-    knitr,
-    rmarkdown,
-    testthat (>= 3.0.0)
+Depends: R (>= 4.4.0)
+Imports: tidyverse, TreeSummarizedExperiment, SummarizedExperiment
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
