@@ -13,3 +13,4 @@ Imports: tidyverse, TreeSummarizedExperiment, SummarizedExperiment
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+LazyData: true
