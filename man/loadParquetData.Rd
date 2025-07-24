@@ -25,7 +25,7 @@ function for collection and formatting as a Summarized Experiment. See the
 function example. Default: NULL}
 }
 \value{
-A SummarizedExperiment object with process metadata, row data, column
+A TreeSummarizedExperiment object with process metadata, row data, column
 names, and relevant assays.
 }
 \description{
