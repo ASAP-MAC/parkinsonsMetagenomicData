@@ -184,20 +184,23 @@ parquet_to_tse <- function(parquet_table, data_type) {
 
     ## Create rowData table
     rdata <- converted_table %>%
-        select(all_of(c(rnames_col, rdata_cols))) %>%
-        dplyr::distinct() %>%
-        tibble::column_to_rownames({{rnames_col}})
+        select(any_of(c(rnames_col, rdata_cols))) %>%
+        dplyr::distinct() %>% 
+      as.data.frame()
+    rownames(rdata) <- rdata[[rnames_col]]
 
     ## Create assay table(s)
-    alist <- vector("list", length(assay_cols)) |>
-        setNames(assay_cols)
-    for (acol in assay_cols) {
-        aframe <- converted_table %>%
-            select(all_of(c(rnames_col, acol, "uuid"))) %>%
-            tidyr::pivot_wider(names_from  = uuid, values_from = all_of(acol), values_fill = 0) %>%
-            tibble::column_to_rownames({{rnames_col}})
-        alist[[acol]] <- aframe
-    }
+    alist <- sapply(assay_cols, function(acol) {
+      converted_table %>%
+        select(all_of(c(rnames_col, acol, "uuid"))) %>%
+        tidyr::pivot_wider(
+          names_from  = uuid,
+          values_from = all_of(acol),
+          values_fill = 0
+        ) %>%
+        tibble::column_to_rownames({{rnames_col}}) %>%
+        as.matrix()
+    }, USE.NAMES = TRUE, simplify = FALSE)
 
     ## Set sample IDs as column name
     cdata <- S4Vectors::DataFrame(matrix(nrow = ncol(alist[[1]]), ncol = 0))
