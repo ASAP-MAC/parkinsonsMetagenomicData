@@ -206,10 +206,19 @@ parquet_to_tse <- function(parquet_table, data_type) {
     cdata <- sampleMetadata %>% 
       filter(uuid %in% unique(converted_table$uuid))
     
+    # make sure rows and columns are in the same order
+    featureIDs <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
+    uuids <- unique(converted_table$uuid)
+    
+    rdata <- rdata[featureIDs,]
+    cdata <- cdata[uuids,]
+    alist <- lapply(alist, function(x) x[featureIDs, uuids])
+    
     ## Create and return Summarized Experiment object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
-                                                     rowData = rdata,
-                                                     colData = cdata)
+                                                     rowData = DataFrame(rdata),
+                                                     colData = DataFrame(cdata)
+                                                     )
 
     return(ex)
 }
