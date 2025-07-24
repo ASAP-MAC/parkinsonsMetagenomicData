@@ -194,7 +194,7 @@ parquet_to_tse <- function(parquet_table, data_type) {
     for (acol in assay_cols) {
         aframe <- converted_table %>%
             select(all_of(c(rnames_col, acol, "uuid"))) %>%
-            tidyr::pivot_wider(names_from = uuid, values_from = all_of(acol)) %>%
+            tidyr::pivot_wider(names_from  = uuid, values_from = all_of(acol), values_fill = 0) %>%
             tibble::column_to_rownames({{rnames_col}})
         alist[[acol]] <- aframe
     }
