@@ -66,9 +66,6 @@ view_parquet <- function(con, httpfs_url = NULL, data_type) {
                         " AS (SELECT * FROM read_parquet('", httpfs_url,
                         data_type, ".parquet'));")
     DBI::dbExecute(con, statement)
-
-    ## Notify of success
-    message(paste0("'", data_type, "' data has been saved as a database view named '", data_type, "'."))
 }
 
 #' @title Create database views for all available data types
@@ -130,7 +127,7 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 #' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
 #' @param data_type Single string: value found in the data_type' column of
 #' output_file_types() and also as the name of a file in the repo of interest.
-#' @return A SummarizedExperiment object with process metadata, row data, column
+#' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @examples
 #' \dontrun{
@@ -150,7 +147,7 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 #'  \code{\link[tidyr]{pivot_wider}}
 #'  \code{\link[tibble]{rownames}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parquet_to_tse
 #' @export
 #' @importFrom dplyr rowwise mutate select
@@ -218,16 +215,10 @@ parquet_to_tse <- function(parquet_table, data_type) {
 
     ## Create and return Summarized Experiment object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
-                                                     rowData = DataFrame(rdata),
-                                                     colData = DataFrame(cdata)
-                                                     )
+                                                             rowData = DataFrame(rdata),
+                                                             colData = DataFrame(cdata))
 
-    ## Add sample metadata
-    meta_ex <- add_metadata(colnames(ex),
-                            id_col = "uuid",
-                            ex)
-
-    return(meta_ex)
+    return(ex)
 }
 
 #' @title Set up DuckDB connection with views for available data types
@@ -335,8 +326,8 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
             stop("'custom_view' should be of the class 'tbl_duckdb_connection'.")
         }
         if (custom_view$lazy_query$x$x != data_type) {
-            stop(paste0("'custom_filter' uses the view '",
-                        custom_filter$lazy_query$x$x,
+            stop(paste0("'custom_view' uses the view '",
+                        custom_view$lazy_query$x$x,
                         "', but 'data_type' equals '", data_type, "'."))
         }
     }
@@ -359,7 +350,7 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
             dplyr::collect()
     }
 
-    ## Transform into SummarizedExperiment
+    ## Transform into TreeSummarizedExperiment
     exp <- parquet_to_tse(collected_view, data_type)
 
     return(exp)

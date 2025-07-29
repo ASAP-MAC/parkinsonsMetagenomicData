@@ -230,21 +230,21 @@ cacheMetagenomicData <- function(uuids,
     return(cache_tbl)
 }
 
-#' @title Load cached files into R as a merged SummarizedExperiment object
+#' @title Load cached files into R as a merged TreeSummarizedExperiment object
 #' @description 'loadMetagenomicData' takes a table of information about cached
 #' files, including paths to the cached files as well as associated UUIDs and
-#' data types, and loads the files into R as SummarizedExperiment objects.
+#' data types, and loads the files into R as TreeSummarizedExperiment objects.
 #' Associated sample metadata is automatically attached as colData, and the
-#' objects are merged into a single SummarizedExperiment object.
+#' objects are merged into a single TreeSummarizedExperiment object.
 #' @param cache_table A data.frame or tibble: structured like
 #' cacheMetagenomicData() output; contains the columns 'uuid', 'cache_path', and
 #' 'data_type', with appropriate entries for each file to be loaded in.
-#' @return A SummarizedExperiment object with relevant sample metadata attached
-#' as colData.
+#' @return A TreeSummarizedExperiment object with relevant sample metadata
+#' attached as colData.
 #' @details At the moment, only the `metaphlan_lists` data types,
 #' `viral_clusters` and `relative_abundance`, as well as the `humann` data
 #' types, have parsing functions for automatically loading into
-#' SummarizedExperiment objects.
+#' TreeSummarizedExperiment objects.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
@@ -273,7 +273,7 @@ loadMetagenomicData <- function(cache_table) {
     }
     confirm_data_type(data_type)
 
-    ## Load data as SummarizedExperiment objects
+    ## Load data as TreeSummarizedExperiment objects
     se_list <- vector("list", nrow(cache_table))
     humann_types <- output_file_types("tool", "humann")$data_type
     metaphlan_types <- output_file_types("tool", "metaphlan")$data_type
@@ -292,7 +292,7 @@ loadMetagenomicData <- function(cache_table) {
     }
     names(se_list) <- paste(cache_table$uuid, cache_table$data_type, sep = "_")
 
-    ## Merge into single SummarizedExperiment object
+    ## Merge into single TreeSummarizedExperiment object
     merged_se <- mergeExperiments(se_list)
 
     ## Add sample metadata
@@ -357,19 +357,19 @@ listMetagenomicData <- function() {
     return(data_tbl)
 }
 
-#' @title Add sample metadata to SummarizedExperiment object as colData
+#' @title Add sample metadata to TreeSummarizedExperiment object as colData
 #' @description 'add_metadata' uses the IDs of samples included in a
-#' SummarizedExperiment object to attach sample metadata as colData. This new
-#' metadata can combine with pre-existing colData.
+#' TreeSummarizedExperiment object to attach sample metadata as colData. This
+#' new metadata can combine with pre-existing colData.
 #' @param sample_ids Vector of strings: sample IDs, such as UUIDs, that will be
 #' used to attach samples to their sampleMetadata
 #' @param id_col String: column name within sampleMetadata where 'sample_ids'
 #' will be found, Default: 'uuid'
-#' @param experiment SummarizedExperiment object: contains samples to add
+#' @param experiment TreeSummarizedExperiment object: contains samples to add
 #' metadata to
 #' @param method String: 'append', 'overwrite', or 'ignore', indicating how to
 #' handle duplicate colData columns, Default: 'append'
-#' @return SummarizedExperiment object with sampleMetadata stored as colData
+#' @return TreeSummarizedExperiment object with sampleMetadata stored as colData
 #' @details  sampleMetadata columns found to have the same name as pre-existing
 #' colData columns can be either appended (preserving both duplicate columns),
 #' used to overwrite the pre-existing columns (leaving only the new version of
@@ -390,19 +390,19 @@ listMetagenomicData <- function() {
 #' }
 #' @seealso
 #'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #' @rdname add_metadata
 #' @export
 #' @importFrom S4Vectors DataFrame
-#' @importFrom SummarizedExperiment colData
+#' @importFrom TreeSummarizedExperiment colData
 add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "append") {
     ## Check that the length of sample_ids matches the number of samples
     if (length(sample_ids) != ncol(experiment)) {
         stop("'sample_ids' has a different number of samples than 'experiment'.")
     }
 
-    ## Check that 'experiment' is a SummarizedExperiment object
-    stopifnot(class(experiment)[1] == "SummarizedExperiment")
+    ## Check that 'experiment' is a TreeSummarizedExperiment object
+    stopifnot(class(experiment)[1] == "TreeSummarizedExperiment")
 
     ## Retrieve sample metadata
     meta <- sampleMetadata
@@ -447,14 +447,14 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     return(experiment)
 }
 
-#' @title Merge SummarizedExperiment objects with the same assay types together
-#' @description 'mergeExperiments' takes a list of SummarizedExperiment objects
+#' @title Merge TreeSummarizedExperiment objects with the same assay types together
+#' @description 'mergeExperiments' takes a list of TreeSummarizedExperiment objects
 #' with the same assays but different samples, and combines them into a single
-#' SummarizedExperiment object.
-#' @param merge_list List of SummarizedExperiment objects: to be merged into a
-#' single SummarizedExperiment object
-#' @return SummarizedExperiment object with multiple samples
-#' @details The assays contained in the SummarizedExperiments to be merged must
+#' TreeSummarizedExperiment object.
+#' @param merge_list List of TreeSummarizedExperiment objects: to be merged into a
+#' single TreeSummarizedExperiment object
+#' @return TreeSummarizedExperiment object with multiple samples
+#' @details The assays contained in the TreeSummarizedExperiments to be merged must
 #' be of the same type (i.e. have the same name) and be in the same order if
 #' there are multiple assays.
 #' @examples
@@ -470,7 +470,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' }
 #' @seealso
 #'  \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{c("SummarizedExperiment-class", "SummarizedExperiment")}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{c("TreeSummarizedExperiment-class", "TreeSummarizedExperiment")}}
 #'  \code{\link[tibble]{rownames}}
 #'  \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
 #'  \code{\link[tidyselect]{everything}}
@@ -480,7 +480,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' @rdname mergeExperiments
 #' @export
 #' @importFrom purrr map_chr map reduce
-#' @importFrom SummarizedExperiment assayNames assay rowData colData SummarizedExperiment
+#' @importFrom TreeSummarizedExperiment assayNames assay rowData colData TreeSummarizedExperiment
 #' @importFrom tibble rownames_to_column column_to_rownames
 #' @importFrom dplyr full_join mutate across bind_rows
 #' @importFrom tidyselect everything
@@ -488,14 +488,14 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' @importFrom S4Vectors SimpleList DataFrame
 #' @importFrom magrittr set_names
 mergeExperiments <- function(merge_list) {
-    ## Check that list contains more than one SummarizedExperiment
+    ## Check that list contains more than one TreeSummarizedExperiment
     if (length(merge_list) == 1) {
         return(merge_list[[1]])
     }
 
     for (i in seq_along(merge_list)) {
-        if (class(merge_list[[i]])[1] != "SummarizedExperiment") {
-            stop(paste0("The list item at index = ", i, " is not a SummarizedExperiment object."))
+        if (class(merge_list[[i]])[1] != "TreeSummarizedExperiment") {
+            stop(paste0("The list item at index = ", i, " is not a TreeSummarizedExperiment object."))
         }
     }
 
@@ -553,9 +553,9 @@ mergeExperiments <- function(merge_list) {
         tibble::column_to_rownames() |>
         S4Vectors::DataFrame()
 
-    ## Reformat as SummarizedExperiment
-    se <- SummarizedExperiment::SummarizedExperiment(assays = assay_list,
-                                                     rowData = rowData,
-                                                     colData = colData)
+    ## Reformat as TreeSummarizedExperiment
+    se <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = assay_list,
+                                                             rowData = rowData,
+                                                             colData = colData)
     return(se)
 }

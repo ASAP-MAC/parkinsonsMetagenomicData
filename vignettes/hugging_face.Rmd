@@ -76,7 +76,7 @@ In the standard workflow, we have two main wrapper functions `accessParquetData`
 and `loadParquetData`. `accessParquetData` sets up a DuckDB connection to the
 parquet files hosted in Hugging Face. `loadParquetData` then takes an argument
 for data type, and optionally arguments for specific sample UUIDs or a custom
-filtering function and loads the requested data into R as a Summarized
+filtering function and loads the requested data into R as a Tree Summarized
 Experiment.
 
 ## Selecting Samples
@@ -113,7 +113,7 @@ con <- accessParquetData()
 ## Loading into R
 
 We then provide that DuckDB connection object, our choice of data type/view, and
-our list of UUIDs to `loadParquetData` and receive a Summarized Experiment
+our list of UUIDs to `loadParquetData` and receive a Tree Summarized Experiment
 object.
 
 ```{r load_wrapper}
