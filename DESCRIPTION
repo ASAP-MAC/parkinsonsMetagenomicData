@@ -4,12 +4,23 @@ Version: 0.1.2
 Authors@R: person("Kaelyn", "Long", email = "kaleyn.long@sph.cuny.edu", role = c("aut", "cre"))
 Maintainer: Kaelyn Long <kaleyn.long@sph.cuny.edu>
 Description: Provides functions to retrieve raw tabular data from Google Cloud Bucket or Hugging Face, starting from a pre-built sample metadata file. Outputs a TreeSummarizedExperiment object as the final result.
-License: GPL-3
+License: Artistic-2.0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: R (>= 4.4.0)
-Imports: tidyverse, TreeSummarizedExperiment, SummarizedExperiment
+Imports: 
+    dplyr,
+    tidyr,
+    tibble,
+    readr,
+    stringr,
+    purrr,
+    tidyselect,
+    httr,
+    jsonlite,
+    TreeSummarizedExperiment, 
+    SummarizedExperiment
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
