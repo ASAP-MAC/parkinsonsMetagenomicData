@@ -1,21 +1,21 @@
 #### Functions to parse different pMD output files
 
 #' @title Parse basic MetaPhlAn output for a single sample as a
-#' SummarizedExperiment object
+#' TreeSummarizedExperiment object
 #' @description 'parse_metaphlan_list' reads a file obtained from running
 #' MetaPhlAn for microbial profiling (with or without unclassified fraction
 #' estimation) or viral sequence cluster analysis. This file is parsed into a
-#' SummarizedExperiment object.
+#' TreeSummarizedExperiment object.
 #' @param sample_id String: A sample identifier
 #' @param file_path String: Path to a locally stored MetaPhlAn output file in
 #' TSV format
 #' @param data_type String: The type of MetaPhlAn output file to be parsed,
 #' either 'relative_abundance' or 'viral_clusters'
-#' @return A SummarizedExperiment object with process metadata, row data, column
+#' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @details This function does not integrate sample metadata as column data. The
 #' provided sample_id is used as the column name for assays within the
-#' SummarizedExperiment object and is intended to be used for integration of
+#' TreeSummarizedExperiment object and is intended to be used for integration of
 #' sample metadata.
 #' @examples
 #' \dontrun{
@@ -31,12 +31,12 @@
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_metaphlan_list
 #' @export
 #' @importFrom readr read_tsv
 #' @importFrom S4Vectors DataFrame
-#' @importFrom SummarizedExperiment SummarizedExperiment
+#' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     ## Confirm data_type input is valid
     confirm_data_type(data_type, "subdir", "metaphlan_lists")
@@ -126,29 +126,29 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     }
 
     ## Combine process metadata, row data, sample ID, and assays into
-    ## SummarizedExperiment object
-    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
-                                                     rowData = rdata,
-                                                     colData = cdata,
-                                                     metadata = meta_list)
+    ## TreeSummarizedExperiment object
+    ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
+                                                             rowData = rdata,
+                                                             colData = cdata,
+                                                             metadata = meta_list)
 
     return(ex)
 }
 
-#' @title Parse HUMAnN output for a single sample as a SummarizedExperiment
+#' @title Parse HUMAnN output for a single sample as a TreeSummarizedExperiment
 #' object
 #' @description 'parse_humann' reads a file obtained from running HUMAnN on a
-#' single sample. This file is parsed into a SummarizedExperiment object.
+#' single sample. This file is parsed into a TreeSummarizedExperiment object.
 #' @param sample_id String: A sample identifier
 #' @param file_path String: Path to a locally stored HUMAnN output file in
 #' gzipped TSV format
 #' @param data_type String: The type of HUMAnN output file to be parsed, as
 #' found in output_file_types("tool", "humann")
-#' @return A SummarizedExperiment object with process metadata, row names,
+#' @return A TreeSummarizedExperiment object with process metadata, row names,
 #' column names, and relevant assays.
 #' @details This function does not integrate sample metadata as column data. The
 #' provided sample_id is used as the column name for assays within the
-#' SummarizedExperiment object and is intended to be used for integration of
+#' TreeSummarizedExperiment object and is intended to be used for integration of
 #' sample metadata.
 #' @examples
 #' \dontrun{
@@ -159,12 +159,12 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_humann
 #' @export
 #' @importFrom readr read_tsv
 #' @importFrom S4Vectors make_zero_col_DFrame
-#' @importFrom SummarizedExperiment SummarizedExperiment
+#' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 parse_humann <- function(sample_id, file_path, data_type) {
     ## Confirm data_type input is valid
     confirm_data_type(data_type, "tool", "humann")
@@ -200,10 +200,10 @@ parse_humann <- function(sample_id, file_path, data_type) {
     alist <- list(thisassay)
     names(alist) <- aname
 
-    ## Combine sample ID, assays, and row names into SummarizedExperiment object
-    ex <- SummarizedExperiment::SummarizedExperiment(assays = alist,
-                                                     rowData = rdata,
-                                                     colData = cdata)
+    ## Combine sample ID, assays, and row names into TreeSummarizedExperiment object
+    ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
+                                                             rowData = rdata,
+                                                             colData = cdata)
 
 
     return(ex)

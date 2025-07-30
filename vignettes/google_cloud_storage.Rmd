@@ -107,7 +107,7 @@ datatable(cache_tbl, extensions = "Responsive")
 ### Automatic Experiment Setup (MetaPhlAn and HUMAnN output files only)
 
 The above table can then be supplied to `loadMetagenomicData` and the cached
-files will be parsed into a single SummarizedExperiment object with sample
+files will be parsed into a single TreeSummarizedExperiment object with sample
 metadata. At this point, only the `metaphlan_lists` data types,
 `viral_clusters` and `relative_abundance`, as well as all `humann` data_types,
 are compatible with this function.
@@ -123,7 +123,7 @@ merged_experiment
 ### Stepwise Experiment Setup
 
 Alternatively, we can parse the files, add metadata, and merge the
-SummarizedExperiment objects in separate steps.
+TreeSummarizedExperiment objects in separate steps.
 
 `parse_metaphlan_list` completes the first step for files with 'data_type' equal
 to "relative_abundance" or "viral_clusters". `parse_humann` is also available
@@ -141,7 +141,7 @@ for (i in 1:nrow(cache_tbl)) {
 }
 ```
 
-Once the files have been loaded as SummarizedExperiment objects, matching assays
+Once the files have been loaded as TreeSummarizedExperiment objects, matching assays
 from multiple samples can be merged together with `mergeExperiments`.
 
 ```{r}

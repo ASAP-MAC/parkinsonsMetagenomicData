@@ -66,9 +66,6 @@ view_parquet <- function(con, httpfs_url = NULL, data_type) {
                         " AS (SELECT * FROM read_parquet('", httpfs_url,
                         data_type, ".parquet'));")
     DBI::dbExecute(con, statement)
-
-    ## Notify of success
-    message(paste0("'", data_type, "' data has been saved as a database view named '", data_type, "'."))
 }
 
 #' @title Create database views for all available data types
@@ -124,12 +121,13 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 
 #' @title Convert tabulated parquet file data to a Summarized Experiment
 #' @description 'parquet_to_tse' takes tabulated data from a parquet file to a
-#' Summarized Experiment object.
+#' Summarized Experiment object. Associated sample metadata is automatically
+#' attached as colData.
 #' @param parquet_table Table or data frame: data taken directly from a parquet
 #' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
 #' @param data_type Single string: value found in the data_type' column of
 #' output_file_types() and also as the name of a file in the repo of interest.
-#' @return A SummarizedExperiment object with process metadata, row data, column
+#' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @examples
 #' \dontrun{
@@ -149,7 +147,7 @@ retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
 #'  \code{\link[tidyr]{pivot_wider}}
 #'  \code{\link[tibble]{rownames}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parquet_to_tse
 #' @export
 #' @importFrom dplyr rowwise mutate select
@@ -185,7 +183,7 @@ parquet_to_tse <- function(parquet_table, data_type) {
     ## Create rowData table
     rdata <- converted_table %>%
         select(any_of(c(rnames_col, rdata_cols))) %>%
-        dplyr::distinct() %>% 
+        dplyr::distinct() %>%
       as.data.frame()
     rownames(rdata) <- rdata[[rnames_col]]
 
@@ -203,23 +201,22 @@ parquet_to_tse <- function(parquet_table, data_type) {
     }, USE.NAMES = TRUE, simplify = FALSE)
 
     ## Set sample IDs as column name
-    cdata <- sampleMetadata %>% 
+    cdata <- sampleMetadata %>%
       filter(uuid %in% unique(converted_table$uuid))
     rownames(cdata) <- cdata$uuid
-    
+
     # make sure rows and columns are in the same order
     featureIDs <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
     uuids <- unique(converted_table$uuid)
-    
+
     rdata <- rdata[featureIDs,, drop = FALSE]
     cdata <- cdata[uuids,, drop = FALSE]
     alist <- lapply(alist, function(x) x[featureIDs, uuids])
-    
+
     ## Create and return Summarized Experiment object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
-                                                     rowData = DataFrame(rdata),
-                                                     colData = DataFrame(cdata)
-                                                     )
+                                                             rowData = DataFrame(rdata),
+                                                             colData = DataFrame(cdata))
 
     return(ex)
 }
@@ -263,7 +260,11 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
 }
 
 #' @title Retrieve data from a DuckDB view and convert to Summarized Experiment
-#' @description 'loadParquetData' accesses a view created
+#' @description 'loadParquetData' accesses a DuckDB view created by
+#' 'accessParquetData' and loads it into R as a Summarized Experiment object.
+#' Arguments can be provided to filter the DuckDB view, either by providing a
+#' list of UUIDs or a saved sequence of function calls using dplyr::tbl to
+#' access the view.
 #' @param con DuckDB connection object of class 'duckdb_connection'
 #' @param data_type Single string: value found in the data_type' column of
 #' output_file_types() and also as the name of a view found in
@@ -325,8 +326,8 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
             stop("'custom_view' should be of the class 'tbl_duckdb_connection'.")
         }
         if (custom_view$lazy_query$x$x != data_type) {
-            stop(paste0("'custom_filter' uses the view '",
-                        custom_filter$lazy_query$x$x,
+            stop(paste0("'custom_view' uses the view '",
+                        custom_view$lazy_query$x$x,
                         "', but 'data_type' equals '", data_type, "'."))
         }
     }
@@ -349,7 +350,7 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
             dplyr::collect()
     }
 
-    ## Transform into SummarizedExperiment
+    ## Transform into TreeSummarizedExperiment
     exp <- parquet_to_tse(collected_view, data_type)
 
     return(exp)
