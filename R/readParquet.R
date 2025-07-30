@@ -357,3 +357,121 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
 }
 
 
+#' Get Parquet File URLs and Metadata from a Hugging Face Repository
+#'
+#' This function queries the Hugging Face Hub API to find all Parquet files
+#' within a specified dataset repository. It constructs the direct download URLs
+#' and then joins this information with a local file containing definitions
+#' for bioBakery data types.
+#'
+#' @details The metadata is sourced from the "biobakery-file-definitions.csv"
+#'   file, which is expected to be in the `inst/extdata` directory of the
+#'   `parkinsonsMetagenomicData` package. If this package is not available,
+#'   the metadata columns will be populated with `NA`.
+#'
+#' @param repo_name A character string specifying the Hugging Face dataset
+#'   repository name in the format "user/repo" or "org/repo".
+#'   Defaults to "waldronlab/metagenomics_mac".
+#' @return A data.frame with the following columns:
+#'   \describe{
+#'     \item{filename}{The name of the Parquet file.}
+#'     \item{URL}{The full download URL for the file.}
+#'     \item{DataType}{The base name of the file, used for joining with metadata.}
+#'     \item{Tool}{The bioBakery tool that typically produces the data type.}
+#'     \item{Description}{A brief description of the data type.}
+#'     \item{Units.Normalization}{The units or normalization method used.}
+#'   }
+#' @export
+#' @importFrom httr GET status_code content
+#' @importFrom jsonlite fromJSON
+#' @importFrom dplyr left_join mutate
+#' @importFrom utils read.csv
+#'
+#' @examples
+#'   # Get file URLs and metadata from the default repository
+#'   file_info <- get_hf_parquet_urls()
+#'   head(file_info)
+get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
+    # --- Step 1: Construct API URL and get repo info ---
+    repo_api_url <- paste0("https://huggingface.co/api/datasets/", repo_name)
+
+    # Make the GET request
+    response <- httr::GET(repo_api_url)
+
+    # Check the status code before parsing
+    if (httr::status_code(response) != 200) {
+        stop(
+            "Failed to get repo info from Hugging Face API for '", repo_name, "'.\n",
+            "Status code: ", httr::status_code(response), ".\n",
+            "Please check if the repository name is correct and public. ",
+            "The server may also be rate-limiting your IP."
+        )
+    }
+
+    # Parse the JSON response content
+    repo_info <- jsonlite::fromJSON(rawToChar(response$content))
+
+    # --- Step 2: Filter for Parquet files ---
+    if (is.null(repo_info$siblings) || is.null(repo_info$siblings$rfilename)) {
+        stop("Could not find file listing in the API response for '", repo_name, "'.")
+    }
+
+    all_files <- repo_info$siblings$rfilename
+    parquet_files <- all_files[endsWith(all_files, ".parquet")]
+
+    if (length(parquet_files) == 0) {
+        message("No Parquet files found in the '", repo_name, "' repository.")
+        # Return an empty data.frame with the correct structure
+        return(data.frame(
+            filename = character(0), URL = character(0), DataType = character(0),
+            Tool = character(0), Description = character(0),
+            Units.Normalization = character(0),
+            stringsAsFactors = FALSE
+        ))
+    }
+
+    # --- Step 3: Create the full URLs for each file ---
+    base_url <- paste0("https://huggingface.co/datasets/", repo_name, "/resolve/main/")
+    parquet_urls <- paste0(base_url, parquet_files)
+
+    message("Found ", length(parquet_urls), " Parquet file(s) in '", repo_name, "'.")
+
+    # --- Step 4: Create initial data.frame ---
+    result_df <- data.frame(
+        filename = parquet_files,
+        URL = parquet_urls,
+        stringsAsFactors = FALSE
+    )
+
+    # --- Step 5: Read definitions and join with file list ---
+    def_path <- system.file(
+        "extdata", "biobakery-file-definitions.csv",
+        package = "parkinsonsMetagenomicData"
+    )
+
+    # Create DataType column for joining
+    result_df <- dplyr::mutate(
+        result_df,
+        DataType = sub("\\.parquet$", "", filename)
+    )
+
+    if (nzchar(def_path) && file.exists(def_path)) {
+        message("Found definitions file. Joining metadata.")
+        definitions <- utils::read.csv(def_path, stringsAsFactors = FALSE)
+
+        # Perform the join
+        result_df <- dplyr::left_join(result_df, definitions, by = "DataType")
+
+    } else {
+        message(
+            "Data type definition file not found. ",
+            "Install 'parkinsonsMetagenomicData' to add full metadata."
+        )
+        # Add empty columns so the function always returns the same structure
+        result_df$Tool <- NA_character_
+        result_df$Description <- NA_character_
+        result_df$Units.Normalization <- NA_character_
+    }
+
+    return(result_df)
+}
