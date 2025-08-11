@@ -339,12 +339,20 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
     } else {
         working_view <- dplyr::tbl(con, data_type)
     }
+
     # Filter for uuids if provided
     if (!is.null(uuids)) {
-        patt <- paste(uuids, collapse = "|")
-        collected_view <- working_view |>
-            dplyr::filter(grepl(patt, filename)) |>
-            dplyr::collect()
+        dt_info <- output_file_types("data_type", data_type)
+        full_paths <- paste0("gs://metagenomics-mac/results/cMDv4/", uuids, "/",
+                             dt_info$subdir, dt_info$file_name)
+        collected_views <- vector("list", length(full_paths))
+        for (i in seq_along(full_paths)) {
+            p <- full_paths[i]
+            collected_views[[i]] <- working_view |>
+                dplyr::filter(filename == p) |>
+                dplyr::collect()
+        }
+        collected_view <- bind_rows(collected_views)
     } else {
         collected_view <- working_view |>
             dplyr::collect()
