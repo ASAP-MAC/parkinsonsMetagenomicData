@@ -29,7 +29,11 @@ A TreeSummarizedExperiment object with process metadata, row data, column
 names, and relevant assays.
 }
 \description{
-'loadParquetData' accesses a view created
+'loadParquetData' accesses a DuckDB view created by
+'accessParquetData' and loads it into R as a Summarized Experiment object.
+Arguments can be provided to filter the DuckDB view, either by providing a
+list of UUIDs or a saved sequence of function calls using dplyr::tbl to
+access the view.
 }
 \details{
 If 'custom_view' is provided, it must use the view indicated by

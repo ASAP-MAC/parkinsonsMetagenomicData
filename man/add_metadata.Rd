@@ -2,7 +2,7 @@
 % Please edit documentation in R/getMetagenomicData.R
 \name{add_metadata}
 \alias{add_metadata}
-\title{Add sample metadata to SummarizedExperiment object as colData}
+\title{Add sample metadata to TreeSummarizedExperiment object as colData}
 \usage{
 add_metadata(sample_ids, id_col = "uuid", experiment, method = "append")
 }
@@ -13,19 +13,19 @@ used to attach samples to their sampleMetadata}
 \item{id_col}{String: column name within sampleMetadata where 'sample_ids'
 will be found, Default: 'uuid'}
 
-\item{experiment}{SummarizedExperiment object: contains samples to add
+\item{experiment}{TreeSummarizedExperiment object: contains samples to add
 metadata to}
 
 \item{method}{String: 'append', 'overwrite', or 'ignore', indicating how to
 handle duplicate colData columns, Default: 'append'}
 }
 \value{
-SummarizedExperiment object with sampleMetadata stored as colData
+TreeSummarizedExperiment object with sampleMetadata stored as colData
 }
 \description{
 'add_metadata' uses the IDs of samples included in a
-SummarizedExperiment object to attach sample metadata as colData. This new
-metadata can combine with pre-existing colData.
+TreeSummarizedExperiment object to attach sample metadata as colData. This
+new metadata can combine with pre-existing colData.
 }
 \details{
 sampleMetadata columns found to have the same name as pre-existing
@@ -50,5 +50,5 @@ if(interactive()){
 }
 \seealso{
 \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-\code{\link[SummarizedExperiment]{SummarizedExperiment-class}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 }

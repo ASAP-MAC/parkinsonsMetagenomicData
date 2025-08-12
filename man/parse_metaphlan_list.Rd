@@ -3,7 +3,7 @@
 \name{parse_metaphlan_list}
 \alias{parse_metaphlan_list}
 \title{Parse basic MetaPhlAn output for a single sample as a
-SummarizedExperiment object}
+TreeSummarizedExperiment object}
 \usage{
 parse_metaphlan_list(sample_id, file_path, data_type)
 }
@@ -17,19 +17,19 @@ TSV format}
 either 'relative_abundance' or 'viral_clusters'}
 }
 \value{
-A SummarizedExperiment object with process metadata, row data, column
+A TreeSummarizedExperiment object with process metadata, row data, column
 names, and relevant assays.
 }
 \description{
 'parse_metaphlan_list' reads a file obtained from running
 MetaPhlAn for microbial profiling (with or without unclassified fraction
 estimation) or viral sequence cluster analysis. This file is parsed into a
-SummarizedExperiment object.
+TreeSummarizedExperiment object.
 }
 \details{
 This function does not integrate sample metadata as column data. The
 provided sample_id is used as the column name for assays within the
-SummarizedExperiment object and is intended to be used for integration of
+TreeSummarizedExperiment object and is intended to be used for integration of
 sample metadata.
 }
 \examples{
@@ -47,5 +47,5 @@ if(interactive()){
 \seealso{
 \code{\link[readr]{read_delim}}
 \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-\code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }

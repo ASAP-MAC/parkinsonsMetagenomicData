@@ -109,21 +109,16 @@ parquet_colinfo <- function(data_type) {
     return(rel_cols)
 }
 
-#' @title Return a URL associated with repo of parquet files
-#' @description 'get_parquet_url' returns a URL associated with a repo that
-#' holds data in the form of parquet files. The version can be specified, or the
-#' latest version can be automatically returned.
-#' @param url_type String: either 'repo', 'file', or 'httpfs'. Indicates which type of URL
-#' to return. 'repo' is the URL of the full repo, 'file' is the prefix to use
-#' when downloading files through standard protocols, and 'httpfs' is the prefix
-#' to use when using DuckDB/DBI to download files.
-#' @param version String: which numbered version of the repo to retrieve, or the
-#' string 'latest' to return the latest version. Default: 'latest'
-#' @return String: URL associated with a parquet file repo
+#' @title Return a table with information about available Hugging Face repos.
+#' @description 'get_repo_info' returns a table of information associated with
+#' each Hugging Face repo that contains relevant parquet files.
+#' @return Data frame: A table of repo information, including information on
+#' overall organization, name, URL, and whether or not the repo is the selected
+#' default.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  get_parquet_url("repo", "latest")
+#'  get_repo_info()
 #'  }
 #' }
 #' @seealso
@@ -131,38 +126,36 @@ parquet_colinfo <- function(data_type) {
 #' @rdname get_parquet_url
 #' @export
 #' @importFrom readr read_csv
-get_parquet_url <- function(url_type, version = "latest") {
-    ## Confirm url_type
-    url_ind <- substr(tolower(url_type), 1, 1)
-
-    if (!url_ind %in% c("r", "f", "h")) {
-        stop(paste0("'", url_type, "' is not a valid 'url_type'. Please enter 'repo', 'file', or 'httpfs'."))
-    }
-
+get_repo_info <- function() {
     ## Load in parquet repo URL table
     fpath <- system.file("extdata", "parquet_repos.csv",
                          package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
 
-    if (version == "latest") {
-        p_row <- ftable[ftable$latest == "Y"]
-    } else {
-        if (!version %in% ftable$version) {
-            stop(paste0("'", version, "' is not a valid version. Please enter a different version or 'latest'."))
-        }
-        p_row <- ftable[ftable$version == version]
-    }
+    return(ftable)
+}
 
-    if (url_ind == "h") {
-        p_url <- p_row$httpfs_url
-    } else if (url_ind == "f") {
-        p_url <- p_row$file_url
-    } else if (url_ind == "r") {
-        p_url <- p_row$repo_url
-    }
+#' @title Convert standard https:// URLs to httpfs-compatible hf:// URLs
+#' @description 'file_to_hf' converts standard https:// URLs representing files
+#' in a Hugging Face repo to URLs compatible with httpfs as described in the
+#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
+#' @param url String: a URL referencing a single file in a Hugging Face repo.
+#' @return String: a URL referencing the same file in a format matching the
+#' httpfs protocol.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  file_to_hf("https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/relative_abundance.parquet")
+#'  }
+#' }
+#' @export
+file_to_hf <- function(url) {
+    hf_url <- url |>
+        gsub(pattern = "https://huggingface.co/", replacement = "hf://") |>
+        gsub(pattern = "resolve/main/", replacement = "")
 
-    return(p_url)
+    return(hf_url)
 }
 
 #' @title Return all "extensions" from a file path
@@ -304,5 +297,32 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 confirm_duckdb_con <- function(con) {
     if (class(con)[1] != "duckdb_connection") {
         stop("Please provide a valid 'duckdb_connection' object.")
+    }
+}
+
+#' @title Validate 'repo' argument
+#' @description 'confirm_repo' checks that a single string is a valid repo name
+#' as listed in get_repo_info() or a NULL value.
+#' @param repo String or NULL: input to be validated
+#' @return NULL
+#' @details This function is intended to be used within another function as
+#' input validation. If the input is valid, nothing will happen. If it is not,
+#' the function will throw a 'stop()' error.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  confirm_repo(NULL)
+#'  confirm_repo("horse")
+#'  confirm_repo("metagenomics_mac")
+#'  }
+#' }
+#' @rdname confirm_repo
+#' @export
+confirm_repo <- function(repo) {
+    ri <- get_repo_info()
+    d <- ri$repo_name[ri$default == "Y"]
+
+    if (!is.null(repo) && !repo %in% ri$repo_name) {
+        stop(paste0("Please provide one of the following valid repo names or NULL to select the default (", d, "):\n", paste(ri$repo_name, collapse = ", ")))
     }
 }
