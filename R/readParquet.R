@@ -281,7 +281,7 @@ parquet_to_tse <- function(parquet_table, data_type) {
 #' }
 #' @rdname accessParquetData
 #' @export
-accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
+accessParquetData <- function(dbdir = ":memory:", repo = NULL ,
                               data_types = NULL) {
     ## Check input
     # data_types
@@ -291,7 +291,7 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
     con <- db_connect(dbdir)
 
     ## Create views from Hugging Face repo
-    retrieve_views(con, repo_version, data_types)
+    retrieve_views(con, repo, data_types)
 
     ## Return connection
     return(con)
@@ -342,14 +342,15 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
 #' @export
 #' @importFrom DBI dbListTables
 #' @importFrom dplyr tbl filter collect
-loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
+loadParquetData <- function(con, data_type, uuids = NULL, feature_name = NULL,
+                            feature_value = NULL, custom_view = NULL) {
     ## Check input
     # con
     confirm_duckdb_con(con)
 
     # data_type
     confirm_data_type(data_type)
-    if (!data_type %in% DBI::dbListTables(con)) {
+    if (!any(grepl(data_type, DBI::dbListTables(con)))) {
         stop(paste0("'", data_type, "' is not available as a database view."))
     }
 
@@ -357,6 +358,9 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
     if (!is.null(uuids)) {
         confirm_uuids(uuids)
     }
+
+    # feature_name
+    list_struct_cols(con, data_type)
 
     # custom_view
     if (!is.null(custom_view)) {
@@ -520,4 +524,46 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
     }
 
     return(result_df)
+}
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param con PARAM_DESCRIPTION
+#' @param table PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[DBI]{dbGetQuery}}
+#'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
+#'  \code{\link[stringr]{str_remove}}, \code{\link[stringr]{str_split}}, \code{\link[stringr]{str_extract}}
+#'  \code{\link[tidyr]{unnest}}
+#' @rdname list_struct_cols
+#' @export
+#' @importFrom DBI dbGetQuery
+#' @importFrom dplyr filter mutate select
+#' @importFrom stringr str_remove str_split str_extract
+#' @importFrom tidyr unnest
+list_struct_cols <- function(con, table) {
+    ## Get table schema
+    schema <- DBI::dbGetQuery(con, paste0("PRAGMA table_info('", table, "')"))
+
+    ## Extract struct info
+    struct_cols <- schema %>%
+        dplyr::filter(grepl("^STRUCT", type)) %>%
+        dplyr::mutate(type_clean = stringr::str_remove(type, "^STRUCT\\(") %>%
+                          stringr::str_remove("\\)$"),
+               fields = stringr::str_split(type_clean, ",\\s*")) %>%
+        dplyr::select(name, fields) %>%
+        tidyr::unnest(fields) %>%
+        dplyr::mutate(subfield = stringr::str_extract(fields, "^[^ ]+"),
+                      subfield_type = stringr::str_extract(fields, "(?<= )[^ ]+")) %>%
+        dplyr::select(struct_column = name, subfield, subfield_type)
+
+    return(struct_cols)
 }
