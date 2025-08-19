@@ -62,6 +62,32 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     return(ftable)
 }
 
+#' @title Read in extdata/biobakery_file_definitions.csv
+#' @description 'biobakery_files' reads in the table
+#' extdata/biobakery_file_definitions.csv.
+#' @return Tibble with columns 'DataType', 'Tool', 'Description', and
+#' Units/Normalization'
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  biobakery_files()
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#' @rdname biobakery_files
+#' @export
+#' @importFrom readr read_csv
+biobakery_files <- function() {
+    ## Read file
+    fpath <- system.file("extdata", "biobakery_file_definitions.csv",
+                         package = "parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
+
+    return(ftable)
+}
+
 #' @title Retrieve column info for parquet files based on original file type
 #' @description 'parquet_colinfo' returns the column info associated with a
 #' parquet file made from a particular output file type.
@@ -107,6 +133,50 @@ parquet_colinfo <- function(data_type) {
         dplyr::arrange(position)
 
     return(rel_cols)
+}
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param con PARAM_DESCRIPTION
+#' @param data_type PARAM_DESCRIPTION
+#' @param feature_name PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[DBI]{dbListTables}}
+#' @rdname pick_projection
+#' @export
+#' @importFrom DBI dbListTables
+pick_projection <- function(con, data_type, feature_name) {
+    ## Find available views
+    tbs <- DBI::dbListTables(con)
+
+    ## Filter for views that match data_type
+    dt_tbs <- tbs[grepl(paste0("^", data_type, "(_|$)"), tbs)]
+
+    if (length(dt_tbs) == 0) {
+        stop(paste0("'", data_type, "' does not match any existing views." ))
+    }
+
+    ## Convert feature_name to projection_code if exists
+    dict <- parquet_colinfo(data_type)
+    code <- dict$projection_code[dict$col_name == feature_name]
+
+    ## Default code to "uuid" if no exact projection
+    if (length(code) == 0) {
+        code <- "uuid"
+    }
+
+    ## Select projection
+    proj <- paste0(data_type, "_", code)
+
+    return(proj)
 }
 
 #' @title Return a table with information about available Hugging Face repos.

@@ -20,8 +20,10 @@ repository. The majority of the studies listed in the table
 are available for retrieval with this package.
 
 To browse the available data, load the `sampleMetadata` object included in this
-package. Additionally, calling `output_file_types()` will provide a list of the
-different output file types that are available for each sample.
+package. Additionally, calling `biobakery_files()` will provide a list of the
+different output file types that are available for each sample. For further
+information on the files and the columns that they contain, please see
+[file_types.md](file_types.md).
 
 ### Sample Metadata
 
@@ -100,13 +102,13 @@ options for data retrieval.
 The initial output location of the pipeline is the Google Cloud Bucket
 `gs://metagenomics-mac`, which requires credentials for access. The creation of
 these credentials is covered in the
-[Google Cloud Storage vignette](./vignettes/google_cloud_storage.html), and you
+[Google Cloud Storage vignette](vignettes/google_cloud_storage.Rmd), and you
 will need the owner of the Google Cloud Project within which the Bucket is
 contained to follow these steps and provide you with the resulting credentials.
 Once you have access to the Bucket, the data will be stored in individual files
 for each sample and output type, and can be accessed with the functions and
 workflows detailed in the
-[Google Cloud Storage vignette](./vignettes/google_cloud_storage.html).
+[Google Cloud Storage vignette](vignettes/google_cloud_storage.Rmd).
 
 ### Hugging Face
 
@@ -118,5 +120,5 @@ hosted publicly on Hugging Face in the
 These files are able to be easily accessed through the
 [DuckDB R client](https://duckdb.org/docs/stable/clients/r.html) and the
 functions and workflows detailed in the
-[Hugging Face vignette](./vignettes/hugging_face.html) streamline this process
+[Hugging Face vignette](vignettes/hugging_face.Rmd) streamline this process
 even further.

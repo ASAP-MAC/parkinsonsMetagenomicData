@@ -157,6 +157,52 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 }
 
+expand_structs <- function(.data) {
+    # peek at column types from the remote table
+    info <- DBI::dbGetQuery(
+        .data$src$con,
+        paste("DESCRIBE", dbplyr::remote_name(.data))
+    )
+
+    # find struct-typed columns
+    struct_cols <- info$column_name[grepl("^STRUCT", info$column_type, ignore.case = TRUE)]
+    if (length(struct_cols) == 0) return(.data)
+
+    # build mutate expressions for each struct field
+    field_exprs <- list()
+    for (sc in struct_cols) {
+        type <- info$column_type[info$column_name == sc]
+        fields <- type |>
+            gsub(pattern = "^STRUCT\\(|\\)$", replacement = "") |>
+            strsplit(", ") |>
+            unlist() |>
+            sub(pattern = " .*", replacement = "")
+        for (f in fields) {
+            field_exprs[[paste(sc, f, sep = "_")]] <- dbplyr::sql( paste0(sc, ".", f) )
+        }
+    }
+
+    dplyr::mutate(.data, !!!field_exprs)
+}
+
+filter_parquet <- function(.data, .values) {
+    if (!is.list(.values) || is.null(names(.values))) {
+        stop(".values must be a *named list* of column = values")
+    }
+
+    # build tibble of all combinations
+    filter_tbl <- tidyr::crossing(!!!.values)
+    colnames(filter_tbl) <- names(.values)
+
+    # rewrite $ to . for SQL compatibility
+    left_cols <- gsub("\\$", ".", names(.values))
+
+    # build join mapping
+    by_mapping <- setNames(names(.values), left_cols)
+
+    dplyr::inner_join(.data, filter_tbl, by = by_mapping, copy = TRUE)
+}
+
 #' @title Convert tabulated parquet file data to a Summarized Experiment
 #' @description 'parquet_to_tse' takes tabulated data from a parquet file to a
 #' Summarized Experiment object. Associated sample metadata is automatically
@@ -343,16 +389,17 @@ accessParquetData <- function(dbdir = ":memory:", repo = NULL ,
 #' @importFrom DBI dbListTables
 #' @importFrom dplyr tbl filter collect
 loadParquetData <- function(con, data_type, uuids = NULL, feature_name = NULL,
-                            feature_value = NULL, custom_view = NULL) {
+                            subfeature_name = NULL, feature_value = NULL,
+                            custom_view = NULL) {
     ## Check input
     # con
     confirm_duckdb_con(con)
 
     # data_type
     confirm_data_type(data_type)
-    if (!any(grepl(data_type, DBI::dbListTables(con)))) {
-        stop(paste0("'", data_type, "' is not available as a database view."))
-    }
+    #if (!any(grepl(data_type, DBI::dbListTables(con)))) {
+    #    stop(paste0("'", data_type, "' is not available as a database view."))
+    #}
 
     # uuids
     if (!is.null(uuids)) {
@@ -360,7 +407,23 @@ loadParquetData <- function(con, data_type, uuids = NULL, feature_name = NULL,
     }
 
     # feature_name
-    list_struct_cols(con, data_type)
+    colinfo <- parquet_colinfo(data_type)
+    if (!feature_name %in% colinfo$col_name) {
+        stop("'", feature_name, "' is not a valid feature in the data type '",
+             data_type, "'. Please choose one of the following:\n",
+             paste0(colinfo$col_name, collapse = ", "))
+    }
+
+    # subfeature_name
+    feat_levels <- colinfo$levels[colinfo$col_name == feature_name] |>
+        strsplit(split = ";") |>
+        unlist()
+
+    if (!subfeature_name %in% feat_levels) {
+        stop("'", subfeature_name, "' is not a valid level in the feature '",
+             feature_name, "'. Please choose one of the following:\n",
+             paste0(feat_levels, collapse = ", "))
+    }
 
     # custom_view
     if (!is.null(custom_view)) {
@@ -374,31 +437,59 @@ loadParquetData <- function(con, data_type, uuids = NULL, feature_name = NULL,
         }
     }
 
+    ## Select appropriate database view
+    proj <- pick_projection(con, data_type, feature_name)
+
     ## Load requested view into R object
     # Apply custom view if provided
     if (!is.null(custom_view)) {
         working_view <- custom_view
     } else {
-        working_view <- dplyr::tbl(con, data_type)
+        working_view <- dplyr::tbl(con, proj)
+    }
+
+    # Filter for feature if selected
+    if (!is.null(feature_name)) {
+        if (!is.null(subfeature_name)) {
+            filtered_view <- working_view |>
+                dplyr::filter(feature_name[[subfeature_name]] == feature_value)
+        } else {
+            filtered_view <- working_view |>
+                dplyr::filter(feature_name == feature_value)
+        }
     }
 
     # Filter for uuids if provided
     if (!is.null(uuids)) {
-        dt_info <- output_file_types("data_type", data_type)
-        full_paths <- paste0("gs://metagenomics-mac/results/cMDv4/", uuids, "/",
-                             dt_info$subdir, dt_info$file_name)
-        collected_views <- vector("list", length(full_paths))
-        for (i in seq_along(full_paths)) {
-            p <- full_paths[i]
-            collected_views[[i]] <- working_view |>
-                dplyr::filter(filename == p) |>
-                dplyr::collect()
+        for (id in uuids) {
+            uuid_view <- filtered_view |>
+                dplyr::filter(uuid == uuids)
         }
-        collected_view <- bind_rows(collected_views)
     } else {
-        collected_view <- working_view |>
-            dplyr::collect()
+        uuid_view <- filtered_view
     }
+
+    # Collect view
+    collected_view <- uuid_view |>
+        collect()
+
+    # Filter for uuids if provided
+    #if (!is.null(uuids)) {
+    #    dt_info <- output_file_types("data_type", data_type)
+    #    full_paths <- paste0("gs://metagenomics-mac/results/cMDv4/", uuids, "/",
+    #                         dt_info$subdir, dt_info$file_name)
+    #    collected_views <- vector("list", length(full_paths))
+    #    for (i in seq_along(full_paths)) {
+    #        p <- full_paths[i]
+    #        collected_views[[i]] <- working_view |>
+    #            dplyr::filter(filename == p) |>
+    #            dplyr::collect()
+    #    }
+    #    collected_view <- bind_rows(collected_views)
+    #} else {
+    #    collected_view <- working_view |>
+    #        dplyr::collect()
+    #}
 
     ## Transform into TreeSummarizedExperiment
     exp <- parquet_to_tse(collected_view, data_type)
@@ -495,7 +586,7 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
 
     # --- Step 5: Read definitions and join with file list ---
     def_path <- system.file(
-        "extdata", "biobakery-file-definitions.csv",
+        "extdata", "biobakery_file_definitions.csv",
         package = "parkinsonsMetagenomicData"
     )
 
