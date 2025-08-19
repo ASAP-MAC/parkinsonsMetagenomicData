@@ -157,50 +157,64 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 }
 
-expand_structs <- function(.data) {
-    # peek at column types from the remote table
-    info <- DBI::dbGetQuery(
-        .data$src$con,
-        paste("DESCRIBE", dbplyr::remote_name(.data))
-    )
+filter_parquet <- function(view, filter_values) {
+    ## Check input
+    # view
+    confirm_duckdb_view(view)
 
-    # find struct-typed columns
-    struct_cols <- info$column_name[grepl("^STRUCT", info$column_type, ignore.case = TRUE)]
-    if (length(struct_cols) == 0) return(.data)
+    # filter_values
+    confirm_filter_values(filter_values, colnames(view))
 
-    # build mutate expressions for each struct field
-    field_exprs <- list()
-    for (sc in struct_cols) {
-        type <- info$column_type[info$column_name == sc]
-        fields <- type |>
-            gsub(pattern = "^STRUCT\\(|\\)$", replacement = "") |>
-            strsplit(", ") |>
-            unlist() |>
-            sub(pattern = " .*", replacement = "")
-        for (f in fields) {
-            field_exprs[[paste(sc, f, sep = "_")]] <- dbplyr::sql( paste0(sc, ".", f) )
+    ## Order filter columns by selectivity
+    col_order <- names(sort(sapply(filter_values, length)))
+    first_col <- col_order[1]
+    first_vals <- filter_values[[first_col]]
+
+    ## Filter first column (most selective) using dplyr::union_all
+    result <- lapply(first_vals, function(val) {
+        dplyr::filter(view, !!rlang::sym(first_col) == val)
+    }) %>%
+        Reduce(dplyr::union_all, .)
+
+    ## Filter remaining columns (on smaller table)
+    remaining_cols <- setdiff(col_order, first_col)
+    for (col in remaining_cols) {
+        vals <- filter_values[[col]]
+        if (length(vals) == 1) {
+            result <- dplyr::filter(result, !!rlang::sym(col) == vals)
+        } else {
+            result <- dplyr::filter(result, !!rlang::sym(col) %in% vals)
         }
     }
 
-    dplyr::mutate(.data, !!!field_exprs)
+    return(result)
 }
 
-filter_parquet <- function(.data, .values) {
-    if (!is.list(.values) || is.null(names(.values))) {
-        stop(".values must be a *named list* of column = values")
-    }
+interpret_and_filter <- function(con, data_type, filter_values) {
+    ## Check input
+    # con
+    confirm_duckdb_con(con)
 
-    # build tibble of all combinations
-    filter_tbl <- tidyr::crossing(!!!.values)
-    colnames(filter_tbl) <- names(.values)
+    # data_type
+    confirm_data_type(data_type)
 
-    # rewrite $ to . for SQL compatibility
-    left_cols <- gsub("\\$", ".", names(.values))
+    # filter_values
+    confirm_filter_values(filter_values)
 
-    # build join mapping
-    by_mapping <- setNames(names(.values), left_cols)
+    ## Order filter columns by selectivity and select projection
+    col_order <- names(sort(sapply(filter_values, length)))
+    first_col <- col_order[1]
 
-    dplyr::inner_join(.data, filter_tbl, by = by_mapping, copy = TRUE)
+    # temporarily disabled: projection <- pick_projection(con, data_type, first_col)
+    projection <- data_type
+
+    ## Load the chosen view
+    chosen_view <- dplyr::tbl(con, projection)
+
+    ## Filter parquet by .values
+    queried_view <- filter_parquet(chosen_view, filter_values)
+
+    return(queried_view)
 }
 
 #' @title Convert tabulated parquet file data to a Summarized Experiment
@@ -388,8 +402,7 @@ accessParquetData <- function(dbdir = ":memory:", repo = NULL ,
 #' @export
 #' @importFrom DBI dbListTables
 #' @importFrom dplyr tbl filter collect
-loadParquetData <- function(con, data_type, uuids = NULL, feature_name = NULL,
-                            subfeature_name = NULL, feature_value = NULL,
+loadParquetData <- function(con, data_type, filter_values = NULL,
                             custom_view = NULL) {
     ## Check input
     # con
@@ -397,39 +410,15 @@ loadParquetData <- function(con, data_type, uuids = NULL, feature_name = NULL,
 
     # data_type
     confirm_data_type(data_type)
-    #if (!any(grepl(data_type, DBI::dbListTables(con)))) {
-    #    stop(paste0("'", data_type, "' is not available as a database view."))
-    #}
 
-    # uuids
-    if (!is.null(uuids)) {
-        confirm_uuids(uuids)
-    }
-
-    # feature_name
-    colinfo <- parquet_colinfo(data_type)
-    if (!feature_name %in% colinfo$col_name) {
-        stop("'", feature_name, "' is not a valid feature in the data type '",
-             data_type, "'. Please choose one of the following:\n",
-             paste0(colinfo$col_name, collapse = ", "))
-    }
-
-    # subfeature_name
-    feat_levels <- colinfo$levels[colinfo$col_name == feature_name] |>
-        strsplit(split = ";") |>
-        unlist()
-
-    if (!subfeature_name %in% feat_levels) {
-        stop("'", subfeature_name, "' is not a valid level in the feature '",
-             feature_name, "'. Please choose one of the following:\n",
-             paste0(feat_levels, collapse = ", "))
+    # filter_values
+    if (!is.null(filter_values)) {
+        confirm_filter_values(filter_values)
     }
 
     # custom_view
     if (!is.null(custom_view)) {
-        if (class(custom_view)[1] != "tbl_duckdb_connection") {
-            stop("'custom_view' should be of the class 'tbl_duckdb_connection'.")
-        }
+        confirm_duckdb_view(custom_view)
         if (custom_view$lazy_query$x$x != data_type) {
             stop(paste0("'custom_view' uses the view '",
                         custom_view$lazy_query$x$x,
@@ -437,59 +426,22 @@ loadParquetData <- function(con, data_type, uuids = NULL, feature_name = NULL,
         }
     }
 
-    ## Select appropriate database view
-    proj <- pick_projection(con, data_type, feature_name)
-
-    ## Load requested view into R object
-    # Apply custom view if provided
-    if (!is.null(custom_view)) {
-        working_view <- custom_view
-    } else {
-        working_view <- dplyr::tbl(con, proj)
-    }
-
-    # Filter for feature if selected
-    if (!is.null(feature_name)) {
-        if (!is.null(subfeature_name)) {
-            filtered_view <- working_view |>
-                dplyr::filter(feature_name[[subfeature_name]] == feature_value)
+    ## Apply any requested filtering, incorporating custom view if provided
+    if (!is.null(filter_values)) {
+        if (!is.null(custom_view)) {
+            working_view <- filter_parquet(custom_view, filter_values)
         } else {
-            filtered_view <- working_view |>
-                dplyr::filter(feature_name == feature_value)
-        }
-    }
-
-    # Filter for uuids if provided
-    if (!is.null(uuids)) {
-        for (id in uuids) {
-            uuid_view <- filtered_view |>
-                dplyr::filter(uuid == uuids)
+            working_view <- interpret_and_filter(con, data_type, filter_values)
         }
     } else {
-        uuid_view <- filtered_view
+        # temporarily disabled: proj <- pick_projection(con, data_type)
+        proj <- data_type
+        working_view <- tbl(con, proj)
     }
 
-    # Collect view
-    collected_view <- uuid_view |>
+    ## Collect view
+    collected_view <- working_view |>
         collect()
-
-    # Filter for uuids if provided
-    #if (!is.null(uuids)) {
-    #    dt_info <- output_file_types("data_type", data_type)
-    #    full_paths <- paste0("gs://metagenomics-mac/results/cMDv4/", uuids, "/",
-    #                         dt_info$subdir, dt_info$file_name)
-    #    collected_views <- vector("list", length(full_paths))
-    #    for (i in seq_along(full_paths)) {
-    #        p <- full_paths[i]
-    #        collected_views[[i]] <- working_view |>
-    #            dplyr::filter(filename == p) |>
-    #            dplyr::collect()
-    #    }
-    #    collected_view <- bind_rows(collected_views)
-    #} else {
-    #    collected_view <- working_view |>
-    #        dplyr::collect()
-    #}
 
     ## Transform into TreeSummarizedExperiment
     exp <- parquet_to_tse(collected_view, data_type)
@@ -615,46 +567,4 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
     }
 
     return(result_df)
-}
-
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param con PARAM_DESCRIPTION
-#' @param table PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
-#' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
-#' @seealso
-#'  \code{\link[DBI]{dbGetQuery}}
-#'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
-#'  \code{\link[stringr]{str_remove}}, \code{\link[stringr]{str_split}}, \code{\link[stringr]{str_extract}}
-#'  \code{\link[tidyr]{unnest}}
-#' @rdname list_struct_cols
-#' @export
-#' @importFrom DBI dbGetQuery
-#' @importFrom dplyr filter mutate select
-#' @importFrom stringr str_remove str_split str_extract
-#' @importFrom tidyr unnest
-list_struct_cols <- function(con, table) {
-    ## Get table schema
-    schema <- DBI::dbGetQuery(con, paste0("PRAGMA table_info('", table, "')"))
-
-    ## Extract struct info
-    struct_cols <- schema %>%
-        dplyr::filter(grepl("^STRUCT", type)) %>%
-        dplyr::mutate(type_clean = stringr::str_remove(type, "^STRUCT\\(") %>%
-                          stringr::str_remove("\\)$"),
-               fields = stringr::str_split(type_clean, ",\\s*")) %>%
-        dplyr::select(name, fields) %>%
-        tidyr::unnest(fields) %>%
-        dplyr::mutate(subfield = stringr::str_extract(fields, "^[^ ]+"),
-                      subfield_type = stringr::str_extract(fields, "(?<= )[^ ]+")) %>%
-        dplyr::select(struct_column = name, subfield, subfield_type)
-
-    return(struct_cols)
 }

@@ -154,6 +154,13 @@ parquet_colinfo <- function(data_type) {
 #' @export
 #' @importFrom DBI dbListTables
 pick_projection <- function(con, data_type, feature_name) {
+    ## Check input
+    # con
+    confirm_duckdb_con(con)
+
+    # data_type
+    confirm_data_type(data_type)
+
     ## Find available views
     tbs <- DBI::dbListTables(con)
 
@@ -164,7 +171,7 @@ pick_projection <- function(con, data_type, feature_name) {
         stop(paste0("'", data_type, "' does not match any existing views." ))
     }
 
-    ## Convert feature_name to projection_code if exists
+    # TEMPORARY: Convert feature_name to projection_code if exists
     dict <- parquet_colinfo(data_type)
     code <- dict$projection_code[dict$col_name == feature_name]
 
@@ -346,6 +353,29 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
     }
 }
 
+confirm_filter_values <- function(filter_values, available_features = NULL) {
+    ## Check that object is a named list
+    if (!is.list(filter_values) || is.null(names(filter_values))) {
+        stop("'filter_values' must be a named list of column = values")
+    }
+
+    ## If any of the list items are named 'uuid', run confirm_uuids()
+    if (!is.null(filter_values[["uuid"]])) {
+        confirm_uuids(filter_values[["uuid"]])
+    }
+
+    ## Confirm all filter features are available if availability provided
+    if (!is.null(available_features)) {
+        for (n in names(filter_values)) {
+            if (!n %in% available_features) {
+                stop("'", n,
+                     "' is not an available feature. All list elements should be named one of the following:\n",
+                     paste0(names(filter_values), collapse = ", "))
+            }
+        }
+    }
+}
+
 #' @title Validate DuckDB connection argument
 #' @description 'confirm_duckdb_con' checks that an object is a valid DuckDB
 #' connection object.
@@ -365,8 +395,16 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 #' @rdname confirm_duckdb_con
 #' @export
 confirm_duckdb_con <- function(con) {
+    ## Check that object class is valid
     if (class(con)[1] != "duckdb_connection") {
         stop("Please provide a valid 'duckdb_connection' object.")
+    }
+}
+
+confirm_duckdb_view <- function(view, data_type = NULL) {
+    ## Check that object class is valid
+    if (class(view)[1] != "tbl_duckdb_connection") {
+        stop("Please provide a valid object of the class 'tbl_duckdb_connection'.")
     }
 }
 
