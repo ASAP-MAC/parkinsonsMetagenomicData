@@ -53,6 +53,8 @@ inst/doc
 # DuckDB database files
 *.duckdb
 
-
 # Macintosh DS_Store
 .DS_Store
+
+# Rendered .md files
+*.html

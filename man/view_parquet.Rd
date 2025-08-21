@@ -2,29 +2,34 @@
 % Please edit documentation in R/readParquet.R
 \name{view_parquet}
 \alias{view_parquet}
-\title{Create a database view of a specific data type}
+\title{Create a database view of a specific parquet file}
 \usage{
-view_parquet(con, httpfs_url = NULL, data_type)
+view_parquet(con, httpfs_url = NULL, view_name = NULL)
 }
 \arguments{
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
 
-\item{data_type}{Single string: value found in the data_type' column of
-output_file_types() and also as the name of a file in the repo of interest,
-indicating which output file to retrieve.}
+\item{httpfs_url}{String: httpfs-compatible URL referencing a specific
+parquet file hosted in a repo of interest.}
+
+\item{view_name}{String: name of the database view to be created. If not
+provided, it will be generated from the name of the file indicated by
+'httpfs_url'.}
 }
 \description{
 'view_parquet' creates a database view with the provided DuckDB
 connection object. The view is created from a parquet file hosted at a
 repo of interest (see inst/extdata/parquet_repos.csv). The specific
-file is specified via the file name.
+file is specified via the httpfs-compatible URL. See
+\href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}.
 }
 \examples{
 \dontrun{
 if(interactive()){
  con <- db_connect()
 
- view_parquet(con, "pathcoverage_unstratified")
+ view_parquet(con, "hf://datasets/waldronlab/metagenomics_mac/relative_abundance.parquet", "relative_abundance")
+
  DBI::dbListTables(con)
  }
 }

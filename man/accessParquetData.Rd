@@ -6,7 +6,7 @@
 \usage{
 accessParquetData(
   dbdir = ":memory:",
-  repo_version = "latest",
+  repo = "waldronlab/metagenomics_mac",
   data_types = NULL
 )
 }
@@ -14,6 +14,9 @@ accessParquetData(
 \item{dbdir}{Location for database files. Should be a path to an existing
 directory in the file system or the value ':memory:' to keep data in RAM.
 Default: ':memory:'}
+
+\item{repo}{String (optional): Hugging Face repo where the parquet files are
+stored. Default: 'waldronlab/metagenomics_mac'}
 
 \item{data_types}{Character vector (optional): list of data types to
 estalish database views for. If NULL, views will be created for all available
@@ -32,8 +35,11 @@ supplied as doing this for all data types can take longer.
 \examples{
 \dontrun{
 if(interactive()){
- prepared_db <- accessParquetData(dbdir = ":memory:")
+ prepared_db <- accessParquetData()
  DBI::dbListTables(prepared_db)
+
+ single_type <- accessParquetData(data_types = "pathcoverage_unstratified")
+ DBI::dbListTables(single_type)
  }
 }
 }

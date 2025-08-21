@@ -2,7 +2,7 @@
 % Please edit documentation in R/parseFiles.R
 \name{parse_humann}
 \alias{parse_humann}
-\title{Parse HUMAnN output for a single sample as a SummarizedExperiment
+\title{Parse HUMAnN output for a single sample as a TreeSummarizedExperiment
 object}
 \usage{
 parse_humann(sample_id, file_path, data_type)
@@ -17,17 +17,17 @@ gzipped TSV format}
 found in output_file_types("tool", "humann")}
 }
 \value{
-A SummarizedExperiment object with process metadata, row names,
+A TreeSummarizedExperiment object with process metadata, row names,
 column names, and relevant assays.
 }
 \description{
 'parse_humann' reads a file obtained from running HUMAnN on a
-single sample. This file is parsed into a SummarizedExperiment object.
+single sample. This file is parsed into a TreeSummarizedExperiment object.
 }
 \details{
 This function does not integrate sample metadata as column data. The
 provided sample_id is used as the column name for assays within the
-SummarizedExperiment object and is intended to be used for integration of
+TreeSummarizedExperiment object and is intended to be used for integration of
 sample metadata.
 }
 \examples{
@@ -40,5 +40,5 @@ if(interactive()){
 \seealso{
 \code{\link[readr]{read_delim}}
 \code{\link[S4Vectors]{DataFrame-class}}
-\code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }

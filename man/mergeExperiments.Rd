@@ -2,24 +2,24 @@
 % Please edit documentation in R/getMetagenomicData.R
 \name{mergeExperiments}
 \alias{mergeExperiments}
-\title{Merge SummarizedExperiment objects with the same assay types together}
+\title{Merge TreeSummarizedExperiment objects with the same assay types together}
 \usage{
 mergeExperiments(merge_list)
 }
 \arguments{
-\item{merge_list}{List of SummarizedExperiment objects: to be merged into a
-single SummarizedExperiment object}
+\item{merge_list}{List of TreeSummarizedExperiment objects: to be merged into a
+single TreeSummarizedExperiment object}
 }
 \value{
-SummarizedExperiment object with multiple samples
+TreeSummarizedExperiment object with multiple samples
 }
 \description{
-'mergeExperiments' takes a list of SummarizedExperiment objects
+'mergeExperiments' takes a list of TreeSummarizedExperiment objects
 with the same assays but different samples, and combines them into a single
-SummarizedExperiment object.
+TreeSummarizedExperiment object.
 }
 \details{
-The assays contained in the SummarizedExperiments to be merged must
+The assays contained in the TreeSummarizedExperiments to be merged must
 be of the same type (i.e. have the same name) and be in the same order if
 there are multiple assays.
 }
@@ -37,7 +37,7 @@ if(interactive()){
 }
 \seealso{
 \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
-\code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{c("SummarizedExperiment-class", "SummarizedExperiment")}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{c("TreeSummarizedExperiment-class", "TreeSummarizedExperiment")}}
 \code{\link[tibble]{rownames}}
 \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
 \code{\link[tidyselect]{everything}}

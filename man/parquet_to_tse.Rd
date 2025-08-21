@@ -14,12 +14,13 @@ file found in the repo of interest (see inst/extdata/parquet_repos.csv).}
 output_file_types() and also as the name of a file in the repo of interest.}
 }
 \value{
-A SummarizedExperiment object with process metadata, row data, column
+A TreeSummarizedExperiment object with process metadata, row data, column
 names, and relevant assays.
 }
 \description{
 'parquet_to_tse' takes tabulated data from a parquet file to a
-Summarized Experiment object.
+Summarized Experiment object. Associated sample metadata is automatically
+attached as colData.
 }
 \examples{
 \dontrun{
@@ -40,5 +41,5 @@ if(interactive()){
 \code{\link[tidyr]{pivot_wider}}
 \code{\link[tibble]{rownames}}
 \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
-\code{\link[SummarizedExperiment]{SummarizedExperiment-class}}, \code{\link[SummarizedExperiment]{SummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }

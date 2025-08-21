@@ -394,7 +394,7 @@ listMetagenomicData <- function() {
 #' @rdname add_metadata
 #' @export
 #' @importFrom S4Vectors DataFrame
-#' @importFrom TreeSummarizedExperiment colData
+#' @importFrom SummarizedExperiment colData
 add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "append") {
     ## Check that the length of sample_ids matches the number of samples
     if (length(sample_ids) != ncol(experiment)) {
@@ -479,14 +479,14 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #'  \code{\link[magrittr]{extract}}
 #' @rdname mergeExperiments
 #' @export
-#' @importFrom purrr map_chr map reduce
-#' @importFrom TreeSummarizedExperiment assayNames assay rowData colData TreeSummarizedExperiment
+#' @importFrom SummarizedExperiment assayNames assay rowData colData
+#' @importFrom purrr map reduce
 #' @importFrom tibble rownames_to_column column_to_rownames
 #' @importFrom dplyr full_join mutate across bind_rows
 #' @importFrom tidyselect everything
 #' @importFrom tidyr replace_na
 #' @importFrom S4Vectors SimpleList DataFrame
-#' @importFrom magrittr set_names
+#' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 mergeExperiments <- function(merge_list) {
     ## Check that list contains more than one TreeSummarizedExperiment
     if (length(merge_list) == 1) {

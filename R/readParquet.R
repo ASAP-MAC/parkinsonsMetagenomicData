@@ -29,22 +29,26 @@ db_connect <- function(dbdir = ":memory:") {
     return(con)
 }
 
-#' @title Create a database view of a specific data type
+#' @title Create a database view of a specific parquet file
 #' @description 'view_parquet' creates a database view with the provided DuckDB
 #' connection object. The view is created from a parquet file hosted at a
 #' repo of interest (see inst/extdata/parquet_repos.csv). The specific
-#' file is specified via the file name.
+#' file is specified via the httpfs-compatible URL. See
+#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}.
 #' @param con DuckDB connection object of class 'duckdb_connection'
-#' @param data_type Single string: value found in the data_type' column of
-#' output_file_types() and also as the name of a file in the repo of interest,
-#' indicating which output file to retrieve.
+#' @param httpfs_url String: httpfs-compatible URL referencing a specific
+#' parquet file hosted in a repo of interest.
+#' @param view_name String: name of the database view to be created. If not
+#' provided, it will be generated from the name of the file indicated by
+#' 'httpfs_url'.
 #' @return NULL
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  con <- db_connect()
 #'
-#'  view_parquet(con, "pathcoverage_unstratified")
+#'  view_parquet(con, "hf://datasets/waldronlab/metagenomics_mac/relative_abundance.parquet", "relative_abundance")
+#'
 #'  DBI::dbListTables(con)
 #'  }
 #' }
@@ -53,7 +57,212 @@ db_connect <- function(dbdir = ":memory:") {
 #' @rdname view_parquet
 #' @export
 #' @importFrom DBI dbExecute
-view_parquet <- function(con, httpfs_url = NULL, data_type) {
+view_parquet <- function(con, httpfs_url = NULL, view_name = NULL) {
+    ## Check input
+    # con
+    confirm_duckdb_con(con)
+
+    ## Create view_name from URL if not provided
+    if (is.null(view_name)) {
+        view_name <- httpfs_url |>
+            gsub(pattern = "^.*\\/", replacement = "") |>
+            gsub(pattern = "\\.parquet", replacement = "") |>
+            gsub(pattern = "\\.", replacement = "_")
+    }
+
+    ## Create data_type-specific view
+    statement <- paste0("CREATE VIEW IF NOT EXISTS ", view_name,
+                        " AS (SELECT * FROM read_parquet('", httpfs_url, "'));")
+    DBI::dbExecute(con, statement)
+}
+
+#' @title Create database views for all available or requested data types
+#' @description 'retrieve_views' creates database views for all of the data
+#' types available in a repo of interest (see inst/extdata/parquet_repos.csv).
+#' an individual type or vector of types may also be requested to avoid unwanted
+#' views.
+#' @param con DuckDB connection object of class 'duckdb_connection'
+#' @return NULL
+#' @details 'retrieve_views' uses 'output_file_types' as the initial list of
+#' data types to retrieve, and checks if they exist as parquet files in the repo
+#' of interest. If they do not, they are simply skipped and the user is notified.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  con <- db_connect()
+#'
+#'  retrieve_views(con, repo = "waldronlab/metagenomics_mac",
+#'                 data_types = c("relative_abundance",
+#'                                "viral_clusters",
+#'                                "pathcoverage_unstratified"))
+#'  DBI::dbListTables(con)
+#'  }
+#' }
+#' @rdname retrieve_views
+#' @export
+retrieve_views <- function(con, repo = NULL, data_types = NULL) {
+    ## Check input
+    # con
+    confirm_duckdb_con(con)
+
+    # repo
+    confirm_repo(repo)
+
+    # data_types
+    for (dt in data_types) confirm_data_type(dt)
+
+    ## Get repo information
+    ri <- get_repo_info()
+
+    if (is.null(repo)) {
+        repo_row <- ri[ri$default == "Y",]
+    } else {
+        repo_row <- ri[ri$repo_name == repo,]
+    }
+
+    ## Get repo file information
+    url_tbl <- get_hf_parquet_urls(repo_row$repo_name)
+
+    if (is.null(data_types)) {
+        data_types <- output_file_types()$data_type
+    }
+
+    #if (is.null(data_types)) {
+    #    data_types <- url_tbl$DataType
+    #}
+
+    selected_files <- url_tbl %>%
+        filter(DataType %in% data_types)
+
+    ## Notify of data types not present
+    missing_types <- setdiff(data_types, url_tbl$DataType)
+
+    if (length(missing_types) != 0) {
+        message(paste0("The following data types are not present in the repo ",
+                       repo_row$repo_name, " and will be skipped:\n",
+                       paste(missing_types, collapse = ", ")))
+    }
+
+    ## Convert URLs to httpfs protocol
+    hf_urls <- file_to_hf(selected_files$URL)
+
+    ## Create view names
+    view_names <- selected_files$filename |>
+        gsub(pattern = "\\.parquet", replacement = "") |>
+        gsub(pattern = "\\.", replacement = "_")
+
+    ## Create view for each file
+    for (i in seq_along(hf_urls)) {
+        view_parquet(con, hf_urls[i], view_names[i])
+    }
+}
+
+#' @title Filter a database view by any number of column:value argument pairs
+#' @description 'filter_parquet_view' takes a named list of exact value filter
+#' arguments and applies them to a DuckDB database view or table. This function
+#' is optimized to work with even extremely large views by leveraging parquet
+#' row group skipping.
+#' @param view DuckDB database view or table: obtained by calling
+#' tbl(con, view_name).
+#' @param filter_values Named list: element name equals the column name to be
+#' filtered and element value equals a vector of exact column values.
+#' @return A filtered DuckDB database view or table. This is still lazy until
+#' collect() is called.
+#' @details Optimization for large files is done by filtering first by the
+#' column with the least provided values. This is the most selective filtering
+#' step and will therefore reduce the amount of data that is being filtered with
+#' subsequent column:value arguments. Because of this, it is ideal to ensure
+#' that the provided DuckDB view or table is sorted by the column with the least
+#' provided arguments. If you have multiple views with different sorting
+#' schemas, interpret_and_filter() will select the appropriate view and apply
+#' the filter for you.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  con <- accessParquetData(data_types = "genefamilies_stratified")
+#'  fvalues <- list(filename = c("gs://metagenomics-mac/results/cMDv4/23f1dd24-2bfa-449a-a624-ac6dedd9edca/humann/out_genefamilies_stratified.tsv.gz",
+#'                               "gs://metagenomics-mac/results/cMDv4/42567d6b-981d-41c5-b82d-8e8dcc44baba/humann/out_genefamilies_stratified.tsv.gz",
+#'                               "gs://metagenomics-mac/results/cMDv4/bc22379e-4c05-4700-9a40-fa6fed718ea6/humann/out_genefamilies_stratified.tsv.gz"),
+#'                  `# Gene Family` = c("UniRef90_U3JBQ2|g__Lactobacillus.s__Lactobacillus_johnsonii",
+#'                                      "UniRef90_R9KYZ5|g__Lachnospiraceae_unclassified.s__Lachnospiraceae_bacterium_COE1",
+#'                                      "UniRef90_R9KYZ5|unclassified",
+#'                                      "UniRef90_A0A1V0QE01|g__Muribaculum.s__Muribaculum_intestinale"))
+#'  filter_parquet_view(view = tbl(con, "genefamilies_stratified"),
+#'                 filter_values = fvalues)
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{setops}}
+#'  \code{\link[rlang]{sym}}
+#' @rdname filter_parquet_view
+#' @export
+#' @importFrom dplyr filter union_all
+#' @importFrom rlang sym
+filter_parquet_view <- function(view, filter_values) {
+    ## Check input
+    # view
+    confirm_duckdb_view(view)
+
+    # filter_values
+    confirm_filter_values(filter_values, colnames(view))
+
+    ## Order filter columns by selectivity
+    col_order <- names(sort(sapply(filter_values, length)))
+    first_col <- col_order[1]
+    first_vals <- filter_values[[first_col]]
+
+    ## Filter first column (most selective) using dplyr::union_all
+    result <- lapply(first_vals, function(val) {
+        dplyr::filter(view, !!rlang::sym(first_col) == val)
+    }) %>%
+        Reduce(dplyr::union_all, .)
+
+    ## Filter remaining columns (on smaller table)
+    remaining_cols <- setdiff(col_order, first_col)
+    for (col in remaining_cols) {
+        vals <- filter_values[[col]]
+        if (length(vals) == 1) {
+            result <- dplyr::filter(result, !!rlang::sym(col) == vals)
+        } else {
+            result <- dplyr::filter(result, !!rlang::sym(col) %in% vals)
+        }
+    }
+
+    return(result)
+}
+
+#' @title Select the view with the most appropriate sorting schema and filter
+#' @description 'interpret_and_filter' takes a named list of exact value filter
+#' arguments and applies them to a DuckDB database view or table. The exact view
+#' or table is additionally selected by this function in order to optimize
+#' filtering.
+#' @param con DuckDB connection object of class 'duckdb_connection'.
+#' @param data_type Character string: the main data type to filter.
+#' @param filter_values Named list: element name equals the column name to be
+#' filtered and element value equals a vector of exact column values.
+#' @return A filtered DuckDB database view or table. This is still lazy until
+#' collect() is called.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#' ## WILL NOT WORK UNTIL PARQUET UPDATE
+#'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+#'                           data_types = "relative_abundance")
+#'  fvalues <- list(species_tax = c("s__Corynebacterium_lowii",
+#'                                  "s__GGB30861_SGB44083"),
+#'                  uuid = c("33e1965a-100e-45f1-a29e-3f480c5af8e1",
+#'                           "769f6548-3e2e-4cd6-9445-0fca5ee50479",
+#'                           "ab04a4ee-8165-49fa-bd07-9e1fff4241c6",
+#'                           "23f1dd24-2bfa-449a-a624-ac6dedd9edca"))
+#'  interpret_and_filter(con, "relative_abundance", fvalues)
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[dplyr]{tbl}}
+#' @rdname interpret_and_filter
+#' @export
+#' @importFrom dplyr tbl
+interpret_and_filter <- function(con, data_type, filter_values) {
     ## Check input
     # con
     confirm_duckdb_con(con)
@@ -61,62 +270,23 @@ view_parquet <- function(con, httpfs_url = NULL, data_type) {
     # data_type
     confirm_data_type(data_type)
 
-    ## Create data_type-specific view
-    statement <- paste0("CREATE VIEW IF NOT EXISTS ", data_type,
-                        " AS (SELECT * FROM read_parquet('", httpfs_url,
-                        data_type, ".parquet'));")
-    DBI::dbExecute(con, statement)
-}
+    # filter_values
+    confirm_filter_values(filter_values)
 
-#' @title Create database views for all available data types
-#' @description 'retrieve_views' creates database views for all of the data types
-#' available in a repo of interest (see inst/extdata/parquet_repos.csv).
-#' @param con DuckDB connection object of class 'duckdb_connection'
-#' @return NULL
-#' @details 'retrieve_views' uses 'output_file_types' as the initial list of data
-#' types to retrieve, and checks if they exist as parquet files in the repo
-#' of interest. If they do not, they are simply skipped.
-#' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  con <- db_connect()
-#'
-#'  retrieve_views(con, repo_version = "latest")
-#'  DBI::dbListTables(con)
-#'  }
-#' }
-#' @seealso
-#'  \code{\link[RCurl]{url.exists}}
-#' @rdname retrieve_views
-#' @export
-#' @importFrom RCurl url.exists
-retrieve_views <- function(con, repo_version = "latest", data_types = NULL) {
-    ## Check input
-    # con
-    confirm_duckdb_con(con)
+    ## Order filter columns by selectivity and select projection
+    col_order <- names(sort(sapply(filter_values, length)))
+    first_col <- col_order[1]
 
-    # data_types
-    for (dt in data_types) confirm_data_type(dt)
+    # temporarily disabled: projection <- pick_projection(con, data_type, first_col)
+    projection <- data_type
 
-    ## Get all data types
-    if (is.null(data_types)) {
-        data_types <- output_file_types()$data_type
-    }
+    ## Load the chosen view
+    chosen_view <- dplyr::tbl(con, projection)
 
-    ## Get repo base URLs
-    file_url <- get_parquet_url("file", repo_version)
-    httpfs_url <- get_parquet_url("httpfs", repo_version)
+    ## Filter parquet by .values
+    queried_view <- filter_parquet_view(chosen_view, filter_values)
 
-    ## Create view for each type if it exists
-    for (type in data_types) {
-        test_url <- paste0(file_url, type, ".parquet")
-        exists <- RCurl::url.exists(test_url)
-        if (!exists) {
-            message(paste0("'", type, "' is not currently available in the repo '", file_url, "', skipping."))
-            next
-        }
-        view_parquet(con, httpfs_url, type)
-    }
+    return(queried_view)
 }
 
 #' @title Convert tabulated parquet file data to a Summarized Experiment
@@ -230,6 +400,8 @@ parquet_to_tse <- function(parquet_table, data_type) {
 #' @param dbdir Location for database files. Should be a path to an existing
 #' directory in the file system or the value ':memory:' to keep data in RAM.
 #' Default: ':memory:'
+#' @param repo String (optional): Hugging Face repo where the parquet files are
+#' stored. Default: 'waldronlab/metagenomics_mac'
 #' @param data_types Character vector (optional): list of data types to
 #' estalish database views for. If NULL, views will be created for all available
 #' data types. Default: NULL
@@ -237,13 +409,17 @@ parquet_to_tse <- function(parquet_table, data_type) {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  prepared_db <- accessParquetData(dbdir = ":memory:")
+#'  prepared_db <- accessParquetData()
 #'  DBI::dbListTables(prepared_db)
+#'
+#'  single_type <- accessParquetData(data_types = "pathcoverage_unstratified")
+#'  DBI::dbListTables(single_type)
 #'  }
 #' }
 #' @rdname accessParquetData
 #' @export
-accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
+accessParquetData <- function(dbdir = ":memory:",
+                              repo = "waldronlab/metagenomics_mac",
                               data_types = NULL) {
     ## Check input
     # data_types
@@ -253,7 +429,7 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
     con <- db_connect(dbdir)
 
     ## Create views from Hugging Face repo
-    retrieve_views(con, repo_version, data_types)
+    retrieve_views(con, repo, data_types)
 
     ## Return connection
     return(con)
@@ -269,7 +445,8 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
 #' @param data_type Single string: value found in the data_type' column of
 #' output_file_types() and also as the name of a view found in
 #' DBI::dbListTables(con), indicating which view to collect data from.
-#' @param uuids Vector of strings (optional): sample UUID(s) to get output for,
+#' @param filter_values Named list: element name equals the column name to be
+#' filtered and element value equals a vector of exact column values.
 #' Default: NULL
 #' @param custom_view Saved object with the initial class
 #' 'tbl_duckdb_connection' (optional): DuckDB tables/views can be accessed with
@@ -304,51 +481,45 @@ accessParquetData <- function(dbdir = ":memory:", repo_version = "latest",
 #' @export
 #' @importFrom DBI dbListTables
 #' @importFrom dplyr tbl filter collect
-loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
+loadParquetData <- function(con, data_type, filter_values = NULL,
+                            custom_view = NULL) {
     ## Check input
     # con
     confirm_duckdb_con(con)
 
     # data_type
     confirm_data_type(data_type)
-    if (!data_type %in% DBI::dbListTables(con)) {
-        stop(paste0("'", data_type, "' is not available as a database view."))
-    }
 
-    # uuids
-    if (!is.null(uuids)) {
-        confirm_uuids(uuids)
+    # filter_values
+    if (!is.null(filter_values)) {
+        confirm_filter_values(filter_values)
     }
 
     # custom_view
     if (!is.null(custom_view)) {
-        if (class(custom_view)[1] != "tbl_duckdb_connection") {
-            stop("'custom_view' should be of the class 'tbl_duckdb_connection'.")
+        confirm_duckdb_view(custom_view)
+    }
+
+    ## Apply any requested filtering, incorporating custom view if provided
+    if (!is.null(filter_values)) {
+        if (!is.null(custom_view)) {
+            working_view <- filter_parquet_view(custom_view, filter_values)
+        } else {
+            working_view <- interpret_and_filter(con, data_type, filter_values)
         }
-        if (custom_view$lazy_query$x$x != data_type) {
-            stop(paste0("'custom_view' uses the view '",
-                        custom_view$lazy_query$x$x,
-                        "', but 'data_type' equals '", data_type, "'."))
+    } else {
+        if (!is.null(custom_view)) {
+            working_view <- custom_view
+        } else {
+            # temporarily disabled: proj <- pick_projection(con, data_type)
+            proj <- data_type
+            working_view <- tbl(con, proj)
         }
     }
 
-    ## Load requested view into R object
-    # Apply custom view if provided
-    if (!is.null(custom_view)) {
-        working_view <- custom_view
-    } else {
-        working_view <- dplyr::tbl(con, data_type)
-    }
-    # Filter for uuids if provided
-    if (!is.null(uuids)) {
-        patt <- paste(uuids, collapse = "|")
-        collected_view <- working_view |>
-            dplyr::filter(grepl(patt, filename)) |>
-            dplyr::collect()
-    } else {
-        collected_view <- working_view |>
-            dplyr::collect()
-    }
+    ## Collect view
+    collected_view <- working_view |>
+        collect()
 
     ## Transform into TreeSummarizedExperiment
     exp <- parquet_to_tse(collected_view, data_type)
@@ -356,19 +527,11 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
     return(exp)
 }
 
-
-#' Get Parquet File URLs and Metadata from a Hugging Face Repository
-#'
-#' This function queries the Hugging Face Hub API to find all Parquet files
+#' @title Get Parquet File URLs and Metadata from a Hugging Face Repository
+#' @description This function queries the Hugging Face Hub API to find all Parquet files
 #' within a specified dataset repository. It constructs the direct download URLs
 #' and then joins this information with a local file containing definitions
-#' for bioBakery data types.
-#'
-#' @details The metadata is sourced from the "biobakery-file-definitions.csv"
-#'   file, which is expected to be in the `inst/extdata` directory of the
-#'   `parkinsonsMetagenomicData` package. If this package is not available,
-#'   the metadata columns will be populated with `NA`.
-#'
+#' for BioBakery data types.
 #' @param repo_name A character string specifying the Hugging Face dataset
 #'   repository name in the format "user/repo" or "org/repo".
 #'   Defaults to "waldronlab/metagenomics_mac".
@@ -381,16 +544,19 @@ loadParquetData <- function(con, data_type, uuids = NULL, custom_view = NULL) {
 #'     \item{Description}{A brief description of the data type.}
 #'     \item{Units.Normalization}{The units or normalization method used.}
 #'   }
+#' @details The metadata is sourced from the "biobakery-file-definitions.csv"
+#' file, which is expected to be in the `inst/extdata` directory of the
+#' `parkinsonsMetagenomicData` package. If this package is not available,
+#' the metadata columns will be populated with `NA`.
+#' @examples
+#'   # Get file URLs and metadata from the default repository
+#'   file_info <- get_hf_parquet_urls()
+#'   head(file_info)
 #' @export
 #' @importFrom httr GET status_code content
 #' @importFrom jsonlite fromJSON
 #' @importFrom dplyr left_join mutate
 #' @importFrom utils read.csv
-#'
-#' @examples
-#'   # Get file URLs and metadata from the default repository
-#'   file_info <- get_hf_parquet_urls()
-#'   head(file_info)
 get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
     # --- Step 1: Construct API URL and get repo info ---
     repo_api_url <- paste0("https://huggingface.co/api/datasets/", repo_name)
@@ -445,14 +611,14 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
 
     # --- Step 5: Read definitions and join with file list ---
     def_path <- system.file(
-        "extdata", "biobakery-file-definitions.csv",
+        "extdata", "biobakery_file_definitions.csv",
         package = "parkinsonsMetagenomicData"
     )
 
     # Create DataType column for joining
     result_df <- dplyr::mutate(
         result_df,
-        DataType = sub("\\.parquet$", "", filename)
+        DataType = sub("\\..*parquet$", "", filename)
     )
 
     if (nzchar(def_path) && file.exists(def_path)) {

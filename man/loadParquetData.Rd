@@ -4,7 +4,7 @@
 \alias{loadParquetData}
 \title{Retrieve data from a DuckDB view and convert to Summarized Experiment}
 \usage{
-loadParquetData(con, data_type, uuids = NULL, custom_view = NULL)
+loadParquetData(con, data_type, filter_values = NULL, custom_view = NULL)
 }
 \arguments{
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
@@ -13,7 +13,8 @@ loadParquetData(con, data_type, uuids = NULL, custom_view = NULL)
 output_file_types() and also as the name of a view found in
 DBI::dbListTables(con), indicating which view to collect data from.}
 
-\item{uuids}{Vector of strings (optional): sample UUID(s) to get output for,
+\item{filter_values}{Named list: element name equals the column name to be
+filtered and element value equals a vector of exact column values.
 Default: NULL}
 
 \item{custom_view}{Saved object with the initial class
@@ -29,7 +30,11 @@ A TreeSummarizedExperiment object with process metadata, row data, column
 names, and relevant assays.
 }
 \description{
-'loadParquetData' accesses a view created
+'loadParquetData' accesses a DuckDB view created by
+'accessParquetData' and loads it into R as a Summarized Experiment object.
+Arguments can be provided to filter the DuckDB view, either by providing a
+list of UUIDs or a saved sequence of function calls using dplyr::tbl to
+access the view.
 }
 \details{
 If 'custom_view' is provided, it must use the view indicated by

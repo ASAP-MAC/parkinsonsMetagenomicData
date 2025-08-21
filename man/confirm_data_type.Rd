@@ -32,7 +32,7 @@ the function will throw a 'stop()' error.
 \dontrun{
 if(interactive()){
  confirm_data_type("relative_abundance")
- confirm_data_type("realtive_abundance", "tool", "humann")
+ confirm_data_type("relative_abundance", "tool", "humann")
  confirm_data_type(c("relative_abundance", "viral_clusters"))
  confirm_data_type("horse")
  }

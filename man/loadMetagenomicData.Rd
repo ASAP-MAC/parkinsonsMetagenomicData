@@ -2,7 +2,7 @@
 % Please edit documentation in R/getMetagenomicData.R
 \name{loadMetagenomicData}
 \alias{loadMetagenomicData}
-\title{Load cached files into R as a merged SummarizedExperiment object}
+\title{Load cached files into R as a merged TreeSummarizedExperiment object}
 \usage{
 loadMetagenomicData(cache_table)
 }
@@ -12,21 +12,21 @@ cacheMetagenomicData() output; contains the columns 'uuid', 'cache_path', and
 'data_type', with appropriate entries for each file to be loaded in.}
 }
 \value{
-A SummarizedExperiment object with relevant sample metadata attached
-as colData.
+A TreeSummarizedExperiment object with relevant sample metadata
+attached as colData.
 }
 \description{
 'loadMetagenomicData' takes a table of information about cached
 files, including paths to the cached files as well as associated UUIDs and
-data types, and loads the files into R as SummarizedExperiment objects.
+data types, and loads the files into R as TreeSummarizedExperiment objects.
 Associated sample metadata is automatically attached as colData, and the
-objects are merged into a single SummarizedExperiment object.
+objects are merged into a single TreeSummarizedExperiment object.
 }
 \details{
 At the moment, only the \code{metaphlan_lists} data types,
 \code{viral_clusters} and \code{relative_abundance}, as well as the \code{humann} data
 types, have parsing functions for automatically loading into
-SummarizedExperiment objects.
+TreeSummarizedExperiment objects.
 }
 \examples{
 \dontrun{

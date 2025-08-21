@@ -1,31 +1,31 @@
-"general_data_type","col_name","col_class","description","se_role","position"
-"viral_clusters","M-Group/Cluster",NA,NA,"rdata",1
-"viral_clusters","genomeName",NA,NA,"rname",2
-"viral_clusters","len",NA,NA,"rdata",3
-"viral_clusters","breadth_of_coverage",NA,NA,"assay",4
-"viral_clusters","depth_of_coverage_mean",NA,NA,"assay",5
-"viral_clusters","depth_of_coverage_median",NA,NA,"assay",6
-"viral_clusters","M-Group-Type [k|u]",NA,NA,"rdata",7
-"viral_clusters","First Genome in Cluster",NA,NA,"rdata",8
-"viral_clusters","Other Genomes",NA,NA,"rdata",9
-"viral_clusters","filename",NA,NA,"cname",10
-"relative_abundance","clade_name",NA,NA,"rname",1
-"relative_abundance","NCBI_tax_id",NA,NA,"rdata",2
-"relative_abundance","relative_abundance",NA,NA,"assay",3
-"relative_abundance","additional_species",NA,NA,"rdata",4
-"relative_abundance","filename",NA,NA,"cname",5
-"marker_abundance","marker",NA,NA,"rname",1
-"marker_abundance","abundance",NA,NA,"assay",2
-"marker_abundance","filename",NA,NA,"cname",3
-"marker_presence","marker",NA,NA,"rname",1
-"marker_presence","presence",NA,NA,"assay",2
-"marker_presence","filename",NA,NA,"cname",3
-"genefamilies","Gene Family",NA,NA,"rname",1
-"genefamilies","out_Abundance-RPKs",NA,NA,"assay",2
-"genefamilies","filename",NA,NA,"cname",3
-"pathabundance","Pathway",NA,NA,"rname",1
-"pathabundance","out_Abundance",NA,NA,"assay",2
-"pathabundance","filename",NA,NA,"cname",3
-"pathcoverage","Pathway",NA,NA,"rname",1
-"pathcoverage","out_Coverage",NA,NA,"assay",2
-"pathcoverage","filename",NA,NA,"cname",3
+general_data_type,col_name,col_class,description,projection_code,levels,se_role,position
+viral_clusters,M-Group/Cluster,character,The marker gene group or cluster detected,,,rdata,1
+viral_clusters,genomeName,character,The database identifier of the matched genome,,,rname,2
+viral_clusters,len,int,Length of the genome (in base pairs) in the database,,,rdata,3
+viral_clusters,breadth_of_coverage,float,The proportion of the genome covered by reads,,,assay,4
+viral_clusters,depth_of_coverage_mean,float,The average sequencing depth across the genome,,,assay,5
+viral_clusters,depth_of_coverage_median,float,The median sequencing depth across the genome,,,assay,6
+viral_clusters,M-Group-Type [k|u],character,Whether the matched genome has known (kVSG) or unknown (uVSG) taxonomy,,,rdata,7
+viral_clusters,First Genome in Cluster,character,"The first genome in the matched cluster, if that cluster's taxonomy is known",,,rdata,8
+viral_clusters,Other Genomes,character,Other genomes in the same cluster that share the same marker set,,,rdata,9
+viral_clusters,filename,NA,NA,,,cname,10
+relative_abundance,nested_clade_name,character,The taxonomic lineage of the detected microbial clade,clade,kingdom_tax;phylum_tax;class_tax;order_tax;family_tax;genus_tax;species_tax;terminal_tax,rname,1
+relative_abundance,NCBI_tax_id,character,The NCBI Taxonomy identifier for the clade in clade_name,,,rdata,2
+relative_abundance,relative_abundance,float,The proportion of the total microbial community represented by the clade,,,assay,3
+relative_abundance,additional_species,character,Any other species represented by the same set of detected markers,,,rdata,4
+relative_abundance,uuid,NA,NA,uuid,,cname,5
+marker_abundance,marker,NA,The marker identifier,,,rname,1
+marker_abundance,abundance,NA,The mean coverage of the marker genes,,,assay,2
+marker_abundance,filename,NA,NA,,,cname,3
+marker_presence,marker,NA,The marker identifier,,,rname,1
+marker_presence,presence,NA,Whether or not that marker is present (1) or absent (0),,,assay,2
+marker_presence,filename,NA,NA,,,cname,3
+genefamilies,Gene Family,NA,NA,,,rname,1
+genefamilies,out_Abundance-RPKs,NA,NA,,,assay,2
+genefamilies,filename,NA,NA,,,cname,3
+pathabundance,Pathway,NA,NA,,,rname,1
+pathabundance,out_Abundance,NA,NA,,,assay,2
+pathabundance,filename,NA,NA,,,cname,3
+pathcoverage,Pathway,NA,NA,,,rname,1
+pathcoverage,out_Coverage,NA,NA,,,assay,2
+pathcoverage,filename,NA,NA,,,cname,3

@@ -2,32 +2,34 @@
 % Please edit documentation in R/readParquet.R
 \name{retrieve_views}
 \alias{retrieve_views}
-\title{Create database views for all available data types}
+\title{Create database views for all available or requested data types}
 \usage{
-retrieve_views(con, repo_version = "latest", data_types = NULL)
+retrieve_views(con, repo = NULL, data_types = NULL)
 }
 \arguments{
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
 }
 \description{
-'retrieve_views' creates database views for all of the data types
-available in a repo of interest (see inst/extdata/parquet_repos.csv).
+'retrieve_views' creates database views for all of the data
+types available in a repo of interest (see inst/extdata/parquet_repos.csv).
+an individual type or vector of types may also be requested to avoid unwanted
+views.
 }
 \details{
-'retrieve_views' uses 'output_file_types' as the initial list of data
-types to retrieve, and checks if they exist as parquet files in the repo
-of interest. If they do not, they are simply skipped.
+'retrieve_views' uses 'output_file_types' as the initial list of
+data types to retrieve, and checks if they exist as parquet files in the repo
+of interest. If they do not, they are simply skipped and the user is notified.
 }
 \examples{
 \dontrun{
 if(interactive()){
  con <- db_connect()
 
- retrieve_views(con, repo_version = "latest")
+ retrieve_views(con, repo = "waldronlab/metagenomics_mac",
+                data_types = c("relative_abundance",
+                               "viral_clusters",
+                               "pathcoverage_unstratified"))
  DBI::dbListTables(con)
  }
 }
-}
-\seealso{
-\code{\link[RCurl]{url.exists}}
 }
