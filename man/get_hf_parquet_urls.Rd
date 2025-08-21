@@ -26,7 +26,7 @@ A data.frame with the following columns:
 This function queries the Hugging Face Hub API to find all Parquet files
 within a specified dataset repository. It constructs the direct download URLs
 and then joins this information with a local file containing definitions
-for bioBakery data types.
+for BioBakery data types.
 }
 \details{
 The metadata is sourced from the "biobakery-file-definitions.csv"

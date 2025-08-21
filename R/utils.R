@@ -135,17 +135,26 @@ parquet_colinfo <- function(data_type) {
     return(rel_cols)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param con PARAM_DESCRIPTION
-#' @param data_type PARAM_DESCRIPTION
-#' @param feature_name PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @title Choose the most appropriate DuckDB view/table for filtering
+#' @description 'pick_projection' takes a data type and the name of a feature
+#' to filter that data by and chooses the appropriate DuckDB view/table for
+#' performing that filtering in an efficient way. If no view is tailored to the
+#' specific feature, a view/table sorted by UUID will be the default.
+#' @param con DuckDB connection object of class 'duckdb_connection'. This
+#' connection contains the views/tables to select from.
+#' @param data_type Single string: value found in the data_type' column of
+#' output_file_types() and also as the name of a view found in
+#' DBI::dbListTables(con), indicating which view to collect data from.
+#' @param feature_name Single string: the name of the feature that the file is
+#' intended to be filtered by. Default = "uuid"
+#' @return Single string: the name of a DuckDB view/table
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+#'                           data_types = "relative_abundance")
+#'  pick_projection(con, "relative_abundance", "nested_clade_name")
+#'  pick_projection(con, "relative_abundance")
 #'  }
 #' }
 #' @seealso
@@ -153,7 +162,7 @@ parquet_colinfo <- function(data_type) {
 #' @rdname pick_projection
 #' @export
 #' @importFrom DBI dbListTables
-pick_projection <- function(con, data_type, feature_name) {
+pick_projection <- function(con, data_type, feature_name = "uuid") {
     ## Check input
     # con
     confirm_duckdb_con(con)
@@ -307,7 +316,7 @@ confirm_uuids <- function(uuids) {
 #' \dontrun{
 #' if(interactive()){
 #'  confirm_data_type("relative_abundance")
-#'  confirm_data_type("realtive_abundance", "tool", "humann")
+#'  confirm_data_type("relative_abundance", "tool", "humann")
 #'  confirm_data_type(c("relative_abundance", "viral_clusters"))
 #'  confirm_data_type("horse")
 #'  }
@@ -353,6 +362,36 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
     }
 }
 
+#' @title Validate 'filter_values' argument
+#' @description 'confirm_filter_values' checks that a named list is valide to be
+#' used as a 'filter_values' argument for various functions in
+#' parkinsonsMetagenomicData. Specifically, the input should be a named list,
+#' where the element name equals the name of a column to be
+#' filtered and element value equals a vector of exact column values. Base usage
+#' of 'confirm_filter_values' just confirms that the object is a named list, and
+#' if any of the elements are named 'uuid', validates that the values of that
+#' element are valid uuids. If a vector of available features is provided, the
+#' names of the elements of the list will be compared to that vector.
+#' @param filter_values Named list: input to be validated
+#' @param available_features Character vector: features that the list element
+#' names should be found in. Default: NULL
+#' @return NULL
+#' @details This function is intended to be used within another function as
+#' input validation. If the input is valid, nothing will happen. If it is not,
+#' the function will throw a 'stop()' error.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  l1 <- list(uuid = "56aa2ad5-007d-407c-a644-48aac1e9a8f0", animals = c("frog", "horse"))
+#'  l2 <- list(uuid = "blue")
+#'  confirm_filter_values(l1)
+#'  confirm_filter_values(l1, c("uuid", "animals", "shapes"))
+#'  confirm_filter_values(l1, c("animals", "shapes"))
+#'  confirm_filter_values(l2)
+#'  }
+#' }
+#' @rdname confirm_filter_values
+#' @export
 confirm_filter_values <- function(filter_values, available_features = NULL) {
     ## Check that object is a named list
     if (!is.list(filter_values) || is.null(names(filter_values))) {
@@ -401,7 +440,25 @@ confirm_duckdb_con <- function(con) {
     }
 }
 
-confirm_duckdb_view <- function(view, data_type = NULL) {
+#' @title Validate DuckDB view/table argument
+#' @description 'confirm_duckdb_view' checks that an object is a valid DuckDB
+#' table connection object
+#' @param view Object to validate
+#' @return NULL
+#' @details This function is intended to be used within another function as
+#' input validation. If the input is valid, nothing will happen. If it is not,
+#' the function will throw a 'stop()' error.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  con <- accessParquetData(data_types = "pathcoverage_unstratified")
+#'  view <- tbl(con, "pathcoverage_unstratified")
+#'  confirm_duckdb_view(view)
+#'  }
+#' }
+#' @rdname confirm_duckdb_view
+#' @export
+confirm_duckdb_view <- function(view) {
     ## Check that object class is valid
     if (class(view)[1] != "tbl_duckdb_connection") {
         stop("Please provide a valid object of the class 'tbl_duckdb_connection'.")
