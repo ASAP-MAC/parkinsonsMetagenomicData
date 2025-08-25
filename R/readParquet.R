@@ -127,10 +127,6 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
         data_types <- output_file_types()$data_type
     }
 
-    #if (is.null(data_types)) {
-    #    data_types <- url_tbl$DataType
-    #}
-
     selected_files <- url_tbl %>%
         filter(DataType %in% data_types)
 
@@ -277,8 +273,8 @@ interpret_and_filter <- function(con, data_type, filter_values) {
     col_order <- names(sort(sapply(filter_values, length)))
     first_col <- col_order[1]
 
-    # temporarily disabled: projection <- pick_projection(con, data_type, first_col)
-    projection <- data_type
+    projection <- pick_projection(con, data_type, first_col)
+    #projection <- data_type
 
     ## Load the chosen view
     chosen_view <- dplyr::tbl(con, projection)
@@ -511,8 +507,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
         if (!is.null(custom_view)) {
             working_view <- custom_view
         } else {
-            # temporarily disabled: proj <- pick_projection(con, data_type)
-            proj <- data_type
+            proj <- pick_projection(con, data_type)
+            #proj <- data_type
             working_view <- tbl(con, proj)
         }
     }
@@ -618,7 +614,7 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
     # Create DataType column for joining
     result_df <- dplyr::mutate(
         result_df,
-        DataType = sub("\\..*parquet$", "", filename)
+        DataType = detect_data_type(filename)
     )
 
     if (nzchar(def_path) && file.exists(def_path)) {
