@@ -135,6 +135,34 @@ parquet_colinfo <- function(data_type) {
     return(rel_cols)
 }
 
+#' @title Detect which accepted data type a string is referring to
+#' @description 'detect_data_type' parses the longest value matching a value in
+#' output_file_types()$data_type.
+#' @param string String(s): a single string or vector of strings to parse
+#' @return String(s): detected data type values
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  detect_data_type("genefamilies_cpm_but_sorted")
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[stringr]{str_extract}}
+#' @rdname detect_data_type
+#' @export
+#' @importFrom stringr str_extract
+detect_data_type <- function(string) {
+    ## Retrieve and sort all possible types
+    data_types <- output_file_types()$data_type
+    reg_types <- paste0(data_types[order(nchar(data_types), decreasing = TRUE)],
+                        collapse = "|")
+
+    ## Extract first match from input
+    matches <- stringr::str_extract(string, reg_types)
+
+    return(matches)
+}
+
 #' @title Choose the most appropriate DuckDB view/table for filtering
 #' @description 'pick_projection' takes a data type and the name of a feature
 #' to filter that data by and chooses the appropriate DuckDB view/table for
@@ -174,25 +202,30 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
     tbs <- DBI::dbListTables(con)
 
     ## Filter for views that match data_type
-    dt_tbs <- tbs[grepl(paste0("^", data_type, "(_|$)"), tbs)]
+    detected_types <- detect_data_type(tbs)
+    matching_views <- tbs[which(detected_types == data_type)]
+    #dt_tbs <- tbs[grepl(paste0("^", data_type, "(_|$)"), tbs)]
 
-    if (length(dt_tbs) == 0) {
+    if (length(matching_views) == 0) {
         stop(paste0("'", data_type, "' does not match any existing views." ))
     }
 
-    # TEMPORARY: Convert feature_name to projection_code if exists
-    dict <- parquet_colinfo(data_type)
-    code <- dict$projection_code[dict$col_name == feature_name]
+    ## Create expected view
+    eview <- paste0(data_type, "_", feature_name)
 
-    ## Default code to "uuid" if no exact projection
-    if (length(code) == 0) {
-        code <- "uuid"
+    ## Default to "uuid" view or first view available if no exact match
+    if (!eview %in% matching_views) {
+        if (any(grepl("uuid", matching_views))) {
+            cview <- matching_views[grepl("uuid", matching_views)]
+        } else {
+            cview <- matching_views[1]
+        }
+        message("Exact match for '", eview, "' not found, selecting '", cview, "'")
+    } else {
+        cview <- eview
     }
 
-    ## Select projection
-    proj <- paste0(data_type, "_", code)
-
-    return(proj)
+    return(cview)
 }
 
 #' @title Return a table with information about available Hugging Face repos.

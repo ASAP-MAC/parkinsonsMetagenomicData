@@ -117,6 +117,8 @@ have been processed, it requires credentialed access and more file wrangling.
 As a simpler alternative, the data have been combined into parquet files and
 hosted publicly on Hugging Face in the
 [metagenomics_mac repo](https://huggingface.co/datasets/waldronlab/metagenomics_mac).
+Smaller example files featuring data from 10 samples each can be found at
+[metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
 These files are able to be easily accessed through the
 [DuckDB R client](https://duckdb.org/docs/stable/clients/r.html) and the
 functions and workflows detailed in the
