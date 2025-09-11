@@ -127,10 +127,9 @@ parquet_colinfo <- function(data_type) {
     gen_type <- output_file_types(filter_col = "data_type",
                                   filter_string = data_type)$general_data_type
 
-    ## Pull and return column info in order
+    ## Pull and return column info
     rel_cols <- ftable %>%
-        dplyr::filter(general_data_type == gen_type) %>%
-        dplyr::arrange(position)
+        dplyr::filter(general_data_type == gen_type)
 
     return(rel_cols)
 }
@@ -204,7 +203,6 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
     ## Filter for views that match data_type
     detected_types <- detect_data_type(tbs)
     matching_views <- tbs[which(detected_types == data_type)]
-    #dt_tbs <- tbs[grepl(paste0("^", data_type, "(_|$)"), tbs)]
 
     if (length(matching_views) == 0) {
         stop(paste0("'", data_type, "' does not match any existing views." ))

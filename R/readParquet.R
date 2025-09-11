@@ -121,17 +121,17 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 
     ## Get repo file information
-    url_tbl <- get_hf_parquet_urls(repo_row$repo_name)
+    url_tbl <- suppressMessages(get_hf_parquet_urls(repo_row$repo_name))
 
     if (is.null(data_types)) {
         data_types <- output_file_types()$data_type
     }
 
     selected_files <- url_tbl %>%
-        filter(DataType %in% data_types)
+        filter(data_type %in% data_types)
 
     ## Notify of data types not present
-    missing_types <- setdiff(data_types, url_tbl$DataType)
+    missing_types <- setdiff(data_types, url_tbl$data_type)
 
     if (length(missing_types) != 0) {
         message(paste0("The following data types are not present in the repo ",
@@ -140,7 +140,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 
     ## Convert URLs to httpfs protocol
-    hf_urls <- file_to_hf(selected_files$URL)
+    hf_urls <- file_to_hf(selected_files$url)
 
     ## Create view names
     view_names <- selected_files$filename |>
@@ -192,7 +192,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #'  \code{\link[rlang]{sym}}
 #' @rdname filter_parquet_view
 #' @export
-#' @importFrom dplyr filter union_all
+#' @importFrom dplyr filter union_all collapse
 #' @importFrom rlang sym
 filter_parquet_view <- function(view, filter_values) {
     ## Check input
@@ -203,15 +203,21 @@ filter_parquet_view <- function(view, filter_values) {
     confirm_filter_values(filter_values, colnames(view))
 
     ## Order filter columns by selectivity
-    col_order <- names(sort(sapply(filter_values, length)))
+    #col_order <- names(sort(sapply(filter_values, length)))
+    col_order <- names(filter_values)
     first_col <- col_order[1]
     first_vals <- filter_values[[first_col]]
 
-    ## Filter first column (most selective) using dplyr::union_all
-    result <- lapply(first_vals, function(val) {
-        dplyr::filter(view, !!rlang::sym(first_col) == val)
-    }) %>%
-        Reduce(dplyr::union_all, .)
+    ## Filter first column (most selective) using dplyr::union_all or dplyr::collapse
+    if (length(first_vals) == 1) {
+        result <- dplyr::filter(view, !!rlang::sym(first_col) == first_vals) %>%
+            dplyr::collapse()
+    } else {
+        result <- lapply(first_vals, function(val) {
+            dplyr::filter(view, !!rlang::sym(first_col) == val)
+        }) %>%
+            Reduce(dplyr::union_all, .)
+    }
 
     ## Filter remaining columns (on smaller table)
     remaining_cols <- setdiff(col_order, first_col)
@@ -270,17 +276,24 @@ interpret_and_filter <- function(con, data_type, filter_values) {
     confirm_filter_values(filter_values)
 
     ## Order filter columns by selectivity and select projection
-    col_order <- names(sort(sapply(filter_values, length)))
-    first_col <- col_order[1]
+    sorted_inds <- order(sapply(filter_values, length))
+    sorted_args <- filter_values[sorted_inds]
+
+    if ("uuid" %in% names(sorted_args)) {
+        ex_uuid <- sorted_args[["uuid"]]
+        rest_args <- sorted_args[-which(names(sorted_args) == "uuid")]
+        sorted_args <- c(list("uuid" = ex_uuid), rest_args)
+    }
+
+    first_col <- names(sorted_args)[1]
 
     projection <- pick_projection(con, data_type, first_col)
-    #projection <- data_type
 
     ## Load the chosen view
     chosen_view <- dplyr::tbl(con, projection)
 
     ## Filter parquet by .values
-    queried_view <- filter_parquet_view(chosen_view, filter_values)
+    queried_view <- filter_parquet_view(chosen_view, sorted_args)
 
     return(queried_view)
 }
@@ -334,20 +347,14 @@ parquet_to_tse <- function(parquet_table, data_type) {
     ## Get parameters by data type
     colinfo <- parquet_colinfo(data_type)
 
-    colnames(parquet_table) <- colinfo$col_name
-    file_col <- colinfo$col_name[colinfo$se_role == "cname"]
+    cnames_col <- colinfo$col_name[colinfo$se_role == "cname"]
+    cdata_cols <- colinfo$col_name[colinfo$se_role == "cdata"]
     rnames_col <- colinfo$col_name[colinfo$se_role == "rname"]
     rdata_cols <- colinfo$col_name[colinfo$se_role == "rdata"]
     assay_cols <- colinfo$col_name[colinfo$se_role == "assay"]
 
-    ## Convert filename to uuid
-    converted_table <- parquet_table %>%
-        dplyr::rowwise() %>%
-        dplyr::mutate(uuid = unlist(strsplit(get(file_col), "/"))[6]) %>%
-        dplyr::select(-all_of(file_col))
-
     ## Create rowData table
-    rdata <- converted_table %>%
+    rdata <- parquet_table %>%
         select(any_of(c(rnames_col, rdata_cols))) %>%
         dplyr::distinct() %>%
       as.data.frame()
@@ -355,10 +362,10 @@ parquet_to_tse <- function(parquet_table, data_type) {
 
     ## Create assay table(s)
     alist <- sapply(assay_cols, function(acol) {
-      converted_table %>%
+      parquet_table %>%
         select(all_of(c(rnames_col, acol, "uuid"))) %>%
         tidyr::pivot_wider(
-          names_from  = uuid,
+          names_from  = all_of(cnames_col),
           values_from = all_of(acol),
           values_fill = 0
         ) %>%
@@ -366,18 +373,21 @@ parquet_to_tse <- function(parquet_table, data_type) {
         as.matrix()
     }, USE.NAMES = TRUE, simplify = FALSE)
 
-    ## Set sample IDs as column name
-    cdata <- sampleMetadata %>%
-      filter(uuid %in% unique(converted_table$uuid))
-    rownames(cdata) <- cdata$uuid
+    ## Create colData table with sampleMetadata added
+    cdata <- parquet_table %>%
+        select(any_of(c(cnames_col, cdata_cols))) %>%
+        dplyr::distinct() %>%
+        as.data.frame() %>%
+        dplyr::left_join(sampleMetadata, dplyr::join_by(uuid))
+    rownames(cdata) <- cdata[[cnames_col]]
 
-    # make sure rows and columns are in the same order
-    featureIDs <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
-    uuids <- unique(converted_table$uuid)
+    ## Confirm rows and columns are in the same order
+    rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
+    colids <- intersect(rownames(cdata), unlist(lapply(alist, colnames)))
 
-    rdata <- rdata[featureIDs,, drop = FALSE]
-    cdata <- cdata[uuids,, drop = FALSE]
-    alist <- lapply(alist, function(x) x[featureIDs, uuids])
+    rdata <- rdata[rowids,, drop = FALSE]
+    cdata <- cdata[colids,, drop = FALSE]
+    alist <- lapply(alist, function(x) x[rowids, colids, drop = FALSE])
 
     ## Create and return Summarized Experiment object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
@@ -508,7 +518,6 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
             working_view <- custom_view
         } else {
             proj <- pick_projection(con, data_type)
-            #proj <- data_type
             working_view <- tbl(con, proj)
         }
     }
@@ -601,7 +610,7 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
     # --- Step 4: Create initial data.frame ---
     result_df <- data.frame(
         filename = parquet_files,
-        URL = parquet_urls,
+        url = parquet_urls,
         stringsAsFactors = FALSE
     )
 
@@ -611,10 +620,10 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
         package = "parkinsonsMetagenomicData"
     )
 
-    # Create DataType column for joining
+    # Create data_type column for joining
     result_df <- dplyr::mutate(
         result_df,
-        DataType = detect_data_type(filename)
+        data_type = detect_data_type(filename)
     )
 
     if (nzchar(def_path) && file.exists(def_path)) {
@@ -622,7 +631,7 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
         definitions <- utils::read.csv(def_path, stringsAsFactors = FALSE)
 
         # Perform the join
-        result_df <- dplyr::left_join(result_df, definitions, by = "DataType")
+        result_df <- dplyr::left_join(result_df, definitions, by = "data_type")
 
     } else {
         message(
@@ -630,9 +639,9 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
             "Install 'parkinsonsMetagenomicData' to add full metadata."
         )
         # Add empty columns so the function always returns the same structure
-        result_df$Tool <- NA_character_
-        result_df$Description <- NA_character_
-        result_df$Units.Normalization <- NA_character_
+        result_df$tool <- NA_character_
+        result_df$description <- NA_character_
+        result_df$units_normalization <- NA_character_
     }
 
     return(result_df)
