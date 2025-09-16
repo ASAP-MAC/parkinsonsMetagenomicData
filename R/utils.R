@@ -28,6 +28,10 @@ pMD_get_cache <- function() {
 #' @description 'output_file_types' reads in the table extdata/output_files.csv.
 #' The table can optionally be filtered by providing a column name to filter by
 #' and a string/regular expression to filter the selected column with.
+#' @param filter_col Character string (optional): name of the column to filter
+#' by
+#' @param filter_string Character string (optional): string/regular expression
+#' to filter the selected column with.
 #' @return Tibble with columns 'tool', 'data_type', 'file_name', and 'subdir'
 #' @examples
 #' \dontrun{
@@ -92,8 +96,9 @@ biobakery_files <- function() {
 #' @description 'parquet_colinfo' returns the column info associated with a
 #' parquet file made from a particular output file type.
 #' @param data_type Single string: value found in the data_type' column of
-#' output_file_types() and also as the name of a file in the repo
-#' https://huggingface.co/datasets/waldronlab/metagenomics_mac.
+#' output_file_types() and also as part of the name of a file in the repo
+#' https://huggingface.co/datasets/waldronlab/metagenomics_mac or
+#' https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples.
 #' @return Data frame with columns 'general_data_type', 'col_name', 'col_class',
 #' 'description', 'se_role', and 'position'
 #' @examples
@@ -108,7 +113,7 @@ biobakery_files <- function() {
 #' @rdname parquet_colinfo
 #' @export
 #' @importFrom readr read_csv
-#' @importFrom dplyr filter arrange
+#' @importFrom dplyr filter
 parquet_colinfo <- function(data_type) {
     ## Load in parquet column dictionary
     fpath <- system.file("extdata", "parquet_dictionary.csv",
@@ -180,7 +185,7 @@ detect_data_type <- function(string) {
 #' if(interactive()){
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "relative_abundance")
-#'  pick_projection(con, "relative_abundance", "nested_clade_name")
+#'  pick_projection(con, "relative_abundance", "clade_name_species")
 #'  pick_projection(con, "relative_abundance")
 #'  }
 #' }
@@ -440,7 +445,7 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
             if (!n %in% available_features) {
                 stop("'", n,
                      "' is not an available feature. All list elements should be named one of the following:\n",
-                     paste0(names(filter_values), collapse = ", "))
+                     paste0(available_features, collapse = ", "))
             }
         }
     }
@@ -483,7 +488,7 @@ confirm_duckdb_con <- function(con) {
 #' \dontrun{
 #' if(interactive()){
 #'  con <- accessParquetData(data_types = "pathcoverage_unstratified")
-#'  view <- tbl(con, "pathcoverage_unstratified")
+#'  view <- tbl(con, "pathcoverage_unstratified_uuid")
 #'  confirm_duckdb_view(view)
 #'  }
 #' }
@@ -509,7 +514,7 @@ confirm_duckdb_view <- function(view) {
 #' if(interactive()){
 #'  confirm_repo(NULL)
 #'  confirm_repo("horse")
-#'  confirm_repo("metagenomics_mac")
+#'  confirm_repo("waldronlab/metagenomics_mac")
 #'  }
 #' }
 #' @rdname confirm_repo

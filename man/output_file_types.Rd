@@ -6,6 +6,13 @@
 \usage{
 output_file_types(filter_col = NULL, filter_string = NULL)
 }
+\arguments{
+\item{filter_col}{Character string (optional): name of the column to filter
+by}
+
+\item{filter_string}{Character string (optional): string/regular expression
+to filter the selected column with.}
+}
 \value{
 Tibble with columns 'tool', 'data_type', 'file_name', and 'subdir'
 }

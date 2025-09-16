@@ -22,7 +22,7 @@ the function will throw a 'stop()' error.
 \dontrun{
 if(interactive()){
  con <- accessParquetData(data_types = "pathcoverage_unstratified")
- view <- tbl(con, "pathcoverage_unstratified")
+ view <- tbl(con, "pathcoverage_unstratified_uuid")
  confirm_duckdb_view(view)
  }
 }

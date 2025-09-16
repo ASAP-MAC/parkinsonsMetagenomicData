@@ -4,11 +4,7 @@
 \alias{accessParquetData}
 \title{Set up DuckDB connection with views for available data types}
 \usage{
-accessParquetData(
-  dbdir = ":memory:",
-  repo = "waldronlab/metagenomics_mac",
-  data_types = NULL
-)
+accessParquetData(dbdir = ":memory:", repo = NULL, data_types = NULL)
 }
 \arguments{
 \item{dbdir}{Location for database files. Should be a path to an existing
@@ -16,10 +12,11 @@ directory in the file system or the value ':memory:' to keep data in RAM.
 Default: ':memory:'}
 
 \item{repo}{String (optional): Hugging Face repo where the parquet files are
-stored. Default: 'waldronlab/metagenomics_mac'}
+stored. If NULL, the repo listed as the default in get_repo_info() will be
+selected. Default: NULL}
 
 \item{data_types}{Character vector (optional): list of data types to
-estalish database views for. If NULL, views will be created for all available
+establish database views for. If NULL, views will be created for all available
 data types. Default: NULL}
 }
 \value{

@@ -8,8 +8,9 @@ parquet_colinfo(data_type)
 }
 \arguments{
 \item{data_type}{Single string: value found in the data_type' column of
-output_file_types() and also as the name of a file in the repo
-https://huggingface.co/datasets/waldronlab/metagenomics_mac.}
+output_file_types() and also as part of the name of a file in the repo
+https://huggingface.co/datasets/waldronlab/metagenomics_mac or
+https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples.}
 }
 \value{
 Data frame with columns 'general_data_type', 'col_name', 'col_class',

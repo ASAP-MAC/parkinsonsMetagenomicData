@@ -8,6 +8,14 @@ retrieve_views(con, repo = NULL, data_types = NULL)
 }
 \arguments{
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
+
+\item{repo}{String (optional): Hugging Face repo where the parquet files are
+stored. If NULL, the repo listed as the default in get_repo_info() will be
+selected. Default: NULL}
+
+\item{data_types}{Character vector (optional): list of data types to
+establish database views for. If NULL, views will be created for all available
+data types. Default: NULL}
 }
 \description{
 'retrieve_views' creates database views for all of the data

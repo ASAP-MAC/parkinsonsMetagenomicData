@@ -4,12 +4,12 @@
 \alias{get_hf_parquet_urls}
 \title{Get Parquet File URLs and Metadata from a Hugging Face Repository}
 \usage{
-get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac")
+get_hf_parquet_urls(repo_name = NULL)
 }
 \arguments{
 \item{repo_name}{A character string specifying the Hugging Face dataset
-repository name in the format "user/repo" or "org/repo".
-Defaults to "waldronlab/metagenomics_mac".}
+repository name in the format "user/repo" or "org/repo". If NULL, the repo
+listed as the default in get_repo_info() will be selected. Default: NULL}
 }
 \value{
 A data.frame with the following columns:
@@ -35,7 +35,10 @@ file, which is expected to be in the \code{inst/extdata} directory of the
 the metadata columns will be populated with \code{NA}.
 }
 \examples{
-  # Get file URLs and metadata from the default repository
-  file_info <- get_hf_parquet_urls()
-  head(file_info)
+\dontrun{
+if(interactive()){
+ file_info <- get_hf_parquet_urls()
+ head(file_info)
+ }
+}
 }

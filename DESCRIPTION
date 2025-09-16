@@ -7,7 +7,7 @@ Description: Provides functions to retrieve raw tabular data from Google Cloud B
 License: Artistic-2.0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Depends: R (>= 4.4.0)
 Imports: 
     dplyr,
