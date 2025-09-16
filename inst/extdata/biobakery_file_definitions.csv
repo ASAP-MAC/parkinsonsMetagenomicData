@@ -1,4 +1,4 @@
-DataType,Tool,Description,Units/Normalization
+data_type,tool,description,units_normalization
 genefamilies,HUMAnN,"Abundance of gene families, typically identified by UniRef90 IDs. This is the raw, unnormalized output.",Reads Per Kilobase (RPK)
 genefamilies_cpm,HUMAnN,"Gene family abundances normalized to Copies Per Million. This accounts for sequencing depth, making samples more comparable.",Copies Per Million (CPM)
 genefamilies_cpm_stratified,HUMAnN,"Gene family abundances (in CPM) that are taxonomically stratified, showing the contribution of each species to the total abundance of each gene family.",Copies Per Million (CPM)

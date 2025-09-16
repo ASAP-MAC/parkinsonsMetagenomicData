@@ -23,7 +23,7 @@ the function will throw a 'stop()' error.
 if(interactive()){
  confirm_repo(NULL)
  confirm_repo("horse")
- confirm_repo("metagenomics_mac")
+ confirm_repo("waldronlab/metagenomics_mac")
  }
 }
 }

@@ -11,7 +11,8 @@ parquet_to_tse(parquet_table, data_type)
 file found in the repo of interest (see inst/extdata/parquet_repos.csv).}
 
 \item{data_type}{Single string: value found in the data_type' column of
-output_file_types() and also as the name of a file in the repo of interest.}
+output_file_types() and also as part of the name of a file in the repo of
+interest.}
 }
 \value{
 A TreeSummarizedExperiment object with process metadata, row data, column
@@ -25,13 +26,11 @@ attached as colData.
 \examples{
 \dontrun{
 if(interactive()){
- con <- db_connect()
- view_parquet(con, "pathcoverage_unstratified")
- p_tbl <- dplyr::tbl(con, "pathcoverage_unstratified") |>
-          head() |>
-          dplyr::collect()
+ con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+                          data_types = "pathcoverage_unstratified")
+ parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
 
- se <- parquet_to_tse(p_tbl, "pathcoverage_unstratified")
+ se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
  se
  }
 }

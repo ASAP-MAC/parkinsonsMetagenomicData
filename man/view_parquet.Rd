@@ -27,8 +27,9 @@ file is specified via the httpfs-compatible URL. See
 \dontrun{
 if(interactive()){
  con <- db_connect()
-
- view_parquet(con, "hf://datasets/waldronlab/metagenomics_mac/relative_abundance.parquet", "relative_abundance")
+ view_parquet(con,
+              "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
+              "relative_abundance_uuid")
 
  DBI::dbListTables(con)
  }

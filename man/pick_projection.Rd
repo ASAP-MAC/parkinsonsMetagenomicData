@@ -31,7 +31,7 @@ specific feature, a view/table sorted by UUID will be the default.
 if(interactive()){
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "relative_abundance")
- pick_projection(con, "relative_abundance", "nested_clade_name")
+ pick_projection(con, "relative_abundance", "clade_name_species")
  pick_projection(con, "relative_abundance")
  }
 }

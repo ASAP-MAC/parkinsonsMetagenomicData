@@ -27,15 +27,13 @@ filtering.
 \examples{
 \dontrun{
 if(interactive()){
-## WILL NOT WORK UNTIL PARQUET UPDATE
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "relative_abundance")
- fvalues <- list(species_tax = c("s__Corynebacterium_lowii",
-                                 "s__GGB30861_SGB44083"),
-                 uuid = c("33e1965a-100e-45f1-a29e-3f480c5af8e1",
-                          "769f6548-3e2e-4cd6-9445-0fca5ee50479",
-                          "ab04a4ee-8165-49fa-bd07-9e1fff4241c6",
-                          "23f1dd24-2bfa-449a-a624-ac6dedd9edca"))
+ fvalues <- list(clade_name_species = c("s__GGB52130_SGB14966",
+                                        "s__Streptococcus_mutans"),
+                 uuid = c("d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+                          "38d449c8-1462-4d30-ba87-d032d95942ce",
+                          "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"))
  interpret_and_filter(con, "relative_abundance", fvalues)
  }
 }

@@ -8,7 +8,7 @@ filter_parquet_view(view, filter_values)
 }
 \arguments{
 \item{view}{DuckDB database view or table: obtained by calling
-tbl(con, view_name).}
+tbl(duckdb_connection, view_name).}
 
 \item{filter_values}{Named list: element name equals the column name to be
 filtered and element value equals a vector of exact column values.}
@@ -36,15 +36,15 @@ the filter for you.
 \examples{
 \dontrun{
 if(interactive()){
- con <- accessParquetData(data_types = "genefamilies_stratified")
- fvalues <- list(filename = c("gs://metagenomics-mac/results/cMDv4/23f1dd24-2bfa-449a-a624-ac6dedd9edca/humann/out_genefamilies_stratified.tsv.gz",
-                              "gs://metagenomics-mac/results/cMDv4/42567d6b-981d-41c5-b82d-8e8dcc44baba/humann/out_genefamilies_stratified.tsv.gz",
-                              "gs://metagenomics-mac/results/cMDv4/bc22379e-4c05-4700-9a40-fa6fed718ea6/humann/out_genefamilies_stratified.tsv.gz"),
-                 `# Gene Family` = c("UniRef90_U3JBQ2|g__Lactobacillus.s__Lactobacillus_johnsonii",
-                                     "UniRef90_R9KYZ5|g__Lachnospiraceae_unclassified.s__Lachnospiraceae_bacterium_COE1",
-                                     "UniRef90_R9KYZ5|unclassified",
-                                     "UniRef90_A0A1V0QE01|g__Muribaculum.s__Muribaculum_intestinale"))
- filter_parquet_view(view = tbl(con, "genefamilies_stratified"),
+ con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+                          data_types = "genefamilies_stratified")
+ fvalues <- list(uuid = c("d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+                          "38d449c8-1462-4d30-ba87-d032d95942ce",
+                          "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"),
+                 gene_family_uniref = c("UniRef90_R6K8T6",
+                                       "UniRef90_B0PDE3"))
+
+ filter_parquet_view(view = tbl(con, "genefamilies_stratified_uuid"),
                 filter_values = fvalues)
  }
 }

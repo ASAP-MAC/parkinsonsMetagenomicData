@@ -10,8 +10,9 @@ loadParquetData(con, data_type, filter_values = NULL, custom_view = NULL)
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
 
 \item{data_type}{Single string: value found in the data_type' column of
-output_file_types() and also as the name of a view found in
-DBI::dbListTables(con), indicating which view to collect data from.}
+output_file_types() and also as part of the name of a view found in
+DBI::dbListTables(con), indicating which views to consider when collecting
+data.}
 
 \item{filter_values}{Named list: element name equals the column name to be
 filtered and element value equals a vector of exact column values.
@@ -32,27 +33,35 @@ names, and relevant assays.
 \description{
 'loadParquetData' accesses a DuckDB view created by
 'accessParquetData' and loads it into R as a Summarized Experiment object.
-Arguments can be provided to filter the DuckDB view, either by providing a
-list of UUIDs or a saved sequence of function calls using dplyr::tbl to
-access the view.
+Arguments can be provided to filter or transform the DuckDB view. To filter,
+provide a named list (format: name = column name, value = single exact
+value or vector of exact values) to filter_values. To further transform the
+view, provide a saved sequence of function calls starting with dplyr::tbl to
+custom_view.
 }
 \details{
-If 'custom_view' is provided, it must use the view indicated by
-'data_type'.
+If 'custom_view' is provided, it must use one of the views indicated
+by data_type'.
 }
 \examples{
 \dontrun{
 if(interactive()){
- prepared_db <- accessParquetData(dbdir = ":memory:")
- DBI::dbListTables(prepared_db)
- custom_filter <- tbl(prepared_db, "pathcoverage_unstratified") |>
-                filter(`# Pathway` == "PWY-5686: UMP biosynthesis I")
+ con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+                          data_types = "pathcoverage_unstratified")
 
- se <- loadParquetData(con = prepared_db,
-                       data_type = "pathcoverage_unstratified",
-                       uuids = c("0807eb2a-a15e-4647-8e19-2600d8fda378",
-                                 "e0fbb54f-0249-4917-a4d7-bd68acb89c62"),
-                       custom_view = custom_filter)
+ custom_filter <- tbl(con, "pathcoverage_unstratified_pathway") |>
+                  filter(grepl("UMP biosynthesis", pathway))
+
+ custom_tse <- loadParquetData(con,
+                               data_type = "pathcoverage_unstratified",
+                               filter_values = list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+                                                             "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+                                                             "fb7e8210-002a-4554-b265-873c4003e25f",
+                                                             "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+                                                             "4985aa08-6138-4146-8ae3-952716575395",
+                                                             "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")),
+                               custom_view = custom_filter)
+ custom_tse
  }
 }
 }

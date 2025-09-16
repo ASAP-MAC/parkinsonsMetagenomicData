@@ -46,8 +46,9 @@ db_connect <- function(dbdir = ":memory:") {
 #' \dontrun{
 #' if(interactive()){
 #'  con <- db_connect()
-#'
-#'  view_parquet(con, "hf://datasets/waldronlab/metagenomics_mac/relative_abundance.parquet", "relative_abundance")
+#'  view_parquet(con,
+#'               "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
+#'               "relative_abundance_uuid")
 #'
 #'  DBI::dbListTables(con)
 #'  }
@@ -82,6 +83,12 @@ view_parquet <- function(con, httpfs_url = NULL, view_name = NULL) {
 #' an individual type or vector of types may also be requested to avoid unwanted
 #' views.
 #' @param con DuckDB connection object of class 'duckdb_connection'
+#' @param repo String (optional): Hugging Face repo where the parquet files are
+#' stored. If NULL, the repo listed as the default in get_repo_info() will be
+#' selected. Default: NULL
+#' @param data_types Character vector (optional): list of data types to
+#' establish database views for. If NULL, views will be created for all available
+#' data types. Default: NULL
 #' @return NULL
 #' @details 'retrieve_views' uses 'output_file_types' as the initial list of
 #' data types to retrieve, and checks if they exist as parquet files in the repo
@@ -121,17 +128,17 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 
     ## Get repo file information
-    url_tbl <- get_hf_parquet_urls(repo_row$repo_name)
+    url_tbl <- suppressMessages(get_hf_parquet_urls(repo_row$repo_name))
 
     if (is.null(data_types)) {
         data_types <- output_file_types()$data_type
     }
 
     selected_files <- url_tbl %>%
-        filter(DataType %in% data_types)
+        filter(data_type %in% data_types)
 
     ## Notify of data types not present
-    missing_types <- setdiff(data_types, url_tbl$DataType)
+    missing_types <- setdiff(data_types, url_tbl$data_type)
 
     if (length(missing_types) != 0) {
         message(paste0("The following data types are not present in the repo ",
@@ -140,7 +147,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 
     ## Convert URLs to httpfs protocol
-    hf_urls <- file_to_hf(selected_files$URL)
+    hf_urls <- file_to_hf(selected_files$url)
 
     ## Create view names
     view_names <- selected_files$filename |>
@@ -159,7 +166,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' is optimized to work with even extremely large views by leveraging parquet
 #' row group skipping.
 #' @param view DuckDB database view or table: obtained by calling
-#' tbl(con, view_name).
+#' tbl(duckdb_connection, view_name).
 #' @param filter_values Named list: element name equals the column name to be
 #' filtered and element value equals a vector of exact column values.
 #' @return A filtered DuckDB database view or table. This is still lazy until
@@ -175,15 +182,15 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  con <- accessParquetData(data_types = "genefamilies_stratified")
-#'  fvalues <- list(filename = c("gs://metagenomics-mac/results/cMDv4/23f1dd24-2bfa-449a-a624-ac6dedd9edca/humann/out_genefamilies_stratified.tsv.gz",
-#'                               "gs://metagenomics-mac/results/cMDv4/42567d6b-981d-41c5-b82d-8e8dcc44baba/humann/out_genefamilies_stratified.tsv.gz",
-#'                               "gs://metagenomics-mac/results/cMDv4/bc22379e-4c05-4700-9a40-fa6fed718ea6/humann/out_genefamilies_stratified.tsv.gz"),
-#'                  `# Gene Family` = c("UniRef90_U3JBQ2|g__Lactobacillus.s__Lactobacillus_johnsonii",
-#'                                      "UniRef90_R9KYZ5|g__Lachnospiraceae_unclassified.s__Lachnospiraceae_bacterium_COE1",
-#'                                      "UniRef90_R9KYZ5|unclassified",
-#'                                      "UniRef90_A0A1V0QE01|g__Muribaculum.s__Muribaculum_intestinale"))
-#'  filter_parquet_view(view = tbl(con, "genefamilies_stratified"),
+#'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+#'                           data_types = "genefamilies_stratified")
+#'  fvalues <- list(uuid = c("d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'                           "38d449c8-1462-4d30-ba87-d032d95942ce",
+#'                           "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"),
+#'                  gene_family_uniref = c("UniRef90_R6K8T6",
+#'                                        "UniRef90_B0PDE3"))
+#'
+#'  filter_parquet_view(view = tbl(con, "genefamilies_stratified_uuid"),
 #'                 filter_values = fvalues)
 #'  }
 #' }
@@ -192,7 +199,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #'  \code{\link[rlang]{sym}}
 #' @rdname filter_parquet_view
 #' @export
-#' @importFrom dplyr filter union_all
+#' @importFrom dplyr filter union_all collapse
 #' @importFrom rlang sym
 filter_parquet_view <- function(view, filter_values) {
     ## Check input
@@ -203,15 +210,21 @@ filter_parquet_view <- function(view, filter_values) {
     confirm_filter_values(filter_values, colnames(view))
 
     ## Order filter columns by selectivity
-    col_order <- names(sort(sapply(filter_values, length)))
+    #col_order <- names(sort(sapply(filter_values, length)))
+    col_order <- names(filter_values)
     first_col <- col_order[1]
     first_vals <- filter_values[[first_col]]
 
-    ## Filter first column (most selective) using dplyr::union_all
-    result <- lapply(first_vals, function(val) {
-        dplyr::filter(view, !!rlang::sym(first_col) == val)
-    }) %>%
-        Reduce(dplyr::union_all, .)
+    ## Filter first column (most selective) using dplyr::union_all or dplyr::collapse
+    if (length(first_vals) == 1) {
+        result <- dplyr::filter(view, !!rlang::sym(first_col) == first_vals) %>%
+            dplyr::collapse()
+    } else {
+        result <- lapply(first_vals, function(val) {
+            dplyr::filter(view, !!rlang::sym(first_col) == val)
+        }) %>%
+            Reduce(dplyr::union_all, .)
+    }
 
     ## Filter remaining columns (on smaller table)
     remaining_cols <- setdiff(col_order, first_col)
@@ -241,15 +254,13 @@ filter_parquet_view <- function(view, filter_values) {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#' ## WILL NOT WORK UNTIL PARQUET UPDATE
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "relative_abundance")
-#'  fvalues <- list(species_tax = c("s__Corynebacterium_lowii",
-#'                                  "s__GGB30861_SGB44083"),
-#'                  uuid = c("33e1965a-100e-45f1-a29e-3f480c5af8e1",
-#'                           "769f6548-3e2e-4cd6-9445-0fca5ee50479",
-#'                           "ab04a4ee-8165-49fa-bd07-9e1fff4241c6",
-#'                           "23f1dd24-2bfa-449a-a624-ac6dedd9edca"))
+#'  fvalues <- list(clade_name_species = c("s__GGB52130_SGB14966",
+#'                                         "s__Streptococcus_mutans"),
+#'                  uuid = c("d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'                           "38d449c8-1462-4d30-ba87-d032d95942ce",
+#'                           "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"))
 #'  interpret_and_filter(con, "relative_abundance", fvalues)
 #'  }
 #' }
@@ -270,17 +281,24 @@ interpret_and_filter <- function(con, data_type, filter_values) {
     confirm_filter_values(filter_values)
 
     ## Order filter columns by selectivity and select projection
-    col_order <- names(sort(sapply(filter_values, length)))
-    first_col <- col_order[1]
+    sorted_inds <- order(sapply(filter_values, length))
+    sorted_args <- filter_values[sorted_inds]
+
+    if ("uuid" %in% names(sorted_args)) {
+        ex_uuid <- sorted_args[["uuid"]]
+        rest_args <- sorted_args[-which(names(sorted_args) == "uuid")]
+        sorted_args <- c(list("uuid" = ex_uuid), rest_args)
+    }
+
+    first_col <- names(sorted_args)[1]
 
     projection <- pick_projection(con, data_type, first_col)
-    #projection <- data_type
 
     ## Load the chosen view
     chosen_view <- dplyr::tbl(con, projection)
 
     ## Filter parquet by .values
-    queried_view <- filter_parquet_view(chosen_view, filter_values)
+    queried_view <- filter_parquet_view(chosen_view, sorted_args)
 
     return(queried_view)
 }
@@ -292,19 +310,18 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' @param parquet_table Table or data frame: data taken directly from a parquet
 #' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
 #' @param data_type Single string: value found in the data_type' column of
-#' output_file_types() and also as the name of a file in the repo of interest.
+#' output_file_types() and also as part of the name of a file in the repo of
+#' interest.
 #' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  con <- db_connect()
-#'  view_parquet(con, "pathcoverage_unstratified")
-#'  p_tbl <- dplyr::tbl(con, "pathcoverage_unstratified") |>
-#'           head() |>
-#'           dplyr::collect()
+#'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+#'                           data_types = "pathcoverage_unstratified")
+#'  parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
 #'
-#'  se <- parquet_to_tse(p_tbl, "pathcoverage_unstratified")
+#'  se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
 #'  se
 #'  }
 #' }
@@ -334,20 +351,14 @@ parquet_to_tse <- function(parquet_table, data_type) {
     ## Get parameters by data type
     colinfo <- parquet_colinfo(data_type)
 
-    colnames(parquet_table) <- colinfo$col_name
-    file_col <- colinfo$col_name[colinfo$se_role == "cname"]
+    cnames_col <- colinfo$col_name[colinfo$se_role == "cname"]
+    cdata_cols <- colinfo$col_name[colinfo$se_role == "cdata"]
     rnames_col <- colinfo$col_name[colinfo$se_role == "rname"]
     rdata_cols <- colinfo$col_name[colinfo$se_role == "rdata"]
     assay_cols <- colinfo$col_name[colinfo$se_role == "assay"]
 
-    ## Convert filename to uuid
-    converted_table <- parquet_table %>%
-        dplyr::rowwise() %>%
-        dplyr::mutate(uuid = unlist(strsplit(get(file_col), "/"))[6]) %>%
-        dplyr::select(-all_of(file_col))
-
     ## Create rowData table
-    rdata <- converted_table %>%
+    rdata <- parquet_table %>%
         select(any_of(c(rnames_col, rdata_cols))) %>%
         dplyr::distinct() %>%
       as.data.frame()
@@ -355,10 +366,10 @@ parquet_to_tse <- function(parquet_table, data_type) {
 
     ## Create assay table(s)
     alist <- sapply(assay_cols, function(acol) {
-      converted_table %>%
+      parquet_table %>%
         select(all_of(c(rnames_col, acol, "uuid"))) %>%
         tidyr::pivot_wider(
-          names_from  = uuid,
+          names_from  = all_of(cnames_col),
           values_from = all_of(acol),
           values_fill = 0
         ) %>%
@@ -366,18 +377,21 @@ parquet_to_tse <- function(parquet_table, data_type) {
         as.matrix()
     }, USE.NAMES = TRUE, simplify = FALSE)
 
-    ## Set sample IDs as column name
-    cdata <- sampleMetadata %>%
-      filter(uuid %in% unique(converted_table$uuid))
-    rownames(cdata) <- cdata$uuid
+    ## Create colData table with sampleMetadata added
+    cdata <- parquet_table %>%
+        select(any_of(c(cnames_col, cdata_cols))) %>%
+        dplyr::distinct() %>%
+        as.data.frame() %>%
+        dplyr::left_join(sampleMetadata, dplyr::join_by(uuid))
+    rownames(cdata) <- cdata[[cnames_col]]
 
-    # make sure rows and columns are in the same order
-    featureIDs <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
-    uuids <- unique(converted_table$uuid)
+    ## Confirm rows and columns are in the same order
+    rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
+    colids <- intersect(rownames(cdata), unlist(lapply(alist, colnames)))
 
-    rdata <- rdata[featureIDs,, drop = FALSE]
-    cdata <- cdata[uuids,, drop = FALSE]
-    alist <- lapply(alist, function(x) x[featureIDs, uuids])
+    rdata <- rdata[rowids,, drop = FALSE]
+    cdata <- cdata[colids,, drop = FALSE]
+    alist <- lapply(alist, function(x) x[rowids, colids, drop = FALSE])
 
     ## Create and return Summarized Experiment object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
@@ -397,9 +411,10 @@ parquet_to_tse <- function(parquet_table, data_type) {
 #' directory in the file system or the value ':memory:' to keep data in RAM.
 #' Default: ':memory:'
 #' @param repo String (optional): Hugging Face repo where the parquet files are
-#' stored. Default: 'waldronlab/metagenomics_mac'
+#' stored. If NULL, the repo listed as the default in get_repo_info() will be
+#' selected. Default: NULL
 #' @param data_types Character vector (optional): list of data types to
-#' estalish database views for. If NULL, views will be created for all available
+#' establish database views for. If NULL, views will be created for all available
 #' data types. Default: NULL
 #' @return DuckDB connection object of class 'duckdb_connection'
 #' @examples
@@ -415,9 +430,12 @@ parquet_to_tse <- function(parquet_table, data_type) {
 #' @rdname accessParquetData
 #' @export
 accessParquetData <- function(dbdir = ":memory:",
-                              repo = "waldronlab/metagenomics_mac",
+                              repo = NULL,
                               data_types = NULL) {
     ## Check input
+    # repo
+    confirm_repo(repo)
+
     # data_types
     for (dt in data_types) confirm_data_type(dt)
 
@@ -434,13 +452,16 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @title Retrieve data from a DuckDB view and convert to Summarized Experiment
 #' @description 'loadParquetData' accesses a DuckDB view created by
 #' 'accessParquetData' and loads it into R as a Summarized Experiment object.
-#' Arguments can be provided to filter the DuckDB view, either by providing a
-#' list of UUIDs or a saved sequence of function calls using dplyr::tbl to
-#' access the view.
+#' Arguments can be provided to filter or transform the DuckDB view. To filter,
+#' provide a named list (format: name = column name, value = single exact
+#' value or vector of exact values) to filter_values. To further transform the
+#' view, provide a saved sequence of function calls starting with dplyr::tbl to
+#' custom_view.
 #' @param con DuckDB connection object of class 'duckdb_connection'
 #' @param data_type Single string: value found in the data_type' column of
-#' output_file_types() and also as the name of a view found in
-#' DBI::dbListTables(con), indicating which view to collect data from.
+#' output_file_types() and also as part of the name of a view found in
+#' DBI::dbListTables(con), indicating which views to consider when collecting
+#' data.
 #' @param filter_values Named list: element name equals the column name to be
 #' filtered and element value equals a vector of exact column values.
 #' Default: NULL
@@ -453,21 +474,27 @@ accessParquetData <- function(dbdir = ":memory:",
 #' function example. Default: NULL
 #' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
-#' @details If 'custom_view' is provided, it must use the view indicated by
-#' 'data_type'.
+#' @details If 'custom_view' is provided, it must use one of the views indicated
+#' by data_type'.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  prepared_db <- accessParquetData(dbdir = ":memory:")
-#'  DBI::dbListTables(prepared_db)
-#'  custom_filter <- tbl(prepared_db, "pathcoverage_unstratified") |>
-#'                 filter(`# Pathway` == "PWY-5686: UMP biosynthesis I")
+#'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+#'                           data_types = "pathcoverage_unstratified")
 #'
-#'  se <- loadParquetData(con = prepared_db,
-#'                        data_type = "pathcoverage_unstratified",
-#'                        uuids = c("0807eb2a-a15e-4647-8e19-2600d8fda378",
-#'                                  "e0fbb54f-0249-4917-a4d7-bd68acb89c62"),
-#'                        custom_view = custom_filter)
+#'  custom_filter <- tbl(con, "pathcoverage_unstratified_pathway") |>
+#'                   filter(grepl("UMP biosynthesis", pathway))
+#'
+#'  custom_tse <- loadParquetData(con,
+#'                                data_type = "pathcoverage_unstratified",
+#'                                filter_values = list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'                                                              "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'                                                              "fb7e8210-002a-4554-b265-873c4003e25f",
+#'                                                              "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'                                                              "4985aa08-6138-4146-8ae3-952716575395",
+#'                                                              "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")),
+#'                                custom_view = custom_filter)
+#'  custom_tse
 #'  }
 #' }
 #' @seealso
@@ -508,7 +535,6 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
             working_view <- custom_view
         } else {
             proj <- pick_projection(con, data_type)
-            #proj <- data_type
             working_view <- tbl(con, proj)
         }
     }
@@ -529,8 +555,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' and then joins this information with a local file containing definitions
 #' for BioBakery data types.
 #' @param repo_name A character string specifying the Hugging Face dataset
-#'   repository name in the format "user/repo" or "org/repo".
-#'   Defaults to "waldronlab/metagenomics_mac".
+#' repository name in the format "user/repo" or "org/repo". If NULL, the repo
+#' listed as the default in get_repo_info() will be selected. Default: NULL
 #' @return A data.frame with the following columns:
 #'   \describe{
 #'     \item{filename}{The name of the Parquet file.}
@@ -545,15 +571,33 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' `parkinsonsMetagenomicData` package. If this package is not available,
 #' the metadata columns will be populated with `NA`.
 #' @examples
-#'   # Get file URLs and metadata from the default repository
-#'   file_info <- get_hf_parquet_urls()
-#'   head(file_info)
+#' \dontrun{
+#' if(interactive()){
+#'  file_info <- get_hf_parquet_urls()
+#'  head(file_info)
+#'  }
+#' }
 #' @export
 #' @importFrom httr GET status_code content
 #' @importFrom jsonlite fromJSON
 #' @importFrom dplyr left_join mutate
 #' @importFrom utils read.csv
-get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
+get_hf_parquet_urls <- function(repo_name = NULL) {
+    ## Check input
+    # repo
+    confirm_repo(repo_name)
+
+    ## Get repo information
+    ri <- get_repo_info()
+
+    if (is.null(repo_name)) {
+        repo_row <- ri[ri$default == "Y",]
+    } else {
+        repo_row <- ri[ri$repo_name == repo_name,]
+    }
+
+    repo_name <- repo_row$repo_name
+
     # --- Step 1: Construct API URL and get repo info ---
     repo_api_url <- paste0("https://huggingface.co/api/datasets/", repo_name)
 
@@ -601,7 +645,7 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
     # --- Step 4: Create initial data.frame ---
     result_df <- data.frame(
         filename = parquet_files,
-        URL = parquet_urls,
+        url = parquet_urls,
         stringsAsFactors = FALSE
     )
 
@@ -611,10 +655,10 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
         package = "parkinsonsMetagenomicData"
     )
 
-    # Create DataType column for joining
+    # Create data_type column for joining
     result_df <- dplyr::mutate(
         result_df,
-        DataType = detect_data_type(filename)
+        data_type = detect_data_type(filename)
     )
 
     if (nzchar(def_path) && file.exists(def_path)) {
@@ -622,7 +666,7 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
         definitions <- utils::read.csv(def_path, stringsAsFactors = FALSE)
 
         # Perform the join
-        result_df <- dplyr::left_join(result_df, definitions, by = "DataType")
+        result_df <- dplyr::left_join(result_df, definitions, by = "data_type")
 
     } else {
         message(
@@ -630,9 +674,9 @@ get_hf_parquet_urls <- function(repo_name = "waldronlab/metagenomics_mac") {
             "Install 'parkinsonsMetagenomicData' to add full metadata."
         )
         # Add empty columns so the function always returns the same structure
-        result_df$Tool <- NA_character_
-        result_df$Description <- NA_character_
-        result_df$Units.Normalization <- NA_character_
+        result_df$tool <- NA_character_
+        result_df$description <- NA_character_
+        result_df$units_normalization <- NA_character_
     }
 
     return(result_df)
