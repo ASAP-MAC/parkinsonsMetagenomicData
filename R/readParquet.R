@@ -284,12 +284,6 @@ interpret_and_filter <- function(con, data_type, filter_values) {
     sorted_inds <- order(sapply(filter_values, length))
     sorted_args <- filter_values[sorted_inds]
 
-    if ("uuid" %in% names(sorted_args)) {
-        ex_uuid <- sorted_args[["uuid"]]
-        rest_args <- sorted_args[-which(names(sorted_args) == "uuid")]
-        sorted_args <- c(list("uuid" = ex_uuid), rest_args)
-    }
-
     first_col <- names(sorted_args)[1]
 
     projection <- pick_projection(con, data_type, first_col)
