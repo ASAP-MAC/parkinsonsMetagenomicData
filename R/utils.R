@@ -161,8 +161,24 @@ detect_data_type <- function(string) {
     reg_types <- paste0(data_types[order(nchar(data_types), decreasing = TRUE)],
                         collapse = "|")
 
-    ## Extract first match from input
-    matches <- stringr::str_extract(string, reg_types)
+    ## Loop through input
+    matches <- rep(NA, length(string))
+
+    for (i in 1:length(string)) {
+        s <- string[i]
+
+        if (grepl("_ref", s)) {
+            ## Detect reference type
+            match <- "reference"
+        } else {
+            ## Extract first match from input
+            match <- stringr::str_extract(s, reg_types)
+
+        }
+
+        ## Save current type
+        matches[i] <- match
+    }
 
     return(matches)
 }
@@ -251,6 +267,16 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
 get_repo_info <- function() {
     ## Load in parquet repo URL table
     fpath <- system.file("extdata", "parquet_repos.csv",
+                         package = "parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
+
+    return(ftable)
+}
+
+get_ref_info <- function() {
+    ## Load in reference file info table
+    fpath <- system.file("extdata", "ref_file_definitions.csv",
                          package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
@@ -525,5 +551,13 @@ confirm_repo <- function(repo) {
 
     if (!is.null(repo) && !repo %in% ri$repo_name) {
         stop(paste0("Please provide one of the following valid repo names or NULL to select the default (", d, "):\n", paste(ri$repo_name, collapse = ", ")))
+    }
+}
+
+confirm_ref <- function(ref) {
+    ri <- get_ref_info()
+
+    if (!ref %in% ri$ref_file) {
+        stop(paste0("Please provide one of the following valid reference file names:\n", paste(ri$ref_file, collapse = ", ")))
     }
 }

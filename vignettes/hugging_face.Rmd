@@ -137,7 +137,7 @@ the column to filter by, and the element values will be exact matches.
 
 ```{r filter_vals}
 filter_values <- list(uuid = selected_samples$uuid,
-                      clade_name_phylum = "p__Firmicutes")
+                      clade_name_species = "s__Faecalibacterium_prausnitzii")
 ```
 
 We then provide that set of filtering arguments to `loadParquetData` along with

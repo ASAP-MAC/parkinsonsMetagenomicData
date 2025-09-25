@@ -675,3 +675,29 @@ get_hf_parquet_urls <- function(repo_name = NULL) {
 
     return(result_df)
 }
+
+load_ref <- function(ref, repo = NULL) {
+    ## Check input
+    # ref
+    confirm_ref(ref)
+
+    # repo
+    confirm_repo(repo)
+
+    if (is.null(repo)) {
+        ri <- get_repo_info()
+        repo <- ri$repo_name[ri$default == "Y"]
+    }
+
+    ## retrieve URL
+    rurl <- get_hf_parquet_urls(repo) |>
+        suppressMessages() |>
+        dplyr::filter(data_type == "reference") |>
+        dplyr::filter(filename == paste0(ref, ".parquet")) |>
+        dplyr::pull(url)
+
+    ## Collect ref file
+    ref_tbl <- arrow::read_parquet(rurl)
+
+    return(ref_tbl)
+}
