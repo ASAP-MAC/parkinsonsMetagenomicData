@@ -163,8 +163,8 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' @title Filter a database view by any number of column:value argument pairs
 #' @description 'filter_parquet_view' takes a named list of exact value filter
 #' arguments and applies them to a DuckDB database view or table. This function
-#' is optimized to work with even extremely large views by leveraging parquet
-#' row group skipping.
+#' applies the filters in the order provided, ensuring that the most efficient
+#' filtering method is used for the first provided condition.
 #' @param view DuckDB database view or table: obtained by calling
 #' tbl(duckdb_connection, view_name).
 #' @param filter_values Named list: element name equals the column name to be
@@ -175,8 +175,8 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' column with the least provided values. This is the most selective filtering
 #' step and will therefore reduce the amount of data that is being filtered with
 #' subsequent column:value arguments. Because of this, it is ideal to ensure
-#' that the provided DuckDB view or table is sorted by the column with the least
-#' provided arguments. If you have multiple views with different sorting
+#' that the provided DuckDB view or table is sorted by the column involved in
+#' the first filter condition. If you have multiple views with different sorting
 #' schemas, interpret_and_filter() will select the appropriate view and apply
 #' the filter for you.
 #' @examples
@@ -209,25 +209,28 @@ filter_parquet_view <- function(view, filter_values) {
     # filter_values
     confirm_filter_values(filter_values, colnames(view))
 
-    ## Order filter columns by selectivity
-    #col_order <- names(sort(sapply(filter_values, length)))
+    ## Separate first filter condition
     col_order <- names(filter_values)
     first_col <- col_order[1]
     first_vals <- filter_values[[first_col]]
 
-    ## Filter first column (most selective) using dplyr::union_all or dplyr::collapse
+    ## Filter first column using dplyr::union_all or dplyr::collapse
     if (length(first_vals) == 1) {
         result <- dplyr::filter(view, !!rlang::sym(first_col) == first_vals) %>%
             dplyr::collapse()
-    } else {
+        remaining_cols <- setdiff(col_order, first_col)
+    } else if (length(first_vals) <= 10) {
         result <- lapply(first_vals, function(val) {
             dplyr::filter(view, !!rlang::sym(first_col) == val)
         }) %>%
             Reduce(dplyr::union_all, .)
+        remaining_cols <- setdiff(col_order, first_col)
+    } else {
+        result <- view
+        remaining_cols <- col_order
     }
 
     ## Filter remaining columns (on smaller table)
-    remaining_cols <- setdiff(col_order, first_col)
     for (col in remaining_cols) {
         vals <- filter_values[[col]]
         if (length(vals) == 1) {
@@ -350,6 +353,11 @@ parquet_to_tse <- function(parquet_table, data_type) {
     rnames_col <- colinfo$col_name[colinfo$se_role == "rname"]
     rdata_cols <- colinfo$col_name[colinfo$se_role == "rdata"]
     assay_cols <- colinfo$col_name[colinfo$se_role == "assay"]
+
+    ## Account for row ordering issues
+    if ("additional_species" %in% colnames(parquet_table)) {
+        parquet_table$additional_species <- standardize_ordering(parquet_table$additional_species, ",")
+    }
 
     ## Create rowData table
     rdata <- parquet_table %>%
@@ -543,6 +551,13 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     return(exp)
 }
 
+returnSamples <- function(repo = NULL, data_type, filter_values) {
+    con <- accessParquetData(repo = repo, data_types = data_type)
+    tse <- loadParquetData(con = con, data_type = data_type,
+                           filter_values = list(uuid = metadata$uuid))
+    return(tse)
+}
+
 #' @title Get Parquet File URLs and Metadata from a Hugging Face Repository
 #' @description This function queries the Hugging Face Hub API to find all Parquet files
 #' within a specified dataset repository. It constructs the direct download URLs
@@ -676,6 +691,27 @@ get_hf_parquet_urls <- function(repo_name = NULL) {
     return(result_df)
 }
 
+#' @title Load a single parquet reference file
+#' @description 'load_ref' retrieves a single parquet file by name from a
+#' designated repo and loads it into a table in R.
+#' @param ref String: the name of a reference file as found in get_ref_info()
+#' @param repo String (optional): Hugging Face repo where the parquet files are
+#' stored. If NULL, the repo listed as the default in get_repo_info() will be
+#' selected. Default: NULL
+#' @return A table of reference information
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  load_ref("clade_name_ref")
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{pull}}
+#'  \code{\link[arrow]{read_parquet}}
+#' @rdname load_ref
+#' @export
+#' @importFrom dplyr filter pull
+#' @importFrom arrow read_parquet
 load_ref <- function(ref, repo = NULL) {
     ## Check input
     # ref

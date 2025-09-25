@@ -69,7 +69,19 @@ Experiment.
 
 ## Selecting Samples
 
-First we select samples by browsing the `sampleMetadata` object.
+First we select samples by browsing the `sampleMetadata` object. This is an
+optional step, as those wishing to perform meta-analyses may wish to select
+results across all samples.
+
+```{r}
+table(sampleMetadata$control, useNA = "ifany")
+metadata <- sampleMetadata %>%
+    filter(control %in% c("Case", "Study Control") &
+           age >= 16 &
+           is.na(sex) != TRUE)
+
+    
+```
 
 ```{r pick_metadata}
 selected_samples <- sampleMetadata |>
@@ -81,7 +93,7 @@ selected_samples <- sampleMetadata |>
 datatable(selected_samples, extensions = "Responsive")
 ```
 
-The `uuid` column contains the UUIDs we will need for `loadParquetData`.
+The `uuid` column contains the UUIDs we will provide for `loadParquetData`.
 
 ```{r pull_uuids}
 selected_uuids <- selected_samples$uuid

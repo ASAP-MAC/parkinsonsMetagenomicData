@@ -261,7 +261,7 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
 #' }
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
-#' @rdname get_parquet_url
+#' @rdname get_repo_info
 #' @export
 #' @importFrom readr read_csv
 get_repo_info <- function() {
@@ -274,6 +274,23 @@ get_repo_info <- function() {
     return(ftable)
 }
 
+#' @title Return a table with information about available parquet reference
+#' files.
+#' @description 'get_ref_info' returns a table of information associated with
+#' each parquet reference file.
+#' @return Data frame: A table of ref information, including information on
+#' general data types and tools served as well as descriptions.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  get_ref_info()
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#' @rdname get_ref_info
+#' @export
+#' @importFrom readr read_csv
 get_ref_info <- function() {
     ## Load in reference file info table
     fpath <- system.file("extdata", "ref_file_definitions.csv",
@@ -554,10 +571,39 @@ confirm_repo <- function(repo) {
     }
 }
 
+#' @title Validate 'ref' argument
+#' @description 'confirm_ref' checks that a single string is a valid reference
+#' file name as listed in get_ref_info() or a NULL value.
+#' @param repo String: input to be validated
+#' @return NULL
+#' @details This function is intended to be used within another function as
+#' input validation. If the input is valid, nothing will happen. If it is not,
+#' the function will throw a 'stop()' error.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  confirm_ref("horse")
+#'  confirm_ref("clade_name_ref")
+#'  }
+#' }
+#' @rdname confirm_repo
+#' @export
 confirm_ref <- function(ref) {
     ri <- get_ref_info()
 
     if (!ref %in% ri$ref_file) {
         stop(paste0("Please provide one of the following valid reference file names:\n", paste(ri$ref_file, collapse = ", ")))
     }
+}
+
+standardize_ordering <- function(vec, delim) {
+    vec <- lapply(vec, function(x) {
+        if (!is.na(x)) {
+            str_split(x, pattern = delim) |>
+                unlist() |>
+                sort() |>
+                paste(collapse = delim)
+        } else { x }
+        }) |>
+        unlist()
 }
