@@ -75,12 +75,15 @@ results across all samples.
 
 ```{r}
 table(sampleMetadata$control, useNA = "ifany")
-metadata <- sampleMetadata %>%
+sample_data <- sampleMetadata %>%
     filter(control %in% c("Case", "Study Control") &
            age >= 16 &
            is.na(sex) != TRUE)
 
-    
+clade_name_ref <- load_ref("clade_name_ref")
+feature_data <- clade_name_ref %>%
+    filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+    select(clade_name_genus)
 ```
 
 ```{r pick_metadata}

@@ -284,18 +284,27 @@ interpret_and_filter <- function(con, data_type, filter_values) {
     confirm_filter_values(filter_values)
 
     ## Order filter columns by selectivity and select projection
+    # Retrieve available projections
+    projs <- DBI::dbListTables(con) |>
+        gsub(pattern = paste0(data_type, "_"),
+             replacement = "")
+
+    # Determine primary filter column and values
     sorted_inds <- order(sapply(filter_values, length))
     sorted_args <- filter_values[sorted_inds]
 
-    first_col <- names(sorted_args)[1]
+    fcols <- intersect(projs, names(filter_values))
+    proj_ind <- which(names(sorted_args) %in% fcols)[1]
 
-    projection <- pick_projection(con, data_type, first_col)
+    arranged_args <- c(sorted_args[proj_ind], sorted_args[-proj_ind])
+
+    projection <- pick_projection(con, data_type, names(arranged_args)[1])
 
     ## Load the chosen view
     chosen_view <- dplyr::tbl(con, projection)
 
     ## Filter parquet by .values
-    queried_view <- filter_parquet_view(chosen_view, sorted_args)
+    queried_view <- filter_parquet_view(chosen_view, arranged_args)
 
     return(queried_view)
 }
@@ -335,7 +344,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' @importFrom tibble column_to_rownames
 #' @importFrom S4Vectors DataFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
-parquet_to_tse <- function(parquet_table, data_type) {
+parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
     ## Check input
     # parquet_table
     if (!is.data.frame(parquet_table)) {
@@ -359,6 +368,9 @@ parquet_to_tse <- function(parquet_table, data_type) {
         parquet_table$additional_species <- standardize_ordering(parquet_table$additional_species, ",")
     }
 
+    esamps <- setdiff(empty_data$uuid,
+                      unique(dplyr::pull(parquet_table[,cnames_col])))
+
     ## Create rowData table
     rdata <- parquet_table %>%
         select(any_of(c(rnames_col, rdata_cols))) %>%
@@ -368,7 +380,7 @@ parquet_to_tse <- function(parquet_table, data_type) {
 
     ## Create assay table(s)
     alist <- sapply(assay_cols, function(acol) {
-      parquet_table %>%
+      pdata <- parquet_table %>%
         select(all_of(c(rnames_col, acol, "uuid"))) %>%
         tidyr::pivot_wider(
           names_from  = all_of(cnames_col),
@@ -377,6 +389,11 @@ parquet_to_tse <- function(parquet_table, data_type) {
         ) %>%
         tibble::column_to_rownames({{rnames_col}}) %>%
         as.matrix()
+
+      edata <- matrix(NA, nrow(pdata), length(esamps),
+                      dimnames = list(NULL, esamps))
+
+      cbind(pdata, edata)
     }, USE.NAMES = TRUE, simplify = FALSE)
 
     ## Create colData table with sampleMetadata added
@@ -507,7 +524,7 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @importFrom DBI dbListTables
 #' @importFrom dplyr tbl filter collect
 loadParquetData <- function(con, data_type, filter_values = NULL,
-                            custom_view = NULL) {
+                            custom_view = NULL, include_empty = FALSE) {
     ## Check input
     # con
     confirm_duckdb_con(con)
@@ -531,6 +548,18 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
             working_view <- filter_parquet_view(custom_view, filter_values)
         } else {
             working_view <- interpret_and_filter(con, data_type, filter_values)
+
+            if ("uuid" %in% names(filter_values) && include_empty) {
+                sample_headers <- get_cdata_only(con, data_type,
+                                                 filter_values$uuid)
+                full_empties <- setdiff(filter_values$uuid, sample_headers$uuid)
+                emat <- as.data.frame(matrix(nrow = length(full_empties),
+                                             ncol = ncol(sample_headers),
+                                             dimnames = list(c(),
+                                                             colnames(sample_headers))))
+                emat$uuid <- full_empties
+                sample_headers <- rbind(sample_headers, emat)
+            }
         }
     } else {
         if (!is.null(custom_view)) {
@@ -546,16 +575,84 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
         collect()
 
     ## Transform into TreeSummarizedExperiment
-    exp <- parquet_to_tse(collected_view, data_type)
+    if (exists("sample_headers")) {
+        empty_samples <- dplyr::filter(sample_headers, !uuid %in% collected_view$uuid)
+        exp <- parquet_to_tse(collected_view, data_type, empty_samples)
+    } else {
+        exp <- parquet_to_tse(collected_view, data_type)
+    }
 
     return(exp)
 }
 
-returnSamples <- function(repo = NULL, data_type, filter_values) {
+returnSamples <- function(repo = NULL, data_type, sample_data, feature_data) {
+    ## Check input
+    # repo
+
+    # data_type
+
+    # sample_data
+
+    # feature_data
+
+    ## Create database connection and load views
     con <- accessParquetData(repo = repo, data_types = data_type)
+
+    ## Convert sample_data and feature_data to filter_values
+    filter_values <- list()
+
+    if (!is.null(feature_data)) {
+        # Retrieve available projections
+        projs <- DBI::dbListTables(con) |>
+            gsub(pattern = paste0(data_type, "_"),
+                 replacement = "")
+
+        # Determine primary filter column and values
+        #fcols <- intersect(projs, colnames(feature_data))
+        fcols <- colnames(feature_data)
+
+        fsets <- vector(mode = "list", length = length(fcols))
+        for (i in 1:length(fcols)) {
+            cur_col <- fcols[i]
+            names(fsets)[i] <- cur_col
+            fsets[i] <- as.vector(unique(feature_data[,cur_col]))
+        }
+
+        #sorted_inds <- order(sapply(fsets, length))
+        #sorted_args <- fsets[sorted_inds]
+
+        #filter_values <- c(filter_values, sorted_args[1])
+        filter_values <- c(filter_values, fsets)
+    }
+
+    if (!is.null(sample_data)) {
+        # Add sample uuids
+        uuid_arg <- list(uuid = sample_data$uuid)
+        filter_values <- c(filter_values, uuid_arg)
+    }
+
+    ## Load data
     tse <- loadParquetData(con = con, data_type = data_type,
-                           filter_values = list(uuid = metadata$uuid))
+                           filter_values = filter_values)
     return(tse)
+}
+
+get_cdata_only <- function(con, data_type, uuids) {
+    ## Get column info
+    colinfo <- parquet_colinfo(data_type)
+
+    uuid_col <- colinfo$col_name[colinfo$se_role == "cname"]
+    cdata_cols <- colinfo$col_name[colinfo$se_role == "cdata"]
+
+    ## Collect parquet data
+    proj <- pick_projection(con, data_type, "uuid")
+    edat <- tbl(con, proj) |>
+        dplyr::select(all_of(c(uuid_col, cdata_cols))) |>
+        dplyr::filter(!!rlang::sym(uuid_col) %in% uuids) |>
+        dplyr::distinct() |>
+        dplyr::collect()
+
+    return(edat)
 }
 
 #' @title Get Parquet File URLs and Metadata from a Hugging Face Repository
