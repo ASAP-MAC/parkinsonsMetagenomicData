@@ -130,7 +130,8 @@ parquet_colinfo <- function(data_type) {
 
     ## Find corresponding general_data_type
     gen_type <- output_file_types(filter_col = "data_type",
-                                  filter_string = data_type)$general_data_type
+                                  filter_string = data_type)$general_data_type |>
+        unique()
 
     ## Pull and return column info
     rel_cols <- ftable %>%

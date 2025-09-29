@@ -81,9 +81,23 @@ sample_data <- sampleMetadata %>%
            is.na(sex) != TRUE)
 
 clade_name_ref <- load_ref("clade_name_ref")
-feature_data <- clade_name_ref %>%
-    filter(grepl("Faecalibacterium", clade_name_genus)) %>%
-    select(clade_name_genus)
+feature_data_genus <- clade_name_ref %>%
+    filter(grepl("Faecalibacterium", clade_name_genus))
+
+genus_ex <- returnSamples("relative_abundance", sample_data, feature_data_genus)
+genus_ex
+
+feature_data_species <- clade_name_ref %>%
+    filter(grepl("prausnitzii", clade_name_species))
+
+species_ex <- returnSamples("relative_abundance", sample_data, feature_data_species)
+species_ex
+
+gene_family_ref <- load_ref("gene_family_ref")
+feature_data_gf <- gene_family_ref %>%
+    filter(grepl("UniRef90_A0A060BPF3", gene_family_uniref))
+
+gf_ex <- returnSamples("genefamilies", sample_data, feature_data_gf, include_empty_samples = FALSE)
 ```
 
 ```{r pick_metadata}

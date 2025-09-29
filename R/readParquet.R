@@ -368,6 +368,7 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
         parquet_table$additional_species <- standardize_ordering(parquet_table$additional_species, ",")
     }
 
+    ## Confirm empty samples
     esamps <- setdiff(empty_data$uuid,
                       unique(dplyr::pull(parquet_table[,cnames_col])))
 
@@ -397,10 +398,23 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
     }, USE.NAMES = TRUE, simplify = FALSE)
 
     ## Create colData table with sampleMetadata added
+    if (!is.null(empty_data)) {
+        etab <- empty_data %>%
+            filter(uuid %in% esamps) %>%
+            select(any_of(c(cnames_col, cdata_cols))) %>%
+            as.data.frame()
+    }
+
     cdata <- parquet_table %>%
         select(any_of(c(cnames_col, cdata_cols))) %>%
         dplyr::distinct() %>%
-        as.data.frame() %>%
+        as.data.frame()
+
+    if (exists("etab")) {
+        cdata <- rbind(cdata, etab)
+    }
+
+    cdata <- cdata %>%
         dplyr::left_join(sampleMetadata, dplyr::join_by(uuid))
     rownames(cdata) <- cdata[[cnames_col]]
 
@@ -524,7 +538,7 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @importFrom DBI dbListTables
 #' @importFrom dplyr tbl filter collect
 loadParquetData <- function(con, data_type, filter_values = NULL,
-                            custom_view = NULL, include_empty = FALSE) {
+                            custom_view = NULL, include_empty_samples = TRUE) {
     ## Check input
     # con
     confirm_duckdb_con(con)
@@ -542,6 +556,13 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
         confirm_duckdb_view(custom_view)
     }
 
+    # include_empty_samples
+    if (class(include_empty_samples) != "logical") {
+        stop("Invalid value of 'include_empty_samples'. Please provide TRUE or FALSE.")
+    } else if (include_empty_samples && !"uuid" %in% names(filter_values)) {
+        message("'include_empty_samples' is TRUE but 'filter_values' does not contain a UUID argument.")
+    }
+
     ## Apply any requested filtering, incorporating custom view if provided
     if (!is.null(filter_values)) {
         if (!is.null(custom_view)) {
@@ -549,7 +570,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
         } else {
             working_view <- interpret_and_filter(con, data_type, filter_values)
 
-            if ("uuid" %in% names(filter_values) && include_empty) {
+            if ("uuid" %in% names(filter_values) && include_empty_samples) {
                 sample_headers <- get_cdata_only(con, data_type,
                                                  filter_values$uuid)
                 full_empties <- setdiff(filter_values$uuid, sample_headers$uuid)
@@ -574,6 +595,15 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     collected_view <- working_view |>
         collect()
 
+    if (nrow(collected_view) == 0) {
+        if (exists("sample_headers")) {
+            message("0 rows returned but empty samples exist. TreeSummarizedExperiment will include colData as applicable.")
+        } else {
+            message("0 rows returned and any empty samples are not kept. TreeSummarizedExperiment is empty.")
+            return(TreeSummarizedExperiment::TreeSummarizedExperiment())
+        }
+    }
+
     ## Transform into TreeSummarizedExperiment
     if (exists("sample_headers")) {
         empty_samples <- dplyr::filter(sample_headers, !uuid %in% collected_view$uuid)
@@ -585,7 +615,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     return(exp)
 }
 
-returnSamples <- function(repo = NULL, data_type, sample_data, feature_data) {
+returnSamples <- function(data_type, sample_data, feature_data, repo = NULL, include_empty_samples = TRUE) {
     ## Check input
     # repo
 
@@ -633,7 +663,8 @@ returnSamples <- function(repo = NULL, data_type, sample_data, feature_data) {
 
     ## Load data
     tse <- loadParquetData(con = con, data_type = data_type,
-                           filter_values = filter_values)
+                           filter_values = filter_values,
+                           include_empty_samples = include_empty_samples)
     return(tse)
 }
 
