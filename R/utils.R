@@ -278,7 +278,13 @@ get_repo_info <- function() {
 #' @title Return a table with information about available parquet reference
 #' files.
 #' @description 'get_ref_info' returns a table of information associated with
-#' each parquet reference file.
+#' each parquet reference file. The table can optionally be filtered by
+#' providing a column name to filter by and a string/regular expression to
+#' filter the selected column with.
+#' @param filter_col Character string (optional): name of the column to filter
+#' by
+#' @param filter_string Character string (optional): string/regular expression
+#' to filter the selected column with.
 #' @return Data frame: A table of ref information, including information on
 #' general data types and tools served as well as descriptions.
 #' @examples
@@ -292,12 +298,23 @@ get_repo_info <- function() {
 #' @rdname get_ref_info
 #' @export
 #' @importFrom readr read_csv
-get_ref_info <- function() {
+get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
     ## Load in reference file info table
     fpath <- system.file("extdata", "ref_file_definitions.csv",
                          package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
+
+    ## Filter table if requested
+    if (!is.null(filter_col) & !is.null(filter_string)) {
+        if (!filter_col %in% colnames(ftable)) {
+            print_colnames <- paste(colnames(ftable), collapse = ", ")
+            stop(paste0("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames))
+        }
+
+        ftable <- ftable %>%
+            filter(grepl(filter_string, .data[[filter_col]], ignore.case = TRUE))
+    }
 
     return(ftable)
 }

@@ -82,22 +82,76 @@ sample_data <- sampleMetadata %>%
 
 clade_name_ref <- load_ref("clade_name_ref")
 feature_data_genus <- clade_name_ref %>%
-    filter(grepl("Faecalibacterium", clade_name_genus))
+    filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+    select(clade_name_genus, clade_name_species)
+feature_data_species <- clade_name_ref %>%
+    filter(grepl("prausnitzii", clade_name_species)) %>%
+    select(clade_name_species)
 
+local_files <- c("/home/kaelyn/Desktop/Work/r_packages/relative_abundance_clade_name_species.parquet",
+                 "/home/kaelyn/Desktop/Work/r_packages/relative_abundance_uuid.parquet")
+
+con <- accessParquetData(local_files = local_files)
+DBI::dbListTables(con)
+
+genus_ex <- loadParquetData(con, "relative_abundance",
+                            filter_values = list(clade_name_genus = unique(feature_data_genus$clade_name_genus),
+                                                 clade_name_species = unique(feature_data_genus$clade_name_species)))
+genus_ex
+
+species_ex <- loadParquetData(con, "relative_abundance",
+                              filter_values = list(clade_name_species = unique(feature_data_species$clade_name_species)))
+species_ex
+
+# Show query
+q_only <- loadParquetData(con, "relative_abundance",
+                          filter_values = list(clade_name_genus = unique(feature_data_genus$clade_name_genus),
+                                               clade_name_species = unique(feature_data_genus$clade_name_species)),
+                          dry_run = TRUE)
+show_query(q_only)
+```
+
+```{r}
+table(sampleMetadata$control, useNA = "ifany")
+sample_data <- sampleMetadata %>%
+    filter(control %in% c("Case", "Study Control") &
+           age >= 16 &
+           is.na(sex) != TRUE)
+sample_data_small <- sample_data[1:10,]
+sample_data_one <- sample_data[1,]
+
+clade_name_ref <- load_ref("clade_name_ref")
+feature_data_genus <- clade_name_ref %>%
+    filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+    select(clade_name_genus)
+
+prof_genus <- profvis(returnSamples("relative_abundance", sample_data, feature_data_genus))
+prof_genus_small <- profvis(returnSamples("relative_abundance", sample_data_small, feature_data_genus))
+prof_genus_one <- profvis(returnSamples("relative_abundance", sample_data_one, feature_data_genus))
+
+time_genus <- system.time(returnSamples("relative_abundance", sample_data, feature_data_genus))
+time_genus_small <- system.time(returnSamples("relative_abundance", sample_data_small, feature_data_genus))
+time_genus_one <- system.time(returnSamples("relative_abundance", sample_data_one, feature_data_genus))
+
+prof_genus2 <- profvis(returnSamples("relative_abundance", sample_data, feature_data_genus, include_empty_samples = FALSE))
 genus_ex <- returnSamples("relative_abundance", sample_data, feature_data_genus)
 genus_ex
 
 feature_data_species <- clade_name_ref %>%
     filter(grepl("prausnitzii", clade_name_species))
+feature_data <- feature_data_species[1,]
 
 species_ex <- returnSamples("relative_abundance", sample_data, feature_data_species)
 species_ex
+
+tex <- returnSamples("relative_abundance", sample_data, feature_data)
 
 gene_family_ref <- load_ref("gene_family_ref")
 feature_data_gf <- gene_family_ref %>%
     filter(grepl("UniRef90_A0A060BPF3", gene_family_uniref))
 
 gf_ex <- returnSamples("genefamilies", sample_data, feature_data_gf, include_empty_samples = FALSE)
+gf_ex
 ```
 
 ```{r pick_metadata}
