@@ -1,0 +1,167 @@
+---
+title: "Working With Data Hosted on Google Cloud Storage"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{google_cloud_storage}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, include = FALSE}
+suppressPackageStartupMessages({
+    library(parkinsonsMetagenomicData)
+    library(dplyr)
+    library(DT)
+})
+
+# If rendering, replace the below with the path to your own service account key
+googleCloudStorageR::gcs_auth("../../curatedmetagenomicdata-232f4a306d1d.json")
+```
+
+## Google Bucket Setup
+
+Output files are contained in the private Google Cloud Bucket
+`gs://metagenomics-mac` at the moment, the user must authenticate with a service
+account keyfile in the following way:
+
+```{r, eval=FALSE}
+googleCloudStorageR::gcs_auth("full/path/to/keyfile.json")
+```
+
+To obtain this keyfile, the owner of a service account affiliated with the
+Google Cloud Project containing `gs://metagenomics-mac` must create it
+according to the process detailed in the Google Cloud Guide
+"[Create and delete service account keys](https://cloud.google.com/iam/docs/keys-create-delete)".
+
+Additionally, the default bucket for `GoogleCloudStorageR` must be set to the
+Google Bucket name, in this case `metagenomics-mac`. This is done automatically
+upon loading the package, but if an error occurs can be manually done through
+the following:
+
+```{r, eval=FALSE}
+googleCloudStorageR::gcs_global_bucket("metagenomics-mac")
+```
+
+## Data Retrieval
+
+All objects stored in `gs://metagenomics-mac` can then be viewed with the
+following. This operation can take several minutes due to the number of objects
+stored in `gs://metagenomics-mac`.
+
+```{r, eval=FALSE}
+googleCloudStorageR::gcs_list_objects()
+```
+
+Alternatively, `listMetagenomicData` will provide a table of objects that are compatible
+with the `cacheMetagenomicData` streamlined downloading and caching function.
+
+```{r, message=FALSE}
+file_tbl <- listMetagenomicData()
+```
+
+```{r, echo=FALSE}
+datatable(slice_sample(file_tbl, n = 10), extensions = "Responsive")
+```
+
+To access output files, use `cacheMetagenomicData`. This function takes UUID and
+data type arguments, downloads the corresponding output files, and
+stores them in a local cache. If the same files are requested again through this
+function, they will not be re-downloaded unless explicitly specified, in order
+to reduce excessive downloads. `cacheMetagenomicData` returns a tibble of cached
+file paths and cache IDs for each requested file.
+
+We will first select samples from a particular study that we want to investigate:
+
+```{r}
+selected_samples <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !any(is.na(.x))))
+```
+
+```{r, echo=FALSE}
+datatable(selected_samples, extensions = "Responsive")
+```
+
+Then we will supply these to `cacheMetagenomicData`.
+
+```{r}
+cache_tbl <- cacheMetagenomicData(uuids = selected_samples$uuid,
+                                  data_type = "relative_abundance")
+```
+
+```{r, echo=FALSE}
+datatable(cache_tbl, extensions = "Responsive")
+```
+
+## Data Handling
+
+### Automatic Experiment Setup (MetaPhlAn and HUMAnN output files only)
+
+The above table can then be supplied to `loadMetagenomicData` and the cached
+files will be parsed into a single TreeSummarizedExperiment object with sample
+metadata. At this point, only the `metaphlan_lists` data types,
+`viral_clusters` and `relative_abundance`, as well as all `humann` data_types,
+are compatible with this function.
+
+```{r, message=FALSE}
+merged_experiment <- loadMetagenomicData(cache_tbl)
+```
+
+```{r, echo=FALSE}
+merged_experiment
+```
+
+### Stepwise Experiment Setup
+
+Alternatively, we can parse the files, add metadata, and merge the
+TreeSummarizedExperiment objects in separate steps.
+
+`parse_metaphlan_list` completes the first step for files with 'data_type' equal
+to "relative_abundance" or "viral_clusters". `parse_humann` is also available
+for HUMAnN output files.
+
+```{r, message=FALSE}
+parsed_rel_ab_list <- vector("list", nrow(cache_tbl))
+names(parsed_rel_ab_list) <- cache_tbl$uuid
+
+for (i in 1:nrow(cache_tbl)) {
+    parsed_rel_ab_list[[i]] <- parse_metaphlan_list(sample_id = cache_tbl$uuid[i],
+                                                file_path = cache_tbl$cache_path[i],
+                                                data_type = cache_tbl$data_type[i])
+    
+}
+```
+
+Once the files have been loaded as TreeSummarizedExperiment objects, matching assays
+from multiple samples can be merged together with `mergeExperiments`.
+
+```{r}
+merged_rel_abs <- mergeExperiments(parsed_rel_ab_list)
+```
+
+```{r, echo=FALSE}
+merged_rel_abs
+```
+
+The corresponding metadata from sampleMetadata is then added as colData with
+the function `add_metadata`.
+
+```{r}
+rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
+                                      id_col = "uuid",
+                                      experiment = merged_rel_abs)
+```
+
+```{r, echo=FALSE}
+rel_abs_with_metadata
+```
+

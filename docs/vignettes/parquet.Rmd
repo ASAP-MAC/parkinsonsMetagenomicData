@@ -1,0 +1,503 @@
+---
+title: "Working With Data in Parquet Format"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Working With Data in Parquet Format}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+---
+
+```{r knitr_setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r general_setup, include=FALSE}
+library(parkinsonsMetagenomicData)
+library(dplyr)
+library(DT)
+```
+
+# Parquet File Overview and Setup
+
+## Hugging Face
+
+Individual pipeline output files have been combined into parquet files
+and hosted in the
+[metagenomics_mac](https://huggingface.co/datasets/waldronlab/metagenomics_mac)
+repo on Hugging Face. Smaller versions of those same files, comprising only 10
+samples per file, are available in the Hugging Face repo
+[metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
+These are publicly accessible, and are able to be easily read using DuckDB.
+
+## Parquet Creation
+
+To create the individual parquet files, one needs credentials to access the
+`gs://metagenomics-mac` Google Bucket. Instructions on obtaining these can be
+found in the
+[Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html). These
+credentials are then substituted into the scripts found in the repo
+[parquet_generation](https://github.com/ASAP-MAC/parquet_generation). These
+scripts perform a number of transformations that increase searchability before
+storing the combined data for each data type in parquet files.
+
+## DuckDB in R
+
+DuckDB is very easy to use in R through the `duckdb` R package. The `DBI` and
+`dplyr`/`dbplyr` packages combine with it to provide a streamlined way to work
+with remote data by selectively querying it before bringing it into your R
+session.
+
+Relevant tools:
+
+ - [DuckDB R Client](https://duckdb.org/docs/stable/clients/r.html)
+ - [DBI](https://dbi.r-dbi.org/)
+ - [dplyr](https://dplyr.tidyverse.org/)/[dbplyr](https://dbplyr.tidyverse.org/)
+
+
+# Standard Workflow
+
+In the standard workflow, we use the main wrapper function `returnSamples`. This
+function takes tables with sample and feature information as well as a remote
+repo name or a vector of paths to locally stored parquet files and retrieves the
+relevant data as a TreeSummarizedExperiment.
+
+Here is a brief overview of each argument to be provided to `returnSamples`,
+please call `?returnSamples` for additional info.
+
+ * **data_type**: the output file type of interest
+ * **sample_data**: a table of sample metadata, used to specify which samples to
+ retrieve data for
+ * **feature_data**: a table of feature data, used to specify how to filter the raw
+ data
+ * **repo**: the identifier of a remote repo where the raw parquet files are stored
+ * **local_files**: paths of locally stored parquet files, as an alternative to
+ retrieval from a remote repo
+ * **include_empty_samples**: sometimes none of the features specified in
+ `feature_data` are found in one or more samples specified in `sample_data`.
+ Should the samples still be included in the result with NA values for each
+ feature (TRUE) or should they be omitted (FALSE)? Omitting these samples may
+ increase response speed when accessing remote repos.
+ * **dry_run**: a dry run returns a `tbl_duckdb_connection` object that contains all
+ of the SQL code necessary to return the requested data. This SQL can be viewed
+ by passing the object into `dplyr::show_query()`. This is useful for evaluating
+ query efficiency prior to actually executing.
+
+## File Selection
+
+Both remote and local parquet files can be queried, though not at the same time.
+`get_repo_info()` gives the names and URLs of the available repos, and
+`get_hf_parquet_urls()` gives information on the files contained in those repos.
+Those files can also be downloaded separately and then provided to the
+`local_files` argument of `returnSamples()`. This may be desirable if internet
+connection is unstable or limited, or if a particular query runs into the repo's
+rate limits.
+
+At this point, we also want to make a note of which `data_type` values we are
+interested in. The `data_type` associated with each parquet file is listed in
+the output of `get_hf_parquet_urls()`. For this example, we will be looking at
+the 'relative_abundance' data type, which corresponds to the files
+"relative_abundance_uuid.parquet" and
+"relative_abundance_clade_name_species.parquet". The difference between these
+two files is the column by which they are sorted:
+"relative_abundance_uuid.parquet" is sorted by the 'uuid' column, while
+"relative_abundance_clade_name_species.parquet" is sorted by the
+'clade_name_species' column. Internal functions will choose which one to use,
+we will simply provide "relative_abundance" as our chosen data type. If you
+are downloading the files locally to avoid rate limits, you would download all
+of the files associated with your chosen data type.
+
+```{r demo_repo_info, eval=FALSE}
+get_repo_info()
+```
+```{r show_repo_info, echo=FALSE}
+get_repo_info() |>
+    datatable(extensions = "Responsive")
+```
+```{r demo_parquet_urls, eval=FALSE}
+get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac")
+```
+```{r show_parquet_urls, echo=FALSE}
+get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac") |>
+    suppressMessages() |>
+    datatable(extensions = "Responsive")
+```
+
+## Sample Table
+
+We can then examine the available samples and optionally select a subset to
+query. This is done by browsing the `sampleMetadata` object. Here is an example
+of how a set of data might be selected for a meta-analysis with some sampling
+parameters. Alternatively, this step can be left off altogether. If the sample
+table is not provided when calling `returnSamples()`, data for all samples will
+simply be returned.
+
+```{r pick_metadata}
+sample_table <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !any(is.na(.x))))
+```
+```{r show_metadata, echo=FALSE}
+datatable(sample_table, extensions = "Responsive")
+```
+
+## Feature Table
+
+For the feature table, we first have to find the reference file that goes with
+the data type we are interested in. To do this, call `get_ref_info()`. Search
+the 'general_data_type' column for your data type and identify the reference
+file of interest. For a more granular view of what exactly will be in each file,
+you can call `parquet_colinfo()` with your data type and see which columns will
+be included. Here, we can see that "clade_name_ref" is associated with
+"relative_abundance".
+
+```{r demo_ref_info, eval=FALSE}
+get_ref_info()
+```
+```{r show_ref_info, echo=FALSE}
+get_ref_info() |>
+    datatable(extensions = "Responsive")
+```
+
+And here we can see exactly which columns are in "clade_name_ref".
+
+```{r demo_colinfo, eval=FALSE}
+parquet_colinfo("relative_abundance")
+```
+```{r show_colinfo, echo=FALSE}
+parquet_colinfo("relative_abundance") |>
+    datatable(extensions = "Responsive")
+```
+
+Once we have found the correct reference file, we can filter it to only contain
+features we are interested in. Here, we are interested in values for all
+bacteria in the genus "Faecalibacterium". We load the reference file with
+`load_ref()`, and use a basic `grepl()` filtering method.
+
+```{r filter_feature_table}
+clade_name_ref <- load_ref("clade_name_ref")
+feature_table <- clade_name_ref %>%
+    filter(grepl("Faecalibacterium", clade_name_genus))
+```
+```{r show_feature_table, echo=FALSE}
+feature_table |>
+    datatable(extensions = "Responsive")
+```
+
+As an extra consideration, MetaPhlAn relative abundance output includes
+aggregate values for each taxonomic level. We can see above that the first row
+returned has a value of `NA` for the "clade_name_species" column, and a few 
+other rows have `NA` in the "clade_name_terminal" column. You may want
+to remove these rows based on your analysis. To do so, we would simply re-filter
+the file:
+
+```{r re_filter_feature_table}
+feature_table <- clade_name_ref %>%
+    filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+    filter(!is.na(clade_name_species)) %>%
+    filter(!is.na(clade_name_terminal))
+```
+```{r show_new_feature_table, echo=FALSE}
+feature_table |>
+    datatable(extensions = "Responsive")
+```
+
+## returnSamples()
+
+We are now ready to retrieve our data. We simply pass our arguments into
+`returnSamples()`. It may take a minute, depending on the amount of data
+requested or your available resources.
+
+```{r basic_return_samples}
+experiment <- returnSamples(data_type = "relative_abundance",
+                            sample_data = sample_table,
+                            feature_data = feature_table,
+                            repo = "waldronlab/metagenomics_mac",
+                            local_files = NULL,
+                            include_empty_samples = TRUE,
+                            dry_run = FALSE)
+experiment
+```
+
+If you are finding that this function is failing due to rate limiting (HTTP 429
+error), hanging, or simply taking longer than you would like, you can download
+the files associated with the data type you are interested in and supply their
+paths to the "local_files" argument in lieu of specifying the "repo" argument.
+It would look something like this:
+
+```{r local_return_samples, eval=FALSE}
+local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
+                 "/path/to/relative_abundance_uuid.parquet")
+
+experiment <- returnSamples(data_type = "relative_abundance",
+                            sample_data = sample_table,
+                            feature_data = feature_table,
+                            repo = NULL,
+                            local_files = local_files,
+                            include_empty_samples = TRUE,
+                            dry_run = FALSE)
+```
+
+Finally, you can check exactly which query is being called on the raw parquet
+data by passing "TRUE" to the "dry_run" argument. This returns a
+`tbl_duckdb_connection` object that can be passed to `dplyr::show_query()`. To
+demonstrate:
+
+```{r query_return_samples}
+query_only <- returnSamples(data_type = "relative_abundance",
+                            sample_data = sample_table,
+                            feature_data = feature_table,
+                            repo = "waldronlab/metagenomics_mac",
+                            local_files = NULL,
+                            include_empty_samples = FALSE,
+                            dry_run = TRUE)
+dplyr::show_query(query_only)
+```
+
+# Piecewise Workflow
+
+In the piecewise workflow, we use the functions `accessParquetData` and
+`loadParquetData` separately to have a little more control over our data. First,
+`accessParquetData` sets up a DuckDB connection to the parquet files that are
+either stored locally or hosted in a remote repo (in this case, Hugging Face).
+`loadParquetData` then takes an argument for data type as well as any filters
+and loads the requested data into R as a Tree Summarized Experiment. We can even
+use `dplyr` functions to customize the SQL query.
+
+## File Selection
+
+We can use the same resources of `get_repo_info()` and `get_hf_parquet_urls()`
+to determine our files of interest and `data_type` value. As before, we can
+download any files and alternatively supply them as local files.
+
+We then run `accessParquetData`, which creates the DuckDB connection and sets
+up DuckDB "VIEW" objects for each available file, whether remotely hosted or
+locally stored. It returns a DuckDB connection object. If you are using a remote
+repo, the `data_types` argument can be left blank to access all available files,
+or a smaller number can be provided. DBI functions can then be used to see which
+views are now available.
+
+```{r access_wrapper}
+con <- accessParquetData(dbdir = ":memory:",
+                         repo = "waldronlab/metagenomics_mac",
+                         local_files = NULL,
+                         data_types = "relative_abundance")
+DBI::dbListTables(con)
+```
+
+Supplying local files would look much as expected, and the "data_types" argument
+need not be supplied:
+
+```{r local_access, eval=FALSE}
+local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
+                 "/path/to/relative_abundance_uuid.parquet")
+
+con <- accessParquetData(dbdir = ":memory:",
+                         repo = NULL,
+                         local_files = local_files,
+                         data_types = NULL)
+```
+
+## Selecting Samples
+
+The sample selection process is the same as in the standard workflow, with the
+exception that we are only passing the UUID column to the loading function. Here
+we will create the same table as earlier, then pull just the UUIDS. This is
+again an optional step, as you may want to get data across all samples for
+meta-analyses.
+
+```{r re_pick_metadata}
+sample_table <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !any(is.na(.x))))
+```
+```{r re_show_metadata, echo=FALSE}
+datatable(sample_table, extensions = "Responsive")
+```
+
+```{r pull_uuids}
+selected_uuids <- sample_table$uuid
+selected_uuids
+```
+
+## Selecting Features
+
+Our feature table is treated similarly, in that we are no longer providing the
+whole table. Instead, we construct our filtering arguments as a named list. The
+element name is the column to filter by, and the element values will be exact
+matches. If this is our previous table:
+
+```{r re_re_filter_feature_table}
+feature_table <- clade_name_ref %>%
+    filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+    filter(!is.na(clade_name_species)) %>%
+    filter(!is.na(clade_name_terminal))
+```
+```{r show_new_new_feature_table, echo=FALSE}
+feature_table |>
+    datatable(extensions = "Responsive")
+```
+
+We would set up the filters like so. These two columns are the minimum required
+to produce the same result as our prior example.
+
+```{r filter_vals}
+filter_values <- list(clade_name_species = unique(feature_table$clade_name_species),
+                      clade_name_terminal = unique(feature_table$clade_name_terminal))
+filter_values
+```
+
+Here is also where we supply our UUIDs.
+
+```{r filter_vals_with_uuid}
+filter_values <- c(list(uuid = selected_uuids), filter_values)
+filter_values
+```
+
+## Loading into R
+
+We then provide our list of filtering arguments to `loadParquetData` along with
+the database connection object and the data type we are accessing and receive a
+Tree Summarized Experiment object. Loading the data may take some time depending
+on the file type and queries.
+
+```{r load_wrapper}
+basic_experiment <- loadParquetData(con = con,
+                                    data_type = "relative_abundance",
+                                    filter_values = filter_values,
+                                    custom_view = NULL,
+                                    include_empty_samples = TRUE,
+                                    dry_run = FALSE)
+basic_experiment
+```
+
+Performing a dry run in order to examine the SQL query would look much as
+before:
+
+```{r query_load_wrapper}
+query_only <- loadParquetData(con = con,
+                              data_type = "relative_abundance",
+                              filter_values = filter_values,
+                              custom_view = NULL,
+                              include_empty_samples = TRUE,
+                              dry_run = TRUE)
+dplyr::show_query(query_only)
+```
+
+## Optional View Customization
+
+Additionally, it is possible to use `dplyr` to preview the data view of interest
+and perform more advanced functions on the data prior to using `loadParquetData`
+or the `collect()` function to load it into R. Here we use the `tbl()` function
+to access the data view of choice, and pipe it into a `filter()` call to select
+only rows that have a value in the "additional_species" column. We can then save
+these calls to a variable prior to loading them into R, and supply this to
+`loadParquetData` either instead of or alongside our other standard filtering
+arguments.
+
+```{r custom_view}
+custom_filter <- tbl(con, "relative_abundance_uuid") %>%
+    filter(!is.na(additional_species))
+```
+
+We can see a preview of the data by calling the saved view:
+
+```{r view_custom_view}
+custom_filter
+```
+
+Or show the query prior to running:
+
+```{r query_custom_view}
+dplyr::show_query(custom_filter)
+```
+
+We then simply provide that custom view to `loadParquetData()`.
+
+```{r load_custom}
+custom_experiment <- loadParquetData(con = con,
+                                     data_type = "relative_abundance",
+                                     filter_values = filter_values,
+                                     custom_view = custom_filter,
+                                     include_empty_samples = TRUE,
+                                     dry_run = FALSE)
+custom_experiment
+```
+
+## Large File Considerations
+
+Handling the larger data types, like "genefamilies_stratified" and similar
+files, works the exact same way but must take a few factors into consideration.
+There are two main limiters:
+
+1. Hugging Face rate limits
+2. Result size
+
+To avoid running into Hugging Face's rate limiting (HTTP 429 error), we want to
+make sure that all filtering arguments are very selective and only executed on
+sorted columns. Using "genefamilies_stratified" as an example, we can filter by
+"uuid" and "gene_family_uniref", since those are the two parquet files
+available. Filtering by "gene_family_species"
+*while we are still accessing the parquet in a lazy manner* can throw an error
+since a lot of the values in that column show up much more often in the dataset.
+To filter these non-sorted columns, it is recommended to use alternate filters
+that leverage the sorted columns (e.g., uuid) to create the initial subset and
+TreeSummarizedExperiment, then apply the less selective filters to the now
+locally available data.
+
+Alternatively, we can download these large files. This will completely eliminate
+the rate limits since we are no longer accessing them remotely.
+
+These options do need to be balanced with your resources for storing and
+handling both the raw and retrieved data, however. It may be helpful to place a
+DuckDB database file in a location capable of large file storage, or run R
+within a high-resource environment.
+
+Below, a few example large file queries are executed. They may take a few
+seconds to fully load the data.
+
+```{r demo_large_queries}
+# Establish connection to genefamilies_stratified files
+con_gs <- accessParquetData(data_types = "genefamilies_stratified")
+
+# Example query: we are looking for the below gene families within a particular
+# study.
+#
+# UniRef90_T4BVE4 - present only in SPF mice
+# UniRef90_A0A1B1SA57 - present only in WildR mice
+
+# Pull study metadata
+selected_samples <- sampleMetadata |>
+    filter(study_name == "MazmanianS_DumitrescuDG") |>
+    select(where(~ !any(is.na(.x))))
+
+# Do as much as possible to narrow down sample IDs prior to filtering
+wildr_ids <- selected_samples |>
+    filter(uncurated_donor_microbiome_type == "WildR") |>
+    dplyr::pull(uuid)
+
+spf_ids <- selected_samples |>
+    filter(uncurated_donor_microbiome_type == "SPF") |>
+    dplyr::pull(uuid)
+
+# Run the queries
+spf_ex <- loadParquetData(con_gs, "genefamilies_stratified",
+                          filter_values = list(gene_family_uniref = "UniRef90_T4BVE4",
+                                               uuid = spf_ids))
+spf_ex
+
+wildr_ex <- loadParquetData(con_gs, "genefamilies_stratified",
+                            filter_values = list(gene_family_uniref = "UniRef90_A0A1B1SA57",
+                                                 uuid = wildr_ids))
+wildr_ex
+
+# The full sample ID list also works, but is a bit slower
+all_ex <- loadParquetData(con_gs, "genefamilies_stratified",
+                          filter_values = list(gene_family_uniref = c("UniRef90_T4BVE4", "UniRef90_A0A1B1SA57"),
+                                               uuid = selected_samples$uuid))
+all_ex
+```
