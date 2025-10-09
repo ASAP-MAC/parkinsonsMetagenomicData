@@ -460,7 +460,7 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 }
 
 #' @title Validate 'filter_values' argument
-#' @description 'confirm_filter_values' checks that a named list is valide to be
+#' @description 'confirm_filter_values' checks that a named list is valid to be
 #' used as a 'filter_values' argument for various functions in
 #' parkinsonsMetagenomicData. Specifically, the input should be a named list,
 #' where the element name equals the name of a column to be
@@ -490,8 +490,9 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 #' @rdname confirm_filter_values
 #' @export
 confirm_filter_values <- function(filter_values, available_features = NULL) {
-    ## Check that object is a named list
-    if (!is.list(filter_values) || is.null(names(filter_values))) {
+    ## Check that object is a named list or NULL
+    if (!is.null(filter_values) &
+        (!is.list(filter_values) || is.null(names(filter_values)))) {
         stop("'filter_values' must be a named list of column = values")
     }
 
@@ -614,14 +615,37 @@ confirm_ref <- function(ref) {
     }
 }
 
+#' @title Standardize the order of a vector of delimited strings
+#' @description 'standardize_ordering' takes a vector of strings, splits each of
+#' them on a specified delimiter, orders them, then re-collapses them with the
+#' same delimiter. This confirms that when calling unique(), there are no
+#' strings that contain the same elements but in a different order.
+#' @param vec Vector of strings: vector of strings to be standardized
+#' @param delim Character: delimiter to split each of the strings by.
+#' @return Vector of strings
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  vec <- c("horse|gecko|frog",
+#'           "cow|camel|fish",
+#'           "frog|gecko|horse")
+#'
+#'  standardize_ordering(vec, delim = "|")
+#'  }
+#' }
+#' @rdname standardize_ordering
+#' @export
+#' @importFrom stringr str_split str_escape
 standardize_ordering <- function(vec, delim) {
     vec <- lapply(vec, function(x) {
         if (!is.na(x)) {
-            str_split(x, pattern = delim) |>
+            stringr::str_split(x, pattern = stringr::str_escape(delim)) |>
                 unlist() |>
                 sort() |>
                 paste(collapse = delim)
         } else { x }
         }) |>
         unlist()
+
+    return(vec)
 }

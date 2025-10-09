@@ -2,6 +2,7 @@
 ## sample_metaphlan_bugs_list.tsv.gz for parse_metaphlan_list()
 ## sample_experiment for add_metadata()
 ## sample_experiment_list for mergeExperiments()
+## sample_parquet for retrieve_local_files()
 
 library(parkinsonsMetagenomicData)
 
@@ -97,3 +98,13 @@ extdata_path <- file.path(system.file("extdata",
                                       package = "parkinsonsMetagenomicData"),
                           "sample_out_kneaddata.log")
 writeLines(lines_to_parse, extdata_path)
+
+## sample_parquet
+p_table <- data.frame(number = c(1, 2, 3, 4),
+                      letter = c("A", "B", "C", "D"))
+
+# write to inst/extdata/sample_table.parquet
+extdata_path <- file.path(system.file("extdata",
+                                      package = "parkinsonsMetagenomicData"),
+                          "sample_table.parquet")
+arrow::write_parquet(p_table, extdata_path)

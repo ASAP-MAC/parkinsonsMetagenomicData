@@ -4,7 +4,14 @@
 \alias{loadParquetData}
 \title{Retrieve data from a DuckDB view and convert to Summarized Experiment}
 \usage{
-loadParquetData(con, data_type, filter_values = NULL, custom_view = NULL)
+loadParquetData(
+  con,
+  data_type,
+  filter_values = NULL,
+  custom_view = NULL,
+  include_empty_samples = FALSE,
+  dry_run = FALSE
+)
 }
 \arguments{
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
@@ -25,10 +32,20 @@ with the 'dplyr::tbl' function, and piped into additional functions such as
 particular sequence of function calls can be saved and provided to this
 function for collection and formatting as a Summarized Experiment. See the
 function example. Default: NULL}
+
+\item{include_empty_samples}{Boolean (optional): should samples provided via
+a 'uuid' argument within 'filter_values' be included in the final
+TreeSummarizedExperiment if they do not show up in the results from filtering
+the source parquet data file. Default: FALSE}
+
+\item{dry_run}{Boolean (optional): if TRUE, the function will return the
+tbl_duckdb_connection object prior to calling 'dplyr::collect'. Default:
+FALSE}
 }
 \value{
-A TreeSummarizedExperiment object with process metadata, row data, column
-names, and relevant assays.
+A TreeSummarizedExperiment object with process metadata, row data,
+column names, and relevant assays. If dry_run = TRUE, a tbl_duckdb_connection
+object.
 }
 \description{
 'loadParquetData' accesses a DuckDB view created by

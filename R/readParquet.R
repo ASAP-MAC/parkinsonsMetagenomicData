@@ -32,16 +32,20 @@ db_connect <- function(dbdir = ":memory:") {
 #' @title Create a database view of a specific parquet file
 #' @description 'view_parquet' creates a database view with the provided DuckDB
 #' connection object. The view is created from a parquet file hosted at a
-#' repo of interest (see inst/extdata/parquet_repos.csv). The specific
-#' file is specified via the httpfs-compatible URL. See
-#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}.
+#' repo of interest (see inst/extdata/parquet_repos.csv) or stored locally. The
+#' specific file is specified via the httpfs-compatible URL or local file path.
 #' @param con DuckDB connection object of class 'duckdb_connection'
-#' @param httpfs_url String: httpfs-compatible URL referencing a specific
-#' parquet file hosted in a repo of interest.
-#' @param view_name String: name of the database view to be created. If not
+#' @param httpfs_url String (optional): httpfs-compatible URL referencing a
+#' specific parquet file hosted in a repo of interest. Default: NULL
+#' @param file_path String (optional): path to locally stored parquet file.
+#' Default: NULL
+#' @param view_name String (optional): name of the database view to be created. If not
 #' provided, it will be generated from the name of the file indicated by
-#' 'httpfs_url'.
+#' 'httpfs_url'. Default: NULL
 #' @return NULL
+#' @details See
+#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
+#' for more information on httpfs-compatible URLs.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
@@ -173,6 +177,28 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 }
 
+#' @title Create database views from local parquet files
+#' @description 'retrieve_local_views' creates database views for each of the
+#' files provided. If view names are not also provided, they are imputed from
+#' the file names.
+#' @param con DuckDB connection object of class 'duckdb_connection'
+#' @param local_files String or vector of strings: path(s) to parquet file(s)
+#' @param view_names String or vector of strings (optional): names to use for
+#' the created views instead of imputing from file names, Default: NULL
+#' @return NULL
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  con <- db_connect(dbdir = ":memory:")
+#'  fpath <- file.path(system.file("extdata",
+#'                                 package = "parkinsonsMetagenomicData"),
+#'                     "sample_table.parquet")
+#'  retrieve_local_views(con, fpath)
+#'  DBI::dbListTables(con)
+#'  }
+#' }
+#' @rdname retrieve_local_views
+#' @export
 retrieve_local_views <- function(con, local_files, view_names = NULL) {
     ## Check input
     # con
@@ -474,19 +500,24 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
 #' @title Set up DuckDB connection with views for available data types
 #' @description 'accessParquetData' is a wrapper function for 'db_connect' and
 #' 'retrieve_views'. A DuckDB connection is established and views are created for
-#' all data types available in a repo of interest
-#' (see inst/extdata/parquet_repos.csv). A vector of specific data types can be
-#' supplied as doing this for all data types can take longer.
+#' either all provided local files or all data types available in a repo of
+#' interest (see inst/extdata/parquet_repos.csv). When using a remote repo, a
+#' vector of specific data types can be supplied as doing this for all data
+#' types can take longer.
 #' @param dbdir Location for database files. Should be a path to an existing
 #' directory in the file system or the value ':memory:' to keep data in RAM.
 #' Default: ':memory:'
 #' @param repo String (optional): Hugging Face repo where the parquet files are
-#' stored. If NULL, the repo listed as the default in get_repo_info() will be
-#' selected. Default: NULL
-#' @param data_types Character vector (optional): list of data types to
-#' establish database views for. If NULL, views will be created for all available
-#' data types. Default: NULL
+#' stored. If NULL and local_files is also NULL, the repo listed as the default
+#' in get_repo_info() will be selected. Default: NULL
+#' @param local_files String or vector of strings (optional): path(s) to parquet
+#' file(s). Default: NULL
+#' @param data_types Character vector (optional): when using a remote repo, a
+#' list of data types to establish database views for. If NULL, views will be
+#' created for all available data types. Default: NULL
 #' @return DuckDB connection object of class 'duckdb_connection'
+#' @details Files stored remotely and locally cannot be combined in the same
+#' connection.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
@@ -510,14 +541,18 @@ accessParquetData <- function(dbdir = ":memory:",
     # data_types
     for (dt in data_types) confirm_data_type(dt)
 
+    if (!is.null(local_files) && !is.null(repo)) {
+        stop("Please provide a value for either 'repo' or 'local_files', but not both.")
+    }
+
     ## Connect to database
     con <- db_connect(dbdir)
 
-    ## Create views from Hugging Face repo
-    if (is.null(local_files)) {
-        retrieve_views(con, repo, data_types)
-    } else if (!is.null(local_files)) {
+    ## Create views from Hugging Face repo or local files
+    if (!is.null(local_files) && is.null(repo)) {
         retrieve_local_views(con, local_files)
+    } else if (is.null(local_files)) {
+        retrieve_views(con, repo, data_types)
     }
 
     ## Return connection
@@ -611,7 +646,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     if (class(include_empty_samples) != "logical") {
         stop("Invalid value of 'include_empty_samples'. Please provide TRUE or FALSE.")
     } else if (include_empty_samples && !"uuid" %in% names(filter_values)) {
-        message("'include_empty_samples' is TRUE but 'filter_values' does not contain a UUID argument.")
+        #message("'include_empty_samples' is TRUE but 'filter_values' does not contain a UUID argument.")
     }
 
     ## Apply any requested filtering, incorporating custom view if provided
@@ -687,8 +722,10 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' listed in 'get_ref_info()' with 'load_ref()', then filtering or otherwise
 #' transforming the result to only include feature combinations of interest.
 #' @param repo String (optional): Hugging Face repo where the parquet files are
-#' stored. If NULL, the repo listed as the default in get_repo_info() will be
-#' selected. Default: NULL
+#' stored. If NULL and local_files is also NULL, the repo listed as the default
+#' in get_repo_info() will be selected. Default: NULL
+#' @param local_files String or vector of strings (optional): path(s) to parquet
+#' file(s). Default: NULL
 #' @param include_empty_samples Boolean (optional): should samples provided via
 #' a 'uuid' argument within 'filter_values' be included in the final
 #' TreeSummarizedExperiment if they do not show up in the results from filtering
@@ -699,6 +736,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays. If dry_run = TRUE, a tbl_duckdb_connection
 #' object.
+#' @details Files stored remotely and locally cannot be combined in the same
+#' connection.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
@@ -717,6 +756,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'  genus_ex <- returnSamples(data_type = "relative_abundance",
 #'                            sample_data = sample_data_small,
 #'                            feature_data = feature_data_genus)
+#'  genus_ex
 #'  }
 #' }
 #' @seealso
@@ -724,7 +764,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' @rdname returnSamples
 #' @export
 #' @importFrom DBI dbListTables dbDisconnect
-returnSamples <- function(data_type, sample_data, feature_data, repo = NULL,
+returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
+                          repo = NULL, local_files = NULL,
                           include_empty_samples = TRUE, dry_run = FALSE) {
     ## Check input
     # repo
@@ -734,19 +775,28 @@ returnSamples <- function(data_type, sample_data, feature_data, repo = NULL,
     confirm_data_type(data_type)
 
     # sample_data
-    if (!is.data.frame(sample_data)) {
-        stop("'sample_data' should be a data.frame.")
-    } else if (!"uuid" %in% colnames(sample_data)) {
-        message("'sample_data' does not have a 'uuid' column, all samples will be returned.")
+    if (!is.null(sample_data)) {
+        if (!is.data.frame(sample_data)) {
+            stop("'sample_data' should be a data.frame.")
+        } else if (!"uuid" %in% colnames(sample_data)) {
+            message("'sample_data' does not have a 'uuid' column, all samples will be returned.")
+        }
     }
 
     # feature_data
-    if (!is.data.frame(feature_data)) {
-        stop("'feature_data' should be a data.frame.")
+    if (!is.null(feature_data)) {
+        if (!is.data.frame(feature_data)) {
+            stop("'feature_data' should be a data.frame.")
+        }
+    }
+
+    if (is.null(sample_data) & is.null(feature_data)) {
+        message("No 'sample_data' or 'feature_data' provided, all data will be returned.")
     }
 
     ## Create database connection and load views
-    con <- accessParquetData(repo = repo, data_types = data_type)
+    con <- accessParquetData(repo = repo, local_files = local_files,
+                             data_types = data_type)
 
     ## Convert sample_data and feature_data to filter_values
     filter_values <- list()
@@ -774,6 +824,10 @@ returnSamples <- function(data_type, sample_data, feature_data, repo = NULL,
         # Add sample uuids
         uuid_arg <- list(uuid = sample_data$uuid)
         filter_values <- c(filter_values, uuid_arg)
+    }
+
+    if (length(filter_values) == 0) {
+        filter_values <- NULL
     }
 
     ## Load data

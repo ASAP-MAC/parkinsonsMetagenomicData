@@ -13,7 +13,7 @@ confirm_filter_values(filter_values, available_features = NULL)
 names should be found in. Default: NULL}
 }
 \description{
-'confirm_filter_values' checks that a named list is valide to be
+'confirm_filter_values' checks that a named list is valid to be
 used as a 'filter_values' argument for various functions in
 parkinsonsMetagenomicData. Specifically, the input should be a named list,
 where the element name equals the name of a column to be
