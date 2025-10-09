@@ -27,3 +27,4 @@ viral_clusters,MetaPhlAn/Custom,"Represents clusters of viral sequences, often u
 strainphlan_markers,StrainPhlAn,"Consensus sequences of clade-specific marker genes for each sample, used for strain-level reconstruction in StrainPhlAn.",Fraction of marker covered / Mean coverage
 fastqc,FastQC,"Quality control metrics for raw sequencing reads, including quality scores, adapter contamination, and sequence content, length, and duplication.",Varies by metric
 kneaddata_log,KneadData,"Log file reporting preprocessing steps such as quality trimming, contaminant removal (e.g., host reads), and overall read counts retained.",None (log file)
+reference,NA,Reference file reporting all unique values of non-UUID identifiers in a parquet file.,NA

@@ -20,16 +20,16 @@ collect() is called.
 \description{
 'filter_parquet_view' takes a named list of exact value filter
 arguments and applies them to a DuckDB database view or table. This function
-is optimized to work with even extremely large views by leveraging parquet
-row group skipping.
+applies the filters in the order provided, ensuring that the most efficient
+filtering method is used for the first provided condition.
 }
 \details{
 Optimization for large files is done by filtering first by the
 column with the least provided values. This is the most selective filtering
 step and will therefore reduce the amount of data that is being filtered with
 subsequent column:value arguments. Because of this, it is ideal to ensure
-that the provided DuckDB view or table is sorted by the column with the least
-provided arguments. If you have multiple views with different sorting
+that the provided DuckDB view or table is sorted by the column involved in
+the first filter condition. If you have multiple views with different sorting
 schemas, interpret_and_filter() will select the appropriate view and apply
 the filter for you.
 }

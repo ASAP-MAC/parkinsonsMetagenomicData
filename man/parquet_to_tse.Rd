@@ -4,7 +4,7 @@
 \alias{parquet_to_tse}
 \title{Convert tabulated parquet file data to a Summarized Experiment}
 \usage{
-parquet_to_tse(parquet_table, data_type)
+parquet_to_tse(parquet_table, data_type, empty_data = NULL)
 }
 \arguments{
 \item{parquet_table}{Table or data frame: data taken directly from a parquet

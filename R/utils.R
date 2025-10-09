@@ -130,7 +130,8 @@ parquet_colinfo <- function(data_type) {
 
     ## Find corresponding general_data_type
     gen_type <- output_file_types(filter_col = "data_type",
-                                  filter_string = data_type)$general_data_type
+                                  filter_string = data_type)$general_data_type |>
+        unique()
 
     ## Pull and return column info
     rel_cols <- ftable %>%
@@ -161,8 +162,24 @@ detect_data_type <- function(string) {
     reg_types <- paste0(data_types[order(nchar(data_types), decreasing = TRUE)],
                         collapse = "|")
 
-    ## Extract first match from input
-    matches <- stringr::str_extract(string, reg_types)
+    ## Loop through input
+    matches <- rep(NA, length(string))
+
+    for (i in 1:length(string)) {
+        s <- string[i]
+
+        if (grepl("_ref", s)) {
+            ## Detect reference type
+            match <- "reference"
+        } else {
+            ## Extract first match from input
+            match <- stringr::str_extract(s, reg_types)
+
+        }
+
+        ## Save current type
+        matches[i] <- match
+    }
 
     return(matches)
 }
@@ -245,7 +262,7 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
 #' }
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
-#' @rdname get_parquet_url
+#' @rdname get_repo_info
 #' @export
 #' @importFrom readr read_csv
 get_repo_info <- function() {
@@ -254,6 +271,50 @@ get_repo_info <- function() {
                          package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
+
+    return(ftable)
+}
+
+#' @title Return a table with information about available parquet reference
+#' files.
+#' @description 'get_ref_info' returns a table of information associated with
+#' each parquet reference file. The table can optionally be filtered by
+#' providing a column name to filter by and a string/regular expression to
+#' filter the selected column with.
+#' @param filter_col Character string (optional): name of the column to filter
+#' by
+#' @param filter_string Character string (optional): string/regular expression
+#' to filter the selected column with.
+#' @return Data frame: A table of ref information, including information on
+#' general data types and tools served as well as descriptions.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  get_ref_info()
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#' @rdname get_ref_info
+#' @export
+#' @importFrom readr read_csv
+get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
+    ## Load in reference file info table
+    fpath <- system.file("extdata", "ref_file_definitions.csv",
+                         package = "parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
+
+    ## Filter table if requested
+    if (!is.null(filter_col) & !is.null(filter_string)) {
+        if (!filter_col %in% colnames(ftable)) {
+            print_colnames <- paste(colnames(ftable), collapse = ", ")
+            stop(paste0("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames))
+        }
+
+        ftable <- ftable %>%
+            filter(grepl(filter_string, .data[[filter_col]], ignore.case = TRUE))
+    }
 
     return(ftable)
 }
@@ -399,7 +460,7 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 }
 
 #' @title Validate 'filter_values' argument
-#' @description 'confirm_filter_values' checks that a named list is valide to be
+#' @description 'confirm_filter_values' checks that a named list is valid to be
 #' used as a 'filter_values' argument for various functions in
 #' parkinsonsMetagenomicData. Specifically, the input should be a named list,
 #' where the element name equals the name of a column to be
@@ -429,8 +490,9 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 #' @rdname confirm_filter_values
 #' @export
 confirm_filter_values <- function(filter_values, available_features = NULL) {
-    ## Check that object is a named list
-    if (!is.list(filter_values) || is.null(names(filter_values))) {
+    ## Check that object is a named list or NULL
+    if (!is.null(filter_values) &
+        (!is.list(filter_values) || is.null(names(filter_values)))) {
         stop("'filter_values' must be a named list of column = values")
     }
 
@@ -526,4 +588,64 @@ confirm_repo <- function(repo) {
     if (!is.null(repo) && !repo %in% ri$repo_name) {
         stop(paste0("Please provide one of the following valid repo names or NULL to select the default (", d, "):\n", paste(ri$repo_name, collapse = ", ")))
     }
+}
+
+#' @title Validate 'ref' argument
+#' @description 'confirm_ref' checks that a single string is a valid reference
+#' file name as listed in get_ref_info() or a NULL value.
+#' @param repo String: input to be validated
+#' @return NULL
+#' @details This function is intended to be used within another function as
+#' input validation. If the input is valid, nothing will happen. If it is not,
+#' the function will throw a 'stop()' error.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  confirm_ref("horse")
+#'  confirm_ref("clade_name_ref")
+#'  }
+#' }
+#' @rdname confirm_repo
+#' @export
+confirm_ref <- function(ref) {
+    ri <- get_ref_info()
+
+    if (!ref %in% ri$ref_file) {
+        stop(paste0("Please provide one of the following valid reference file names:\n", paste(ri$ref_file, collapse = ", ")))
+    }
+}
+
+#' @title Standardize the order of a vector of delimited strings
+#' @description 'standardize_ordering' takes a vector of strings, splits each of
+#' them on a specified delimiter, orders them, then re-collapses them with the
+#' same delimiter. This confirms that when calling unique(), there are no
+#' strings that contain the same elements but in a different order.
+#' @param vec Vector of strings: vector of strings to be standardized
+#' @param delim Character: delimiter to split each of the strings by.
+#' @return Vector of strings
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  vec <- c("horse|gecko|frog",
+#'           "cow|camel|fish",
+#'           "frog|gecko|horse")
+#'
+#'  standardize_ordering(vec, delim = "|")
+#'  }
+#' }
+#' @rdname standardize_ordering
+#' @export
+#' @importFrom stringr str_split str_escape
+standardize_ordering <- function(vec, delim) {
+    vec <- lapply(vec, function(x) {
+        if (!is.na(x)) {
+            stringr::str_split(x, pattern = stringr::str_escape(delim)) |>
+                unlist() |>
+                sort() |>
+                paste(collapse = delim)
+        } else { x }
+        }) |>
+        unlist()
+
+    return(vec)
 }

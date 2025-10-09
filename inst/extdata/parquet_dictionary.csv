@@ -1,76 +1,76 @@
-general_data_type,col_name,col_class,description,se_role
-relative_abundance,clade_name,character,The taxonomic lineage of the detected microbial clade,rname
-relative_abundance,clade_name_kingdom,character,The taxonomic kingdom of the detected microbial clade,rdata
-relative_abundance,clade_name_phylum,character,The taxonomic phylum of the detected microbial clade,rdata
-relative_abundance,clade_name_class,character,The taxonomic class of the detected microbial clade,rdata
-relative_abundance,clade_name_order,character,The taxonomic order of the detected microbial clade,rdata
-relative_abundance,clade_name_family,character,The taxonomic family of the detected microbial clade,rdata
-relative_abundance,clade_name_genus,character,The taxonomic genus of the detected microbial clade,rdata
-relative_abundance,clade_name_species,character,The taxonomic species of the detected microbial clade,rdata
-relative_abundance,clade_name_terminal,character,"The taxonomic terminal (strain, subspecies, etc.) of the detected microbial clade",rdata
-relative_abundance,NCBI_tax_id,character,The NCBI Taxonomy identifier for the clade in clade_name,rdata
-relative_abundance,NCBI_tax_id_kingdom,character,The NCBI Taxonomy identifier for the kingdom in clade_name_kingdom,rdata
-relative_abundance,NCBI_tax_id_phylum,character,The NCBI Taxonomy identifier for the phylum in clade_name_phylum,rdata
-relative_abundance,NCBI_tax_id_class,character,The NCBI Taxonomy identifier for the class in clade_name_class,rdata
-relative_abundance,NCBI_tax_id_order,character,The NCBI Taxonomy identifier for the order in clade_name_order,rdata
-relative_abundance,NCBI_tax_id_family,character,The NCBI Taxonomy identifier for the family in clade_name_family,rdata
-relative_abundance,NCBI_tax_id_genus,character,The NCBI Taxonomy identifier for the genus in clade_name_genus,rdata
-relative_abundance,NCBI_tax_id_species,character,The NCBI Taxonomy identifier for the species in clade_name_species,rdata
-relative_abundance,NCBI_tax_id_terminal,character,"The NCBI Taxonomy identifier for the terminal (strain, subspecies, etc.) in clade_name_terminal",rdata
-relative_abundance,relative_abundance,float,The proportion of the total microbial community represented by the clade,assay
-relative_abundance,additional_species,character,Any other species represented by the same set of detected markers,rdata
-relative_abundance,uuid,character,Sample UUID,cname
-relative_abundance,db_version,character,MetaPhlAn database version(s) referenced,cdata
-relative_abundance,command,character,MetaPhlAn command given,cdata
-relative_abundance,reads_processed,character,Number of reads processed,cdata
-relative_abundance,metaphlan_header,character,MetaPhlAn's custom header row,cdata
-relative_abundance,original_columns,character,Original MetaPhlAn column names,cdata
-viral_clusters,m_group_cluster,character,The marker gene group or cluster detected,rdata
-viral_clusters,genome_name,character,The database identifier of the matched genome,rname
-viral_clusters,length,int,Length of the genome (in base pairs) in the database,rdata
-viral_clusters,breadth_of_coverage,float,The proportion of the genome covered by reads,assay
-viral_clusters,depth_of_coverage_mean,float,The average sequencing depth across the genome,assay
-viral_clusters,depth_of_coverage_median,float,The median sequencing depth across the genome,assay
-viral_clusters,m_group_type_k_u,character,Whether the matched genome has known (kVSG) or unknown (uVSG) taxonomy,rdata
-viral_clusters,first_genome_in_cluster,character,"The first genome in the matched cluster, if that cluster's taxonomy is known",rdata
-viral_clusters,other_genomes,character,Other genomes in the same cluster that share the same marker set,rdata
-viral_clusters,uuid,character,Sample UUID,cname
-viral_clusters,db_version,character,MetaPhlAn database version(s) referenced,cdata
-viral_clusters,command,character,MetaPhlAn command given,cdata
-viral_clusters,metaphlan_header,character,MetaPhlAn's custom header row,cdata
-viral_clusters,original_columns,character,Original MetaPhlAn column names,cdata
-marker_abundance,uniref,character,The marker identifier,rname
-marker_abundance,abundance,float,The mean coverage of the marker genes,assay
-marker_abundance,uuid,character,Sample UUID,cname
-marker_abundance,db_version,character,MetaPhlAn database version(s) referenced,cdata
-marker_abundance,command,character,MetaPhlAn command given,cdata
-marker_abundance,reads_processed,character,Number of reads processed,cdata
-marker_abundance,metaphlan_header,character,MetaPhlAn's custom header row,cdata
-marker_presence,uniref,character,The marker identifier,rname
-marker_presence,presence,int,Whether or not that marker is present (1) or absent (0),assay
-marker_presence,uuid,character,Sample UUID,cname
-marker_presence,db_version,character,MetaPhlAn database version(s) referenced,cdata
-marker_presence,command,character,MetaPhlAn command given,cdata
-marker_presence,reads_processed,character,Number of reads processed,cdata
-marker_presence,metaphlan_header,character,MetaPhlAn's custom header row,cdata
-genefamilies,gene_family,character,NA,rname
-genefamilies,gene_family_uniref,character,NA,rdata
-genefamilies,gene_family_genus,character,NA,rdata
-genefamilies,gene_family_species,character,NA,rdata
-genefamilies,rpk_abundance,float,NA,assay
-genefamilies,uuid,character,Sample UUID,cname
-genefamilies,humann_header,character,HUMAnN's custom header row,cdata
-pathabundance,pathway,character,NA,rname
-pathabundance,pathway_uniref,character,NA,rdata
-pathabundance,pathway_genus,character,NA,rdata
-pathabundance,pathway_species,character,NA,rdata
-pathabundance,abundance,float,NA,assay
-pathabundance,uuid,character,Sample UUID,cname
-pathabundance,humann_header,character,HUMAnN's custom header row,cdata
-pathcoverage,pathway,character,NA,rname
-pathcoverage,pathway_uniref,character,NA,rdata
-pathcoverage,pathway_genus,character,NA,rdata
-pathcoverage,pathway_species,character,NA,rdata
-pathcoverage,coverage,float,NA,assay
-pathcoverage,uuid,character,Sample UUID,cname
-pathcoverage,humann_header,character,HUMAnN's custom header row,cdata
+general_data_type,col_name,col_class,description,se_role,ref_file
+relative_abundance,clade_name,character,The taxonomic lineage of the detected microbial clade,rname,clade_name_ref
+relative_abundance,clade_name_kingdom,character,The taxonomic kingdom of the detected microbial clade,rdata,clade_name_ref
+relative_abundance,clade_name_phylum,character,The taxonomic phylum of the detected microbial clade,rdata,clade_name_ref
+relative_abundance,clade_name_class,character,The taxonomic class of the detected microbial clade,rdata,clade_name_ref
+relative_abundance,clade_name_order,character,The taxonomic order of the detected microbial clade,rdata,clade_name_ref
+relative_abundance,clade_name_family,character,The taxonomic family of the detected microbial clade,rdata,clade_name_ref
+relative_abundance,clade_name_genus,character,The taxonomic genus of the detected microbial clade,rdata,clade_name_ref
+relative_abundance,clade_name_species,character,The taxonomic species of the detected microbial clade,rdata,clade_name_ref
+relative_abundance,clade_name_terminal,character,"The taxonomic terminal (strain, subspecies, etc.) of the detected microbial clade",rdata,clade_name_ref
+relative_abundance,NCBI_tax_id,character,The NCBI Taxonomy identifier for the clade in clade_name,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_kingdom,character,The NCBI Taxonomy identifier for the kingdom in clade_name_kingdom,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_phylum,character,The NCBI Taxonomy identifier for the phylum in clade_name_phylum,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_class,character,The NCBI Taxonomy identifier for the class in clade_name_class,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_order,character,The NCBI Taxonomy identifier for the order in clade_name_order,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_family,character,The NCBI Taxonomy identifier for the family in clade_name_family,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_genus,character,The NCBI Taxonomy identifier for the genus in clade_name_genus,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_species,character,The NCBI Taxonomy identifier for the species in clade_name_species,rdata,clade_name_ref
+relative_abundance,NCBI_tax_id_terminal,character,"The NCBI Taxonomy identifier for the terminal (strain, subspecies, etc.) in clade_name_terminal",rdata,clade_name_ref
+relative_abundance,relative_abundance,float,The proportion of the total microbial community represented by the clade,assay,NA
+relative_abundance,additional_species,character,Any other species represented by the same set of detected markers,rdata,NA
+relative_abundance,uuid,character,Sample UUID,cname,NA
+relative_abundance,db_version,character,MetaPhlAn database version(s) referenced,cdata,NA
+relative_abundance,command,character,MetaPhlAn command given,cdata,NA
+relative_abundance,reads_processed,character,Number of reads processed,cdata,NA
+relative_abundance,metaphlan_header,character,MetaPhlAn's custom header row,cdata,NA
+relative_abundance,original_columns,character,Original MetaPhlAn column names,cdata,NA
+viral_clusters,m_group_cluster,character,The marker gene group or cluster detected,rdata,NA
+viral_clusters,genome_name,character,The database identifier of the matched genome,rname,genome_name_ref
+viral_clusters,length,int,Length of the genome (in base pairs) in the database,rdata,NA
+viral_clusters,breadth_of_coverage,float,The proportion of the genome covered by reads,assay,NA
+viral_clusters,depth_of_coverage_mean,float,The average sequencing depth across the genome,assay,NA
+viral_clusters,depth_of_coverage_median,float,The median sequencing depth across the genome,assay,NA
+viral_clusters,m_group_type_k_u,character,Whether the matched genome has known (kVSG) or unknown (uVSG) taxonomy,rdata,NA
+viral_clusters,first_genome_in_cluster,character,"The first genome in the matched cluster, if that cluster's taxonomy is known",rdata,NA
+viral_clusters,other_genomes,character,Other genomes in the same cluster that share the same marker set,rdata,NA
+viral_clusters,uuid,character,Sample UUID,cname,NA
+viral_clusters,db_version,character,MetaPhlAn database version(s) referenced,cdata,NA
+viral_clusters,command,character,MetaPhlAn command given,cdata,NA
+viral_clusters,metaphlan_header,character,MetaPhlAn's custom header row,cdata,NA
+viral_clusters,original_columns,character,Original MetaPhlAn column names,cdata,NA
+marker_abundance,uniref,character,The marker identifier,rname,uniref_marker_ref
+marker_abundance,abundance,float,The mean coverage of the marker genes,assay,NA
+marker_abundance,uuid,character,Sample UUID,cname,NA
+marker_abundance,db_version,character,MetaPhlAn database version(s) referenced,cdata,NA
+marker_abundance,command,character,MetaPhlAn command given,cdata,NA
+marker_abundance,reads_processed,character,Number of reads processed,cdata,NA
+marker_abundance,metaphlan_header,character,MetaPhlAn's custom header row,cdata,NA
+marker_presence,uniref,character,The marker identifier,rname,uniref_marker_ref
+marker_presence,presence,int,Whether or not that marker is present (1) or absent (0),assay,NA
+marker_presence,uuid,character,Sample UUID,cname,NA
+marker_presence,db_version,character,MetaPhlAn database version(s) referenced,cdata,NA
+marker_presence,command,character,MetaPhlAn command given,cdata,NA
+marker_presence,reads_processed,character,Number of reads processed,cdata,NA
+marker_presence,metaphlan_header,character,MetaPhlAn's custom header row,cdata,NA
+genefamilies,gene_family,character,The detected gene family,rname,gene_family_ref
+genefamilies,gene_family_uniref,character,The UniRef identifier of the detected gene family,rdata,gene_family_ref
+genefamilies,gene_family_genus,character,The taxonomic genus of the detected gene family,rdata,gene_family_ref
+genefamilies,gene_family_species,character,The taxonomic species of the detected gene family,rdata,gene_family_ref
+genefamilies,rpk_abundance,float,Gene family abundance in reads per kilobase,assay,NA
+genefamilies,uuid,character,Sample UUID,cname,NA
+genefamilies,humann_header,character,HUMAnN's custom header row,cdata,NA
+pathabundance,pathway,character,The detected pathway,rname,pathway_ref
+pathabundance,pathway_uniref,character,The UniRef identifier of the detected pathway,rdata,pathway_ref
+pathabundance,pathway_genus,character,The taxonomic genus of the detected pathway,rdata,pathway_ref
+pathabundance,pathway_species,character,The taxonomic species of the detected microbial pathway,rdata,pathway_ref
+pathabundance,abundance,float,The abundance of the detected pathway,assay,NA
+pathabundance,uuid,character,Sample UUID,cname,NA
+pathabundance,humann_header,character,HUMAnN's custom header row,cdata,NA
+pathcoverage,pathway,character,The detected pathway,rname,pathway_ref
+pathcoverage,pathway_uniref,character,The UniRef identifier of the detected pathway,rdata,pathway_ref
+pathcoverage,pathway_genus,character,The taxonomic genus of the detected pathway,rdata,pathway_ref
+pathcoverage,pathway_species,character,The taxonomic species of the detected pathway,rdata,pathway_ref
+pathcoverage,coverage,float,The coverage of the detected pathway,assay,NA
+pathcoverage,uuid,character,Sample UUID,cname,NA
+pathcoverage,humann_header,character,HUMAnN's custom header row,cdata,NA

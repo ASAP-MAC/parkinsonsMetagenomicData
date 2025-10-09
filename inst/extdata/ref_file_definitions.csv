@@ -1,0 +1,6 @@
+ref_file,general_data_type,tool,description
+clade_name_ref,relative_abundance,MetaPhlAn,All unique values of clade_name and NCBI_tax_id found in the MetaPhlAn relative_abundance files in the same repo
+gene_family_ref,genefamilies,HUMAnN,All unique values of gene_family found in the HUMAnN genefamilies files in the same repo
+genome_name_ref,viral_clusters,MetaPhlAn,All unique values of genome_name found in the MetaPhlAn viral_clusters files in the same repo
+pathway_ref,pathabundance;pathcoverage,HUMAnN,All unique values of pathway found in the HUMAnN pathabundance and pathcoverage files in the same repo
+uniref_marker_ref,marker_abundance;marker_presence,MetaPhlAn,All unique values of uniref marker found in the MetaPhlAn marker_abundance and marker_presence files in the same repo
