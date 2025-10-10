@@ -20,8 +20,8 @@ test_that("httpfs installed", {
 test_that("view_parquet creates a single view", {
     con <- db_connect(":memory:")
     view_parquet(con,
-                 "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
-                 "relative_abundance_uuid")
+                 httpfs_url = "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
+                 view_name = "relative_abundance_uuid")
     views <- DBI::dbListTables(con)
 
     expect_true("relative_abundance_uuid" %in% views)
@@ -36,6 +36,19 @@ test_that("retrieve_views creates expected views", {
 
     expect_true("relative_abundance_uuid" %in% views)
 })
+
+## retrieve_local_views
+test_that("retrieve_local_views creates expected views", {
+    con <- db_connect(dbdir = ":memory:")
+    fpath <- file.path(system.file("extdata",
+                                   package = "parkinsonsMetagenomicData"),
+                       "sample_table.parquet")
+    retrieve_local_views(con, fpath)
+    views <- DBI::dbListTables(con)
+
+    expect_true("sample_table" %in% views)
+})
+
 
 ## filter_parquet_view
 test_that("filter_parquet_view works with single and multiple filters", {
@@ -163,12 +176,88 @@ test_that("sampleMetadata was added", {
         dplyr::filter(uuid %in% uuids) |>
         dplyr::pull(age) |>
         sort()
-    cdata_age <- colData(custom_tse)$age |>
+    cdata_age <- SummarizedExperiment::colData(custom_tse)$age |>
         sort()
 
     expect_equal(meta_age, cdata_age)
 })
 
+## returnSamples
+human_samples <- sampleMetadata |>
+    dplyr::filter(control %in% c("Case", "Study Control") &
+                  age >= 16 &
+                  is.na(sex) != TRUE) |>
+    dplyr::filter(host_species == "Homo sapiens") |>
+    head(10)
+
+mouse_samples <- sampleMetadata |>
+    dplyr::filter(control %in% c("Case", "Study Control") &
+                  age >= 16 &
+                  is.na(sex) != TRUE) |>
+    dplyr::filter(host_species == "Mus musculus") |>
+    head(10)
+
+sample_data <- rbind(human_samples, mouse_samples)
+
+clade_name_ref <- load_ref("clade_name_ref")
+feature_data_genus <- clade_name_ref |>
+    dplyr::filter(grepl("Faecalibacterium", clade_name_genus))
+genus_ex <- returnSamples(data_type = "relative_abundance",
+                          sample_data = sample_data,
+                          feature_data = feature_data_genus,
+                          include_empty_samples = FALSE)
+ex_empty <- returnSamples(data_type = "relative_abundance",
+                          sample_data = sample_data,
+                          feature_data = feature_data_genus,
+                          include_empty_samples = TRUE)
+ex_dry <- returnSamples(data_type = "relative_abundance",
+                        sample_data = sample_data,
+                        feature_data = feature_data_genus,
+                        dry_run = TRUE)
+
+test_that("returnSamples returns TreeSummarizedExperiment", {
+    expect_true(inherits(genus_ex, "TreeSummarizedExperiment"))
+})
+
+test_that("Expected samples were returned, ignoring empty ones", {
+    expect_in(colnames(genus_ex), sample_data$uuid)
+    expect_false(all(sample_data$uuid %in% colnames(genus_ex)))
+})
+
+test_that("Expected samples were returned, including empty ones", {
+    expect_setequal(colnames(ex_empty), sample_data$uuid)
+})
+
+test_that("Expected features were returned", {
+    expect_in(rownames(genus_ex), feature_data_genus$clade_name)
+})
+
+test_that("dry_run returns tbl_duckdb_connection", {
+    expect_true(inherits(ex_dry, "tbl_duckdb_connection"))
+})
+
+## get_cdata_only
+test_that("get_cdata_only retrieves requested samples", {
+    con <- accessParquetData(data_types = "relative_abundance")
+    uuids <- c("c3eb1e35-9a43-413d-8078-6a0a7ac064ba",
+               "a82385f0-d1be-4d79-854c-a7fbfe4473e1",
+               "a1444b37-d568-4575-a5c4-14c5eb2a5b89",
+               "2a497dd7-b974-4f04-9e1f-16430c678f06",
+               "496a2d0c-75ae-430f-b969-b15dedc16b3c",
+               "4a786fd8-782f-4d43-937a-36b98e9c0ab6",
+               "c789b8bc-ebe6-4b85-83e1-5cf1bbfa6111",
+               "d311d028-a54b-4557-970c-eb5b77ec0050",
+               "373a5ac4-161a-46c6-b7d8-4f28b854b386",
+               "5a93179f-7ca7-41d8-96d7-dbed215894aa",
+               "7a2e961b-2f13-4760-9392-c896c54e7ec3",
+               "c6ecc460-33db-4032-9092-9148a134f5dc",
+               "e4a83901-e130-4b64-9e7a-fea55bc5f3f2",
+               "6a034c9f-f7c9-4ead-812b-123ee99b1e0b",
+               "ee26b6f0-89fd-45d0-8af9-bc1d9647a700")
+    cdata <- get_cdata_only(con, data_type = "relative_abundance", uuids)
+
+    expect_setequal(uuids, cdata$uuid)
+})
 
 ## get_hf_parquet_urls
 test_that("get_hf_parquet_urls pulls correct columns", {
@@ -177,4 +266,19 @@ test_that("get_hf_parquet_urls pulls correct columns", {
                      "units_normalization")
 
     expect_equal(func_cols, expect_cols)
+})
+
+## load_ref
+cn_ref <- load_ref("clade_name_ref")
+
+test_that("load_ref returns a table", {
+    expect_true(inherits(cn_ref, "tbl"))
+})
+
+test_that("load_ref returns expected columns", {
+    ex_cols <- parquet_colinfo("relative_abundance") |>
+        dplyr::filter(ref_file == "clade_name_ref") |>
+        dplyr::pull(col_name)
+
+    expect_setequal(ex_cols, colnames(cn_ref))
 })

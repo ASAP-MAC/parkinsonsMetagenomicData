@@ -98,6 +98,15 @@ test_that("get_repo_info reads extdata/parquet_repos.csv", {
     expect_equal(test_table, ftable)
 })
 
+## get_ref_info
+test_that("get_ref_info reads extdata/ref_file_definitions.csv", {
+    fpath <- system.file("extdata", "ref_file_definitions.csv",
+                         package="parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |> as.data.frame()
+    test_table <- get_ref_info()
+    expect_equal(test_table, ftable)
+})
+
 ## file_to_hf
 test_that("file_to_hf converts huggingface URL correctly", {
     url <- "https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/file.parquet"
@@ -187,4 +196,28 @@ test_that("confirm_repo accepts NULL or valid repo", {
 
 test_that("confirm_repo errors on invalid repo", {
     expect_error(confirm_repo("horse"))
+})
+
+## confirm_ref
+test_that("confirm_ref accepts valid ref", {
+    expect_no_error(confirm_ref("clade_name_ref"))
+})
+
+test_that("confirm_ref errors on invalid ref", {
+    expect_error(confirm_ref("horse"))
+})
+
+## standardize_ordering
+test_that("standardize_ordering correctly orders strings", {
+    vec <- c("horse|gecko|frog",
+             "cow|camel|fish",
+             "frog|gecko|horse")
+
+    expect_vec <- c("frog|gecko|horse",
+                    "camel|cow|fish",
+                    "frog|gecko|horse")
+
+    new_vec <- standardize_ordering(vec, delim = "|")
+
+    expect_equal(new_vec, expect_vec)
 })
