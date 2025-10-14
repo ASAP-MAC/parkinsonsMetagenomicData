@@ -236,6 +236,31 @@ test_that("dry_run returns tbl_duckdb_connection", {
     expect_true(inherits(ex_dry, "tbl_duckdb_connection"))
 })
 
+#dt_info <- output_file_types()
+#random_data_type <- dt_info[sample(nrow(dt_info), 1),]
+#ri_info <- get_ref_info(filter_col = "general_data_type", filter_string = random_data_type$general_data_type)
+#relevant_ref <- load_ref(ri_info$ref_file)
+#random_sample <- sampleMetadata[sample(nrow(sampleMetadata), 1),]
+#random_feature <- relevant_ref[sample(nrow(relevant_ref), 1),]
+
+#test_that("random data_type returns data for single feature across all samples", {
+#    expect_no_error({
+#        returnSamples(data_type = random_data_type$data_type,
+#                      sample_data = NULL,
+#                      feature_data = random_feature,
+#                      include_empty_samples = FALSE)
+#    })
+#})
+
+#test_that("random data_type returns data for single sample across all features", {
+#    expect_no_error({
+#        returnSamples(data_type = random_data_type$data_type,
+#                      sample_data = random_sample,
+#                      feature_data = NULL,
+#                      include_empty_samples = FALSE)
+#    })
+#})
+
 ## get_cdata_only
 test_that("get_cdata_only retrieves requested samples", {
     con <- accessParquetData(data_types = "relative_abundance")
