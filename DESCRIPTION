@@ -18,6 +18,7 @@ Imports:
     purrr,
     tidyselect,
     httr,
+    arrow,
     jsonlite,
     googleCloudStorageR,
     BiocFileCache,
