@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
 ```{r setup, include = FALSE}
 suppressPackageStartupMessages({
     library(parkinsonsMetagenomicData)
+    library(googleCloudStorageR)
     library(dplyr)
     library(DT)
 })
@@ -137,7 +138,7 @@ for (i in 1:nrow(cache_tbl)) {
     parsed_rel_ab_list[[i]] <- parse_metaphlan_list(sample_id = cache_tbl$uuid[i],
                                                 file_path = cache_tbl$cache_path[i],
                                                 data_type = cache_tbl$data_type[i])
-    
+
 }
 ```
 
