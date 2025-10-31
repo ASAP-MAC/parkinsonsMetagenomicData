@@ -19,6 +19,8 @@ Imports:
     tidyselect,
     httr,
     jsonlite,
+    googleCloudStorageR,
+    BiocFileCache,
     TreeSummarizedExperiment, 
     SummarizedExperiment
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
