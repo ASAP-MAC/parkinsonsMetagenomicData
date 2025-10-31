@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
 ```{r general_setup, include=FALSE}
 library(parkinsonsMetagenomicData)
 library(dplyr)
+library(DBI)
 library(DT)
 ```
 
