@@ -19,11 +19,17 @@ Imports:
     tidyselect,
     httr,
     arrow,
+    duckdb,
     jsonlite,
     googleCloudStorageR,
     BiocFileCache,
-    TreeSummarizedExperiment, 
-    SummarizedExperiment
+    TreeSummarizedExperiment,
+    SummarizedExperiment,
+    DBI,
+    S4Vectors,
+    rlang,
+    tools,
+    utils
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
