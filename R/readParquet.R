@@ -182,9 +182,9 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' files provided. If view names are not also provided, they are imputed from
 #' the file names.
 #' @param con DuckDB connection object of class 'duckdb_connection'
-#' @param local_files String or vector of strings: path(s) to parquet file(s)
-#' @param view_names String or vector of strings (optional): names to use for
-#' the created views instead of imputing from file names, Default: NULL
+#' @param local_files String or vector of strings: path(s) to parquet file(s).
+#' If the elements are named, those names will be used for the created views
+#' instead of imputing from file names.
 #' @return NULL
 #' @examples
 #' \dontrun{
@@ -199,27 +199,27 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' }
 #' @rdname retrieve_local_views
 #' @export
-retrieve_local_views <- function(con, local_files, view_names = NULL) {
+retrieve_local_views <- function(con, local_files) {
     ## Check input
     # con
     confirm_duckdb_con(con)
 
-    # local_files/view_names
-    if (length(view_names) != 0 & length(view_names) != length(local_files)) {
-        stop("The lengths of 'local_files' and 'view_names' do not match.")
-    }
+    ## Create automatic view names
+    view_names <- local_files |>
+        basename() |>
+        gsub(pattern = "\\.parquet", replacement = "") |>
+        gsub(pattern = "\\.", replacement = "_")
 
-    ## Create view names
-    if (is.null(view_names)){
-        view_names <- local_files |>
-            basename() |>
-            gsub(pattern = "\\.parquet", replacement = "") |>
-            gsub(pattern = "\\.", replacement = "_")
+    if (is.null(names(local_files))) {
+        names(local_files) <- view_names
+    } else {
+        empty_ids <- which(names(local_files) == "")
+        names(local_files)[empty_ids] <- view_names[empty_ids]
     }
 
     ## Create view for each file
     for (i in seq_along(local_files)) {
-        view_parquet(con, file_path = local_files[i], view_name = view_names[i])
+        view_parquet(con, file_path = local_files[i], view_name = names(local_files)[i])
     }
 }
 
@@ -511,7 +511,8 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
 #' stored. If NULL and local_files is also NULL, the repo listed as the default
 #' in get_repo_info() will be selected. Default: NULL
 #' @param local_files String or vector of strings (optional): path(s) to parquet
-#' file(s). Default: NULL
+#' file(s). If the elements are named, those names will be used for the created
+#' views instead of imputing from file names. Default: NULL
 #' @param data_types Character vector (optional): when using a remote repo, a
 #' list of data types to establish database views for. If NULL, views will be
 #' created for all available data types. Default: NULL
@@ -725,7 +726,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' stored. If NULL and local_files is also NULL, the repo listed as the default
 #' in get_repo_info() will be selected. Default: NULL
 #' @param local_files String or vector of strings (optional): path(s) to parquet
-#' file(s). Default: NULL
+#' file(s). If the elements are named, those names will be used for the created
+#' views instead of imputing from file names. Default: NULL
 #' @param include_empty_samples Boolean (optional): should samples provided via
 #' a 'uuid' argument within 'filter_values' be included in the final
 #' TreeSummarizedExperiment if they do not show up in the results from filtering
