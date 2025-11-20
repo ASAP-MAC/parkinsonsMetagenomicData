@@ -644,7 +644,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     }
 
     # include_empty_samples
-    if (class(include_empty_samples) != "logical") {
+    if (!methods::is(include_empty_samples, "logical")) {
         stop("Invalid value of 'include_empty_samples'. Please provide TRUE or FALSE.")
     } else if (include_empty_samples && !"uuid" %in% names(filter_values)) {
         #message("'include_empty_samples' is TRUE but 'filter_values' does not contain a UUID argument.")
