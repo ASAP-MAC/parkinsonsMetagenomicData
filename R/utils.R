@@ -165,7 +165,7 @@ detect_data_type <- function(string) {
     ## Loop through input
     matches <- rep(NA, length(string))
 
-    for (i in 1:length(string)) {
+    for (i in seq_along(string)) {
         s <- string[i]
 
         if (grepl("_ref", s)) {
@@ -533,7 +533,7 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
 #' @export
 confirm_duckdb_con <- function(con) {
     ## Check that object class is valid
-    if (class(con)[1] != "duckdb_connection") {
+    if (!methods::is(con, "duckdb_connection")) {
         stop("Please provide a valid 'duckdb_connection' object.")
     }
 }
@@ -558,7 +558,7 @@ confirm_duckdb_con <- function(con) {
 #' @export
 confirm_duckdb_view <- function(view) {
     ## Check that object class is valid
-    if (class(view)[1] != "tbl_duckdb_connection") {
+    if (!methods::is(view, "tbl_duckdb_connection")) {
         stop("Please provide a valid object of the class 'tbl_duckdb_connection'.")
     }
 }

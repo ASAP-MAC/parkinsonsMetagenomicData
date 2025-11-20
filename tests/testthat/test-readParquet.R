@@ -44,9 +44,11 @@ test_that("retrieve_local_views creates expected views", {
                                    package = "parkinsonsMetagenomicData"),
                        "sample_table.parquet")
     retrieve_local_views(con, fpath)
+    retrieve_local_views(con, c(giraffe = fpath))
     views <- DBI::dbListTables(con)
 
     expect_true("sample_table" %in% views)
+    expect_true("giraffe" %in% views)
 })
 
 

@@ -73,7 +73,7 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 
     ## Get cache
     if (!is.null(custom_cache)) {
-        stopifnot(class(custom_cache)[1] == "BiocFileCache")
+        stopifnot(methods::is(custom_cache, "BiocFileCache"))
         bfc <- custom_cache
     } else {
         bfc <- pMD_get_cache()
@@ -183,7 +183,7 @@ cacheMetagenomicData <- function(uuids,
 
     ## Check custom_cache
     if (!is.null(custom_cache)) {
-        stopifnot(class(custom_cache)[1] == "BiocFileCache")
+        stopifnot(methods::is(custom_cache, "BiocFileCache"))
     }
 
     ## Get Google Bucket locators for requested files
@@ -257,7 +257,7 @@ cacheMetagenomicData <- function(uuids,
 #' @export
 loadMetagenomicData <- function(cache_table) {
     ## Check input table format
-    stopifnot(any(class(cache_table) == "data.frame"))
+    stopifnot(methods::is(cache_table, "data.frame"))
     req_cols <- c("uuid", "cache_path", "data_type")
     missing_cols <- req_cols[!req_cols %in% colnames(cache_table)]
     if (length(missing_cols) > 0) {
@@ -278,7 +278,7 @@ loadMetagenomicData <- function(cache_table) {
     humann_types <- output_file_types("tool", "humann")$data_type
     metaphlan_types <- output_file_types("tool", "metaphlan")$data_type
 
-    for (i in 1:nrow(cache_table)) {
+    for (i in seq_len(nrow(cache_table))) {
         if (data_type %in% metaphlan_types) {
             se_list[[i]] <- parse_metaphlan_list(cache_table$uuid[i],
                                                  cache_table$cache_path[i],
@@ -402,7 +402,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     }
 
     ## Check that 'experiment' is a TreeSummarizedExperiment object
-    stopifnot(class(experiment)[1] == "TreeSummarizedExperiment")
+    stopifnot(methods::is(experiment, "TreeSummarizedExperiment"))
 
     ## Retrieve sample metadata
     meta <- sampleMetadata
@@ -494,7 +494,7 @@ mergeExperiments <- function(merge_list) {
     }
 
     for (i in seq_along(merge_list)) {
-        if (class(merge_list[[i]])[1] != "TreeSummarizedExperiment") {
+        if (!methods::is(merge_list[[i]], "TreeSummarizedExperiment")) {
             stop(paste0("The list item at index = ", i, " is not a TreeSummarizedExperiment object."))
         }
     }
@@ -511,7 +511,7 @@ mergeExperiments <- function(merge_list) {
     ## Merge assays
     assay_list <- vector("list", length(assay_names[[1]]))
     names(assay_list) <- assay_names[[1]]
-    for (i in 1:length(assay_list)) {
+    for (i in seq_along(assay_list)) {
         assay_list[[i]] <-
             purrr::map(merge_list, \(x) SummarizedExperiment::assay(x, i)) |>
             purrr::map(as.matrix) |>
