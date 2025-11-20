@@ -813,7 +813,7 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
         fcols <- colnames(feature_data)
 
         fsets <- vector(mode = "list", length = length(fcols))
-        for (i in 1:length(fcols)) {
+        for (i in seq_along(fcols)) {
             cur_col <- fcols[i]
             names(fsets)[i] <- cur_col
             fsets[i] <- as.vector(unique(feature_data[,cur_col]))

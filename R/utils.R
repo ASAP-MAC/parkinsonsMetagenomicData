@@ -165,7 +165,7 @@ detect_data_type <- function(string) {
     ## Loop through input
     matches <- rep(NA, length(string))
 
-    for (i in 1:length(string)) {
+    for (i in seq_along(string)) {
         s <- string[i]
 
         if (grepl("_ref", s)) {
