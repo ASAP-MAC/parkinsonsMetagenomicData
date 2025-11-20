@@ -1,0 +1,49 @@
+# Cache Google Bucket object
+
+'cache_gcb' checks the parkinsonsMetagenomicData cache for the presence
+of a Google Bucket object, downloads or updates the file as needed, and
+returns the path of the cached file.
+
+## Usage
+
+``` r
+cache_gcb(locator, redownload = "no", custom_cache = NULL)
+```
+
+## Arguments
+
+- locator:
+
+  String: the name of a Google Bucket object
+
+- redownload:
+
+  String: "yes", "no", or "ask"; should the function re-download a file
+  that is already present in the cache, Default: 'no'
+
+- custom_cache:
+
+  BiocFileCache object: a custom cache object may be specified instead
+  of the default created by pMD_get_cache(), Default: NULL
+
+## Value
+
+Named vector of strings: Names are the rids of cached files, values are
+the paths to the cached files
+
+## See also
+
+[`gcs_download_url`](https://cloudyr.github.io/googleCloudStorageR//reference/gcs_download_url.html),
+[`gcs_get_object`](https://cloudyr.github.io/googleCloudStorageR//reference/gcs_get_object.html)
+[`BiocFileCache-class`](https://rdrr.io/pkg/BiocFileCache/man/BiocFileCache-class.html)
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+if(interactive()){
+ cache_gcb(locator = "results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz",
+           redownload = "ask")
+ }
+} # }
+```

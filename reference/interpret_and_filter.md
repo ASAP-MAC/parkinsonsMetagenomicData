@@ -1,0 +1,53 @@
+# Select the view with the most appropriate sorting schema and filter
+
+'interpret_and_filter' takes a named list of exact value filter
+arguments and applies them to a DuckDB database view or table. The exact
+view or table is additionally selected by this function in order to
+optimize filtering.
+
+## Usage
+
+``` r
+interpret_and_filter(con, data_type, filter_values)
+```
+
+## Arguments
+
+- con:
+
+  DuckDB connection object of class 'duckdb_connection'.
+
+- data_type:
+
+  Character string: the main data type to filter.
+
+- filter_values:
+
+  Named list: element name equals the column name to be filtered and
+  element value equals a vector of exact column values.
+
+## Value
+
+A filtered DuckDB database view or table. This is still lazy until
+collect() is called.
+
+## See also
+
+[`tbl`](https://dplyr.tidyverse.org/reference/tbl.html)
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+if(interactive()){
+ con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+                          data_types = "relative_abundance")
+ fvalues <- list(clade_name_species = c("s__GGB52130_SGB14966",
+                                        "s__Streptococcus_mutans"),
+                 uuid = c("d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+                          "38d449c8-1462-4d30-ba87-d032d95942ce",
+                          "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"))
+ interpret_and_filter(con, "relative_abundance", fvalues)
+ }
+} # }
+```
