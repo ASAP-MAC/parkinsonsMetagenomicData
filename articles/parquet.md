@@ -201,17 +201,17 @@ experiment
 #> assays(1): relative_abundance
 #> rownames(9):
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_SGB15346|t__SGB15346
-#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15316
+#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15318
 #>   ...
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15339
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_sp_CLA_AA_H233|t__SGB15315
 #> rowData names(19): clade_name clade_name_kingdom ...
 #>   NCBI_tax_id_terminal additional_species
-#> colnames(24): eda61949-02dc-40ae-8dbe-bea2add85a52
-#>   e47a59bb-443a-405f-9c5d-02659d80e9e5 ...
-#>   09a9303d-d87d-4556-9672-04cbbcaf3d37
+#> colnames(24): 56aa2ad5-007d-407c-a644-48aac1e9a8f0
+#>   7b152a7d-e244-4e2b-b924-7195c7ecfb10 ...
 #>   677be4e3-722b-4e43-bd5a-36d8fbed6f86
-#> colData names(524): uuid db_version ...
+#>   09a9303d-d87d-4556-9672-04cbbcaf3d37
+#> colData names(528): uuid db_version ...
 #>   uncurated_Day_of_stool_collection_digestion_issue
 #>   uncurated_Day_of_stool_collection_constipation
 #> reducedDimNames(0):
@@ -498,17 +498,17 @@ basic_experiment
 #> assays(1): relative_abundance
 #> rownames(9):
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_SGB15346|t__SGB15346
-#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15316
+#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15318
 #>   ...
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15339
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_sp_CLA_AA_H233|t__SGB15315
 #> rowData names(19): clade_name clade_name_kingdom ...
 #>   NCBI_tax_id_terminal additional_species
-#> colnames(24): eda61949-02dc-40ae-8dbe-bea2add85a52
-#>   e47a59bb-443a-405f-9c5d-02659d80e9e5 ...
-#>   09a9303d-d87d-4556-9672-04cbbcaf3d37
+#> colnames(24): 56aa2ad5-007d-407c-a644-48aac1e9a8f0
+#>   7b152a7d-e244-4e2b-b924-7195c7ecfb10 ...
 #>   677be4e3-722b-4e43-bd5a-36d8fbed6f86
-#> colData names(524): uuid db_version ...
+#>   09a9303d-d87d-4556-9672-04cbbcaf3d37
+#> colData names(528): uuid db_version ...
 #>   uncurated_Day_of_stool_collection_digestion_issue
 #>   uncurated_Day_of_stool_collection_constipation
 #> reducedDimNames(0):
@@ -590,18 +590,18 @@ We can see a preview of the data by calling the saved view:
 custom_filter
 #> # Source:   SQL [?? x 26]
 #> # Database: DuckDB 1.4.2 [unknown@Linux 6.11.0-1018-azure:R 4.5.2/:memory:]
-#>    clade_name_kingdom clade_name_phylum clade_name_class clade_name_order    
-#>    <chr>              <chr>             <chr>            <chr>               
-#>  1 k__Bacteria        p__Firmicutes     c__Clostridia    o__Eubacteriales    
-#>  2 k__Bacteria        p__Bacteroidota   c__Bacteroidia   o__Bacteroidales    
-#>  3 k__Bacteria        p__Firmicutes     c__Bacilli       o__Lactobacillales  
-#>  4 k__Bacteria        p__Bacteroidota   c__Bacteroidia   o__Bacteroidales    
-#>  5 k__Bacteria        p__Bacteroidota   c__Bacteroidia   o__Bacteroidales    
-#>  6 k__Bacteria        p__Firmicutes     c__Clostridia    o__Eubacteriales    
-#>  7 k__Bacteria        p__Firmicutes     c__Clostridia    o__Eubacteriales    
-#>  8 k__Bacteria        p__Firmicutes     c__Clostridia    o__Eubacteriales    
-#>  9 k__Bacteria        p__Firmicutes     c__Clostridia    o__Eubacteriales    
-#> 10 k__Bacteria        p__Actinobacteria c__Actinomycetia o__Bifidobacteriales
+#>    clade_name_kingdom clade_name_phylum  clade_name_class    clade_name_order   
+#>    <chr>              <chr>              <chr>               <chr>              
+#>  1 k__Bacteria        p__Verrucomicrobia c__Verrucomicrobiae o__Verrucomicrobia…
+#>  2 k__Bacteria        p__Firmicutes      c__Clostridia       o__Eubacteriales   
+#>  3 k__Bacteria        p__Firmicutes      c__Clostridia       o__Eubacteriales   
+#>  4 k__Bacteria        p__Firmicutes      c__Erysipelotrichia o__Erysipelotricha…
+#>  5 k__Bacteria        p__Bacteroidota    c__Bacteroidia      o__Bacteroidales   
+#>  6 k__Bacteria        p__Bacteroidota    c__Bacteroidia      o__Bacteroidales   
+#>  7 k__Bacteria        p__Bacteroidota    c__Bacteroidia      o__Bacteroidales   
+#>  8 k__Bacteria        p__Firmicutes      c__Clostridia       o__Eubacteriales   
+#>  9 k__Bacteria        p__Firmicutes      c__Clostridia       o__Eubacteriales   
+#> 10 k__Bacteria        p__Firmicutes      c__Clostridia       o__Eubacteriales   
 #> # ℹ more rows
 #> # ℹ 22 more variables: clade_name_family <chr>, clade_name_genus <chr>,
 #> #   clade_name_species <chr>, clade_name_terminal <chr>,
@@ -637,18 +637,18 @@ custom_experiment
 #> metadata(0):
 #> assays(1): relative_abundance
 #> rownames(7):
-#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15316
-#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15332
+#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15342
+#>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15318
 #>   ...
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii|t__SGB15323
 #>   k__Bacteria|p__Firmicutes|c__Clostridia|o__Eubacteriales|f__Oscillospiraceae|g__Faecalibacterium|s__Faecalibacterium_sp_CLA_AA_H233|t__SGB15315
 #> rowData names(19): clade_name clade_name_kingdom ...
 #>   NCBI_tax_id_terminal additional_species
-#> colnames(24): 0807eb2a-a15e-4647-8e19-2600d8fda378
-#>   08e2b754-78e2-4cb4-8ff2-95fd7b0ff44a ...
-#>   e47a59bb-443a-405f-9c5d-02659d80e9e5
+#> colnames(24): 39ddb5e7-97f6-4d3c-812b-9653b03f99b3
+#>   677be4e3-722b-4e43-bd5a-36d8fbed6f86 ...
+#>   8707e374-5ddb-4220-8cbf-364b8b0e7be1
 #>   eda61949-02dc-40ae-8dbe-bea2add85a52
-#> colData names(524): uuid db_version ...
+#> colData names(528): uuid db_version ...
 #>   uncurated_Day_of_stool_collection_digestion_issue
 #>   uncurated_Day_of_stool_collection_constipation
 #> reducedDimNames(0):
@@ -736,7 +736,7 @@ spf_ex
 #>   d2b9638a-8c15-4d1d-b5cd-3efeeeed0f2f ...
 #>   01cae6dd-3b93-4abd-9f17-5fbc6a82863e
 #>   ba26be3f-c2d9-4103-96e6-eacc0ff75afd
-#> colData names(520): uuid humann_header ...
+#> colData names(524): uuid humann_header ...
 #>   uncurated_Day_of_stool_collection_digestion_issue
 #>   uncurated_Day_of_stool_collection_constipation
 #> reducedDimNames(0):
@@ -764,7 +764,7 @@ wildr_ex
 #>   1e626f8b-ce4e-4a6a-ae29-82e7ec86b8b8 ...
 #>   bfede8e1-e9fd-434f-9f74-7b1cd424edd7
 #>   985f49c5-a0d2-428d-98f4-b458b0c2c0da
-#> colData names(520): uuid humann_header ...
+#> colData names(524): uuid humann_header ...
 #>   uncurated_Day_of_stool_collection_digestion_issue
 #>   uncurated_Day_of_stool_collection_constipation
 #> reducedDimNames(0):
@@ -794,7 +794,7 @@ all_ex
 #>   d2b9638a-8c15-4d1d-b5cd-3efeeeed0f2f ...
 #>   bfede8e1-e9fd-434f-9f74-7b1cd424edd7
 #>   985f49c5-a0d2-428d-98f4-b458b0c2c0da
-#> colData names(520): uuid humann_header ...
+#> colData names(524): uuid humann_header ...
 #>   uncurated_Day_of_stool_collection_digestion_issue
 #>   uncurated_Day_of_stool_collection_constipation
 #> reducedDimNames(0):
