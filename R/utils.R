@@ -649,3 +649,42 @@ standardize_ordering <- function(vec, delim) {
 
     return(vec)
 }
+
+#' @title Retrieve the URL of the data source from a lazy DuckDB connection
+#' @description 'get_view_source' takes a DuckDB connection object and a lazy
+#' table using one of the connection's views/tables as a source and returns the
+#' source URL.
+#' @param con DuckDB connection object of class 'duckdb_connection'. This
+#' connection contains the source view/table
+#' @param lazy Lazy table using one of the DuckDB connection's views/tables as a
+#' source.
+#' @return String: the URL of the data source used
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
+#'                           data_types = "pathcoverage_unstratified")
+#'  lazy <- tbl(con, "pathcoverage_unstratified_pathway") |>
+#'              filter(grepl("UMP biosynthesis", pathway))
+#'
+#'  get_view_source(con, lazy)
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[stringr]{str_extract}}
+#'  \code{\link[dbplyr]{lazy_multi_join_query}}
+#'  \code{\link[DBI]{dbGetQuery}}
+#' @rdname get_view_source
+#' @export
+#' @importFrom stringr str_extract
+#' @importFrom dbplyr sql_render
+#' @importFrom DBI dbGetQuery
+get_view_source <- function(con, lazy) {
+    proj_name <- stringr::str_extract(as.character(dbplyr::sql_render(lazy)), "(?<=FROM ).+?(?=\\n)")
+    proj_source <- DBI::dbGetQuery(con,
+                                   paste0("SELECT sql FROM duckdb_views() WHERE view_name = '",
+                                          proj_name, "';"))[1,1]
+    proj_url <- stringr::str_extract(proj_source, "(?<=').+?(?=')")
+
+    return(proj_url)
+}
