@@ -684,9 +684,14 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     }
 
     ## Collect view
-    message("This function can take a while. Download the source file ",
-            get_view_source(con, working_view),
-            " and provide it as a local file to avoid the time needed for API retrieval.")
+    current_gen <- output_file_types(filter_col = "data_type", filter_string = paste0("^", data_type, "$"))$general_data_type
+    hf_ind <- get_view_source(con, working_view) |> startsWith("hf")
+    if (current_gen == "genefamilies" && hf_ind) {
+        message("'", data_type, "' is a large data type, and collecting the query can take a while. To avoid going through the Hugging Face API, download the source file ",
+                get_view_source(con, working_view),
+                " and provide it to accessParquetData() in the 'local files' argument.")
+    }
+
     collected_view <- working_view |>
         collect()
 
