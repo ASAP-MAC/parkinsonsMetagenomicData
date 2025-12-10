@@ -684,6 +684,9 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     }
 
     ## Collect view
+    message("This function can take a while. Download the source file ",
+            get_view_source(con, working_view),
+            " and provide it as a local file to avoid the time needed for API retrieval.")
     collected_view <- working_view |>
         collect()
 
