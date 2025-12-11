@@ -680,7 +680,7 @@ standardize_ordering <- function(vec, delim) {
 #' @importFrom dbplyr sql_render
 #' @importFrom DBI dbGetQuery
 get_view_source <- function(con, lazy) {
-    proj_name <- stringr::str_extract(as.character(dbplyr::sql_render(lazy)), "(?<=FROM ).+?(?=\\n)")
+    proj_name <- stringr::str_extract(as.character(dbplyr::sql_render(lazy)), "(?<=FROM (?=[^(])).+?(?=\\n)")
     proj_source <- DBI::dbGetQuery(con,
                                    paste0("SELECT sql FROM duckdb_views() WHERE view_name = '",
                                           proj_name, "';"))[1,1]
