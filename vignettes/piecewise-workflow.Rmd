@@ -1,0 +1,192 @@
+---
+title: "Piecewise Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Piecewise Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r general_setup, include=FALSE}
+library(parkinsonsMetagenomicData)
+library(dplyr)
+library(DBI)
+```
+
+# Piecewise Workflow
+
+In the piecewise workflow, we use the functions `accessParquetData` and
+`loadParquetData` separately to have a little more control over our data. First,
+`accessParquetData` sets up a DuckDB connection to the parquet files that are
+either stored locally or hosted in a remote repo (in this case, Hugging Face).
+`loadParquetData` then takes an argument for data type as well as any filters
+and loads the requested data into R as a Tree Summarized Experiment. We can even
+use `dplyr` functions to customize the SQL query.
+
+## File Selection
+
+We can use the same resources of `get_repo_info()` and `get_hf_parquet_urls()`
+to determine our files of interest and `data_type` value. As before, we can
+download any files and alternatively supply them as local files.
+
+We then run `accessParquetData`, which creates the DuckDB connection and sets
+up DuckDB "VIEW" objects for each available file, whether remotely hosted or
+locally stored. It returns a DuckDB connection object. If you are using a remote
+repo, the `data_types` argument can be left blank to access all available files,
+or a smaller number can be provided. DBI functions can then be used to see which
+views are now available.
+
+```{r access_wrapper}
+con <- accessParquetData(dbdir = ":memory:",
+                         repo = "waldronlab/metagenomics_mac",
+                         local_files = NULL,
+                         data_types = "relative_abundance")
+DBI::dbListTables(con)
+```
+
+Supplying local files would look much as expected, and the "data_types" argument
+need not be supplied:
+
+```{r local_access, eval=FALSE}
+local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
+                 "/path/to/relative_abundance_uuid.parquet")
+
+con <- accessParquetData(dbdir = ":memory:",
+                         repo = NULL,
+                         local_files = local_files,
+                         data_types = NULL)
+```
+
+## Selecting Samples
+
+The sample selection process is the same as in the standard workflow, with the
+exception that we are only passing the UUID column to the loading function. Here
+we will create the same table as earlier, then pull just the UUIDS. This is
+again an optional step, as you may want to get data across all samples for
+meta-analyses.
+
+```{r re_pick_metadata}
+sample_table <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !any(is.na(.x))))
+```
+```{r re_show_metadata, echo=FALSE}
+sample_table
+```
+
+```{r pull_uuids}
+selected_uuids <- sample_table$uuid
+selected_uuids
+```
+
+## Selecting Features
+
+Our feature table is treated similarly, in that we are no longer providing the
+whole table. Instead, we construct our filtering arguments as a named list. The
+element name is the column to filter by, and the element values will be exact
+matches. If this is our previous table:
+
+```{r re_re_filter_feature_table}
+clade_name_ref <- load_ref("clade_name_ref")
+feature_table <- clade_name_ref %>%
+    filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+    filter(!is.na(clade_name_species)) %>%
+    filter(!is.na(clade_name_terminal))
+```
+```{r show_new_new_feature_table, echo=FALSE}
+feature_table
+```
+
+We would set up the filters like so. These two columns are the minimum required
+to produce the same result as our prior example.
+
+```{r filter_vals}
+filter_values <- list(clade_name_species = unique(feature_table$clade_name_species),
+                      clade_name_terminal = unique(feature_table$clade_name_terminal))
+filter_values
+```
+
+Here is also where we supply our UUIDs.
+
+```{r filter_vals_with_uuid}
+filter_values <- c(list(uuid = selected_uuids), filter_values)
+filter_values
+```
+
+## Loading into R
+
+We then provide our list of filtering arguments to `loadParquetData` along with
+the database connection object and the data type we are accessing and receive a
+Tree Summarized Experiment object. Loading the data may take some time depending
+on the file type and queries.
+
+```{r load_wrapper}
+basic_experiment <- loadParquetData(con = con,
+                                    data_type = "relative_abundance",
+                                    filter_values = filter_values,
+                                    custom_view = NULL,
+                                    include_empty_samples = TRUE,
+                                    dry_run = FALSE)
+basic_experiment
+```
+
+Performing a dry run in order to examine the SQL query would look much as
+before:
+
+```{r query_load_wrapper}
+query_only <- loadParquetData(con = con,
+                              data_type = "relative_abundance",
+                              filter_values = filter_values,
+                              custom_view = NULL,
+                              include_empty_samples = TRUE,
+                              dry_run = TRUE)
+dplyr::show_query(query_only)
+```
+
+## Optional View Customization
+
+Additionally, it is possible to use `dplyr` to preview the data view of interest
+and perform more advanced functions on the data prior to using `loadParquetData`
+or the `collect()` function to load it into R. Here we use the `tbl()` function
+to access the data view of choice, and pipe it into a `filter()` call to select
+only rows that have a value in the "additional_species" column. We can then save
+these calls to a variable prior to loading them into R, and supply this to
+`loadParquetData` either instead of or alongside our other standard filtering
+arguments.
+
+```{r custom_view}
+custom_filter <- tbl(con, "relative_abundance_uuid") %>%
+    filter(!is.na(additional_species))
+```
+
+We can see a preview of the data by calling the saved view:
+
+```{r view_custom_view}
+custom_filter
+```
+
+Or show the query prior to running:
+
+```{r query_custom_view}
+dplyr::show_query(custom_filter)
+```
+
+We then simply provide that custom view to `loadParquetData()`.
+
+```{r load_custom}
+custom_experiment <- loadParquetData(con = con,
+                                     data_type = "relative_abundance",
+                                     filter_values = filter_values,
+                                     custom_view = custom_filter,
+                                     include_empty_samples = TRUE,
+                                     dry_run = FALSE)
+custom_experiment
+```
+

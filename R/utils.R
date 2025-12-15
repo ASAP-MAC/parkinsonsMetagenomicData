@@ -275,6 +275,33 @@ get_repo_info <- function() {
     return(ftable)
 }
 
+#' @title Return a table with information about curated metadata features
+#' @description 'data_dict' returns a table of information associated with
+#' each curated feature (not prefixed with "uncurated_") in sampleMetadata.
+#' @return Data frame: A table of metadata feature information, including
+#' information on allowed values and requiredness as well as other parameters.
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  data_dict()
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#' @rdname data_dict
+#' @export
+#' @importFrom readr read_csv
+data_dict <- function() {
+    ## Load in data dictionary table
+    fpath <- system.file("extdata", "data_dictionary.csv",
+                         package = "parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
+        as.data.frame()
+
+    return(ftable)
+
+}
+
 #' @title Return a table with information about available parquet reference
 #' files.
 #' @description 'get_ref_info' returns a table of information associated with
