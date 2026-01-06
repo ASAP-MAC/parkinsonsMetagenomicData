@@ -30,7 +30,7 @@
 #' }
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
-#'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_metaphlan_list
 #' @export

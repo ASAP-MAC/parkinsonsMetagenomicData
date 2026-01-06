@@ -37,11 +37,11 @@ if(interactive()){
 }
 \seealso{
 \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
-\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{c("TreeSummarizedExperiment-class", "TreeSummarizedExperiment")}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 \code{\link[tibble]{rownames}}
 \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
 \code{\link[tidyselect]{everything}}
 \code{\link[tidyr]{replace_na}}
-\code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{c("DataFrame-class", "S4VectorsOverview")}}
+\code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{DataFrame-class}}
 \code{\link[magrittr]{extract}}
 }

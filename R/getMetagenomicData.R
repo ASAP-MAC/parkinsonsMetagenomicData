@@ -52,7 +52,9 @@ get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  cache_gcb(locator = "results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz",
+#'  locator <- paste0("results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/",
+#'                    "metaphlan_lists/metaphlan_bugs_list.tsv.gz")
+#'  cache_gcb(locator = locator,
 #'            redownload = "ask")
 #'  }
 #' }
@@ -166,6 +168,7 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 #' @export
 #' @importFrom stringr str_split
 #' @importFrom tibble tibble
+#' @importFrom stats setNames
 cacheMetagenomicData <- function(uuids,
                                  data_type = "relative_abundance",
                                  redownload = "no",
@@ -199,7 +202,7 @@ cacheMetagenomicData <- function(uuids,
         }, error = function(e) {
             current_error <- paste0("Unable to cache ", locators[i], ": ", e)
             errors <<- c(errors, current_error)
-            current_file <<- NA |> setNames(NA)
+            current_file <<- NA |> stats::setNames(NA)
         })
         cache_paths <- c(cache_paths, current_file)
     }
@@ -338,7 +341,7 @@ listMetagenomicData <- function() {
 
     ## Filter for allowed file types
     objs <- objs %>%
-        dplyr::filter(stringr::str_detect(name, fdetect))
+        dplyr::filter(stringr::str_detect(.data$name, fdetect))
 
     ## Format file information for user
     parsed_locators <- stringr::str_split(objs$name, "/")
@@ -389,7 +392,7 @@ listMetagenomicData <- function() {
 #'  }
 #' }
 #' @seealso
-#'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #' @rdname add_metadata
 #' @export
@@ -470,12 +473,12 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' }
 #' @seealso
 #'  \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
-#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{c("TreeSummarizedExperiment-class", "TreeSummarizedExperiment")}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #'  \code{\link[tibble]{rownames}}
 #'  \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
 #'  \code{\link[tidyselect]{everything}}
 #'  \code{\link[tidyr]{replace_na}}
-#'  \code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{c("DataFrame-class", "S4VectorsOverview")}}
+#'  \code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[magrittr]{extract}}
 #' @rdname mergeExperiments
 #' @export

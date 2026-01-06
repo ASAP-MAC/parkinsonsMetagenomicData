@@ -135,7 +135,7 @@ parquet_colinfo <- function(data_type) {
 
     ## Pull and return column info
     rel_cols <- ftable %>%
-        dplyr::filter(general_data_type == gen_type)
+        dplyr::filter(.data$general_data_type == gen_type)
 
     return(rel_cols)
 }
@@ -356,7 +356,9 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
 #' @examples
 #' \dontrun{
 #' if(interactive()){
-#'  file_to_hf("https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/relative_abundance.parquet")
+#'  file <- paste0("https://huggingface.co/datasets/waldronlab/",
+#'                 "metagenomics_mac/resolve/main/relative_abundance.parquet")
+#'  file_to_hf(file)
 #'  }
 #' }
 #' @export
@@ -620,7 +622,7 @@ confirm_repo <- function(repo) {
 #' @title Validate 'ref' argument
 #' @description 'confirm_ref' checks that a single string is a valid reference
 #' file name as listed in get_ref_info() or a NULL value.
-#' @param repo String: input to be validated
+#' @param ref String: input to be validated
 #' @return NULL
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
@@ -632,7 +634,7 @@ confirm_repo <- function(repo) {
 #'  confirm_ref("clade_name_ref")
 #'  }
 #' }
-#' @rdname confirm_repo
+#' @rdname confirm_ref
 #' @export
 confirm_ref <- function(ref) {
     ri <- get_ref_info()

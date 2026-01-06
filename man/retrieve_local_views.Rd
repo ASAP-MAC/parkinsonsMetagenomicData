@@ -4,15 +4,14 @@
 \alias{retrieve_local_views}
 \title{Create database views from local parquet files}
 \usage{
-retrieve_local_views(con, local_files, view_names = NULL)
+retrieve_local_views(con, local_files)
 }
 \arguments{
 \item{con}{DuckDB connection object of class 'duckdb_connection'}
 
-\item{local_files}{String or vector of strings: path(s) to parquet file(s)}
-
-\item{view_names}{String or vector of strings (optional): names to use for
-the created views instead of imputing from file names, Default: NULL}
+\item{local_files}{String or vector of strings: path(s) to parquet file(s).
+If the elements are named, those names will be used for the created views
+instead of imputing from file names.}
 }
 \description{
 'retrieve_local_views' creates database views for each of the

@@ -33,7 +33,7 @@ This is the primary output for taxonomic profiling, showing the relative
 abundance of each microbial taxon (from kingdom to species and strain level).
 The base MetaPhlAn call to obtain this file is:
 
-```{bash}
+```{bash, eval=FALSE}
 $ metaphlan metagenome.fastq --input_type fastq -o profiled_metagenome.txt
 ```
 
@@ -74,7 +74,7 @@ This is the output file when performing Viral Sequence Clusters Analysis,
 showing the coverage of viral genomes. The base MetaPhlAn call to obtain this
 file is:
 
-```{bash}
+```{bash, eval=FALSE}
 $ metaphlan metagenome.fastq --input_type fastq \
         --profile_vsc --vsc_out profiled_viruses.txt \
         -o profiled_metagenome.txt

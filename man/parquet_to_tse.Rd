@@ -13,6 +13,12 @@ file found in the repo of interest (see inst/extdata/parquet_repos.csv).}
 \item{data_type}{Single string: value found in the data_type' column of
 output_file_types() and also as part of the name of a file in the repo of
 interest.}
+
+\item{empty_data}{Table or data frame: data on samples not included in
+parquet_table. Must include a "uuid" column. Usually the samples were not
+included due to their assay data not passing a filter even though they were
+present in the original parquet file. The extra data included is usually the
+headers of the original output files.}
 }
 \value{
 A TreeSummarizedExperiment object with process metadata, row data, column
@@ -36,9 +42,9 @@ if(interactive()){
 }
 }
 \seealso{
-\code{\link[dplyr]{c("rowwise", "rowwise")}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
+\code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
 \code{\link[tidyr]{pivot_wider}}
 \code{\link[tibble]{rownames}}
-\code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
+\code{\link[S4Vectors]{DataFrame-class}}
 \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }

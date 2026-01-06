@@ -152,7 +152,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 
     selected_files <- url_tbl %>%
-        filter(data_type %in% data_types)
+        filter(.data$data_type %in% data_types)
 
     ## Notify of data types not present
     missing_types <- setdiff(data_types, url_tbl$data_type)
@@ -381,6 +381,11 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' @param data_type Single string: value found in the data_type' column of
 #' output_file_types() and also as part of the name of a file in the repo of
 #' interest.
+#' @param empty_data Table or data frame: data on samples not included in
+#' parquet_table. Must include a "uuid" column. Usually the samples were not
+#' included due to their assay data not passing a filter even though they were
+#' present in the original parquet file. The extra data included is usually the
+#' headers of the original output files.
 #' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @examples
@@ -395,10 +400,10 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #'  }
 #' }
 #' @seealso
-#'  \code{\link[dplyr]{c("rowwise", "rowwise")}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
+#'  \code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
 #'  \code{\link[tidyr]{pivot_wider}}
 #'  \code{\link[tibble]{rownames}}
-#'  \code{\link[S4Vectors]{DataFrame-class}}, \code{\link[S4Vectors]{S4VectorsOverview}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parquet_to_tse
 #' @export
@@ -407,6 +412,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' @importFrom tibble column_to_rownames
 #' @importFrom S4Vectors DataFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
+#' @importFrom tidyselect any_of all_of
 parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
     ## Check input
     # parquet_table
@@ -437,7 +443,7 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
 
     ## Create rowData table
     rdata <- parquet_table %>%
-        select(any_of(c(rnames_col, rdata_cols))) %>%
+        select(tidyselect::any_of(c(rnames_col, rdata_cols))) %>%
         dplyr::distinct() %>%
       as.data.frame()
     rownames(rdata) <- rdata[[rnames_col]]
@@ -445,10 +451,10 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
     ## Create assay table(s)
     alist <- sapply(assay_cols, function(acol) {
       pdata <- parquet_table %>%
-        select(all_of(c(rnames_col, acol, "uuid"))) %>%
+        select(tidyselect::all_of(c(rnames_col, acol, "uuid"))) %>%
         tidyr::pivot_wider(
-          names_from  = all_of(cnames_col),
-          values_from = all_of(acol),
+          names_from  = tidyselect::all_of(cnames_col),
+          values_from = tidyselect::all_of(acol),
           values_fill = 0
         ) %>%
         tibble::column_to_rownames({{rnames_col}}) %>%
@@ -463,13 +469,13 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
     ## Create colData table with sampleMetadata added
     if (!is.null(empty_data)) {
         etab <- empty_data %>%
-            filter(uuid %in% esamps) %>%
-            select(any_of(c(cnames_col, cdata_cols))) %>%
+            filter(.data$uuid %in% esamps) %>%
+            select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
             as.data.frame()
     }
 
     cdata <- parquet_table %>%
-        select(any_of(c(cnames_col, cdata_cols))) %>%
+        select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
         dplyr::distinct() %>%
         as.data.frame()
 
@@ -478,7 +484,7 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
     }
 
     cdata <- cdata %>%
-        dplyr::left_join(sampleMetadata, dplyr::join_by(uuid))
+        dplyr::left_join(sampleMetadata, dplyr::join_by("uuid"))
     rownames(cdata) <- cdata[[cnames_col]]
 
     ## Confirm rows and columns are in the same order
@@ -604,14 +610,16 @@ accessParquetData <- function(dbdir = ":memory:",
 #'  custom_filter <- tbl(con, "pathcoverage_unstratified_pathway") |>
 #'                   filter(grepl("UMP biosynthesis", pathway))
 #'
+#'  uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'             "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'             "fb7e8210-002a-4554-b265-873c4003e25f",
+#'             "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'             "4985aa08-6138-4146-8ae3-952716575395",
+#'             "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+#'
 #'  custom_tse <- loadParquetData(con,
 #'                                data_type = "pathcoverage_unstratified",
-#'                                filter_values = list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
-#'                                                              "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
-#'                                                              "fb7e8210-002a-4554-b265-873c4003e25f",
-#'                                                              "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
-#'                                                              "4985aa08-6138-4146-8ae3-952716575395",
-#'                                                              "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")),
+#'                                filter_values = list(uuid = uuids),
 #'                                custom_view = custom_filter)
 #'  custom_tse
 #'  }
@@ -706,7 +714,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 
     ## Transform into TreeSummarizedExperiment
     if (exists("sample_headers")) {
-        empty_samples <- dplyr::filter(sample_headers, !uuid %in% collected_view$uuid)
+        empty_samples <- dplyr::filter(sample_headers, !.data$uuid %in% collected_view$uuid)
         exp <- parquet_to_tse(collected_view, data_type, empty_samples)
     } else {
         exp <- parquet_to_tse(collected_view, data_type)
@@ -894,6 +902,7 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
 #' @export
 #' @importFrom dplyr select filter distinct collect
 #' @importFrom rlang sym
+#' @importFrom tidyselect all_of
 get_cdata_only <- function(con, data_type, uuids) {
     ## Get column info
     colinfo <- parquet_colinfo(data_type)
@@ -904,7 +913,7 @@ get_cdata_only <- function(con, data_type, uuids) {
     ## Collect parquet data
     proj <- pick_projection(con, data_type, "uuid")
     edat <- tbl(con, proj) |>
-        dplyr::select(all_of(c(uuid_col, cdata_cols))) |>
+        dplyr::select(tidyselect::all_of(c(uuid_col, cdata_cols))) |>
         dplyr::filter(!!rlang::sym(uuid_col) %in% uuids) |>
         dplyr::distinct() |>
         dplyr::collect()
@@ -1021,7 +1030,7 @@ get_hf_parquet_urls <- function(repo_name = NULL) {
     # Create data_type column for joining
     result_df <- dplyr::mutate(
         result_df,
-        data_type = detect_data_type(filename)
+        data_type = detect_data_type(.data$filename)
     )
 
     if (nzchar(def_path) && file.exists(def_path)) {
@@ -1082,8 +1091,8 @@ load_ref <- function(ref, repo = NULL) {
     ## retrieve URL
     rurl <- get_hf_parquet_urls(repo) |>
         suppressMessages() |>
-        dplyr::filter(data_type == "reference") |>
-        dplyr::filter(filename == paste0(ref, ".parquet")) |>
+        dplyr::filter(.data$data_type == "reference") |>
+        dplyr::filter(.data$filename == paste0(ref, ".parquet")) |>
         dplyr::pull(url)
 
     ## Collect ref file

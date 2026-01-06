@@ -35,7 +35,8 @@ stored. If NULL and local_files is also NULL, the repo listed as the default
 in get_repo_info() will be selected. Default: NULL}
 
 \item{local_files}{String or vector of strings (optional): path(s) to parquet
-file(s). Default: NULL}
+file(s). If the elements are named, those names will be used for the created
+views instead of imputing from file names. Default: NULL}
 
 \item{include_empty_samples}{Boolean (optional): should samples provided via
 a 'uuid' argument within 'filter_values' be included in the final

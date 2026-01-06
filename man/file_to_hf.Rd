@@ -21,7 +21,9 @@ in a Hugging Face repo to URLs compatible with httpfs as described in the
 \examples{
 \dontrun{
 if(interactive()){
- file_to_hf("https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/relative_abundance.parquet")
+ file <- paste0("https://huggingface.co/datasets/waldronlab/",
+                "metagenomics_mac/resolve/main/relative_abundance.parquet")
+ file_to_hf(file)
  }
 }
 }
