@@ -254,14 +254,14 @@ parse_fastqc_stats <- function(file_path) {
 #' in TXT format
 #' @return A named vector containing a number of read counts at different stages
 #' @details 'parse_kneaddata_stats' does not parse every single item of
-#' information within the out_kneaddata.log file, but gathers only the lines
+#' information within the out_kneaddata_log.txt file, but gathers only the lines
 #' with read counts.
 #' @examples
 #' \dontrun{
 #' if(interactive()){
 #'  fpath <- file.path(system.file("extdata",
 #'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_out_kneaddata.log")
+#'                     "sample_out_kneaddata_log.txt")
 #'  parse_kneaddata_stats(fpath)
 #'  }
 #' }

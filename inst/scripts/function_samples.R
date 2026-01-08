@@ -96,7 +96,7 @@ lines_to_parse <- c("04/22/2025 05:35:37 AM - kneaddata.utilities - DEBUG: b\"Tr
 # write to inst/extdata/sample_fastqc_data.txt
 extdata_path <- file.path(system.file("extdata",
                                       package = "parkinsonsMetagenomicData"),
-                          "sample_out_kneaddata.log")
+                          "sample_out_kneaddata_log.txt")
 writeLines(lines_to_parse, extdata_path)
 
 ## sample_parquet
