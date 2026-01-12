@@ -20,3 +20,6 @@ library(parkinsonsMetagenomicData)
 
 # Metadata Dictionary
 
+```{r session_info}
+sessionInfo()
+```

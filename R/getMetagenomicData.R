@@ -70,7 +70,7 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)
     if (!p_redown %in% allowed_redown) {
-        stop(paste0("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'"))
+        stop("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'")
     }
 
     ## Get cache
@@ -107,8 +107,8 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
         }, error = function(e) {
             ## Remove cache location if download fails
             BiocFileCache::bfcremove(bfc, rid)
-            stop(paste0("There was an error in downloading the file: ",
-                        conditionMessage(e)))
+            stop("The file was not able to be downloaded: ",
+                        conditionMessage(e))
         })
 
     ## Cached file found, follow "redownload" instructions
@@ -120,10 +120,10 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
             doit <- switch(response, y = TRUE, n = FALSE, NA)
         } else if (p_redown == "y") {
             doit <- TRUE
-            message(paste0("Resource with rname = '", locator, "' found in cache, redownloading."))
+            message("Resource with rname = '", locator, "' found in cache, redownloading.")
         } else if (p_redown == "n") {
             doit <- FALSE
-            message(paste0("Resource with rname = '", locator, "' found in cache, proceeding with most recent version."))
+            message("Resource with rname = '", locator, "' found in cache, proceeding with most recent version.")
         }
 
         if (doit) {
@@ -181,7 +181,7 @@ cacheMetagenomicData <- function(uuids,
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)
     if (!p_redown %in% allowed_redown) {
-        stop(paste0("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'"))
+        stop("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'")
     }
 
     ## Check custom_cache
@@ -193,19 +193,37 @@ cacheMetagenomicData <- function(uuids,
     locators <- get_bucket_locators(uuids, data_type)
 
     ## Download and cache requested files
-    cache_paths <- c()
-    errors <- c()
+    cache_paths <- vector("list", length(locators))
+    errors <- character(0)
+
     for (i in seq_along(locators)) {
-        tryCatch({
-            current_file <- cache_gcb(locators[i], redownload = p_redown,
-                                      custom_cache = custom_cache)
-        }, error = function(e) {
-            current_error <- paste0("Unable to cache ", locators[i], ": ", e)
-            errors <<- c(errors, current_error)
-            current_file <<- NA |> stats::setNames(NA)
-        })
-        cache_paths <- c(cache_paths, current_file)
+        res <- tryCatch(
+            {
+                list(
+                    file = cache_gcb(
+                        locators[i],
+                        redownload = p_redown,
+                        custom_cache = custom_cache
+                    ),
+                    error = NULL
+                )
+            },
+            error = function(e) {
+                list(
+                    file = NA |> stats::setNames(NA),
+                    error = paste0("Unable to cache ", locators[i], ": ",
+                                   conditionMessage(e))
+                )
+            }
+        )
+
+        cache_paths[[i]] <- res$file
+        if (!is.null(res$error)) {
+            errors <- c(errors, res$error)
+        }
     }
+
+    cache_paths <- unlist(cache_paths)
 
     ## Format cache information for user
     parsed_locators <- stringr::str_split(locators, "/")
@@ -265,8 +283,8 @@ loadMetagenomicData <- function(cache_table) {
     missing_cols <- req_cols[!req_cols %in% colnames(cache_table)]
     if (length(missing_cols) > 0) {
         print_missing <- paste(missing_cols, collapse = "\n")
-        stop(paste0("One or more columns are not present in the input data frame.\n",
-                    print_missing))
+        stop("One or more columns are not present in the input data frame.\n",
+             print_missing)
     }
 
     ## Check that all data_type values are the same and valid
@@ -412,14 +430,14 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 
     ## Check that id_col and method are valid
     if (!id_col %in% colnames(meta)) {
-        stop(paste0("'", id_col, "' is not a column in sampleMetadata."))
+        stop("'", id_col, "' is not a column in sampleMetadata.")
     } else if (length(unique(meta[[id_col]])) != nrow(meta)) {
-        stop(paste0("'", id_col, "' is not unique for every sample and therefore cannot be used to retrieve metadata."))
+        stop("'", id_col, "' is not unique for every sample and therefore cannot be used to retrieve metadata.")
     }
 
     valid_methods <- c("append", "overwrite", "ignore")
     if (!method %in% valid_methods) {
-        stop(paste0("'", method, "' is not a valid value for 'method'. Please enter 'append', 'overwrite', or 'ignore'."))
+        stop("'", method, "' is not a valid value for 'method'. Please enter 'append', 'overwrite', or 'ignore'.")
     }
 
     ## Get metadata rows based on sample ID
@@ -432,8 +450,9 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     duplicated <- intersect(colnames(cdata), colnames(meta))
     not_duplicated <- setdiff(colnames(meta), duplicated)
     if (length(duplicated) != 0) {
-        message(paste0("Duplicate metadata columns found, will be processed according to method '", method, "':"))
-        message(paste(duplicated, collapse = ", "))
+        dup_message <- paste(duplicated, collapse = ", ")
+        message("Duplicate metadata columns found, will be processed according to method '", method, "':")
+        message(dup_message)
     }
 
     if (method == "append") {
@@ -498,7 +517,7 @@ mergeExperiments <- function(merge_list) {
 
     for (i in seq_along(merge_list)) {
         if (!methods::is(merge_list[[i]], "TreeSummarizedExperiment")) {
-            stop(paste0("The list item at index = ", i, " is not a TreeSummarizedExperiment object."))
+            stop("The list item at index = ", i, " is not a TreeSummarizedExperiment object.")
         }
     }
 

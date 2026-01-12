@@ -164,3 +164,6 @@ rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
 rel_abs_with_metadata
 ```
 
+```{r session_info}
+sessionInfo()
+```

@@ -122,7 +122,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
                           "viral_depth_of_coverage_median")
     } else {
         ## Notify if output file is not able to be parsed by this function
-        stop(paste0("data_type '", data_type, "' is not 'relative_abundance' or 'viral_clusters'. Please enter one of these values or use a different parsing function."))
+        stop("data_type '", data_type, "' is not 'relative_abundance' or 'viral_clusters'. Please enter one of these values or use a different parsing function.")
     }
 
     ## Combine process metadata, row data, sample ID, and assays into
@@ -241,8 +241,9 @@ parse_fastqc_stats <- function(file_path) {
         strsplit("\t")
 
     ## Format as named vector
-    final_stats <- sapply(stats_mod, "[[", 2)
-    names(final_stats) <- sapply(stats_mod, "[[", 1)
+    final_stats <- vapply(stats_mod, "[[", 2, FUN.VALUE=character(1))
+    names(final_stats) <- vapply(stats_mod, "[[", 1,
+                                 FUN.VALUE=character(1))
 
     return(final_stats)
 }

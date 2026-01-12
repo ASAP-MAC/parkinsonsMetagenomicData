@@ -120,3 +120,7 @@ all_ex <- loadParquetData(con_gs, "genefamilies_stratified",
                                                uuid = selected_samples$uuid))
 all_ex
 ```
+
+```{r session_info}
+sessionInfo()
+```

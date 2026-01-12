@@ -56,7 +56,7 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop(paste0("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames))
+            stop("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames)
         }
 
         ftable <- ftable %>%
@@ -227,7 +227,7 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
     matching_views <- tbs[which(detected_types == data_type)]
 
     if (length(matching_views) == 0) {
-        stop(paste0("'", data_type, "' does not match any existing views." ))
+        stop("'", data_type, "' does not match any existing views." )
     }
 
     ## Create expected view
@@ -336,7 +336,7 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop(paste0("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames))
+            stop("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames)
         }
 
         ftable <- ftable %>%
@@ -418,7 +418,7 @@ confirm_uuids <- function(uuids) {
 
     if (!any(is_uuid)) {
         bad_uuids <- paste(uuids[!results], collapse = "\n")
-        stop(paste0("One or more values are not valid UUIDs.\n", bad_uuids))
+        stop("One or more values are not valid UUIDs.\n", bad_uuids)
     }
 }
 
@@ -457,7 +457,7 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop(paste0("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames))
+            stop("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames)
         }
 
         filter_ind <- TRUE
@@ -469,21 +469,21 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
     ## Check that data_type is valid
     # length
     if (length(data_type) > 1) {
-        stop(paste0("'data_type' should be a single value."))
+        stop("'data_type' should be a single value.")
     }
 
     # values
     if (filter_ind) {
         if (!data_type %in% filtered_types) {
             print_filtered <- paste(filtered_types, collapse = "\n")
-            stop(paste0("'", data_type,
-                        "' is not an allowed value for this function. Please enter one of the following values:\n",
-                        print_filtered))
+            stop("'", data_type,
+                 "' is not an allowed value for this function. Please enter one of the following values:\n",
+                 print_filtered)
         }
     } else {
         if (!data_type %in% all_types) {
-            stop(paste0("'", data_type,
-                        "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types()."))
+            stop("'", data_type,
+                 "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types().")
         }
     }
 }
@@ -534,9 +534,10 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
     if (!is.null(available_features)) {
         for (n in names(filter_values)) {
             if (!n %in% available_features) {
+                af_message <- paste(available_features, collapse = ", ")
                 stop("'", n,
                      "' is not an available feature. All list elements should be named one of the following:\n",
-                     paste0(available_features, collapse = ", "))
+                     af_message)
             }
         }
     }
@@ -615,7 +616,8 @@ confirm_repo <- function(repo) {
     d <- ri$repo_name[ri$default == "Y"]
 
     if (!is.null(repo) && !repo %in% ri$repo_name) {
-        stop(paste0("Please provide one of the following valid repo names or NULL to select the default (", d, "):\n", paste(ri$repo_name, collapse = ", ")))
+        ri_message <- paste(ri$repo_name, collapse = ", ")
+        stop("Please provide one of the following valid repo names or NULL to select the default (", d, "):\n", ri_message)
     }
 }
 
@@ -640,7 +642,8 @@ confirm_ref <- function(ref) {
     ri <- get_ref_info()
 
     if (!ref %in% ri$ref_file) {
-        stop(paste0("Please provide one of the following valid reference file names:\n", paste(ri$ref_file, collapse = ", ")))
+        ri_message <- paste(ri$ref_file, collapse = ", ")
+        stop("Please provide one of the following valid reference file names:\n", ri_message)
     }
 }
 

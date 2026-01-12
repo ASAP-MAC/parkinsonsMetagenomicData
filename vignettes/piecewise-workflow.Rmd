@@ -190,3 +190,6 @@ custom_experiment <- loadParquetData(con = con,
 custom_experiment
 ```
 
+```{r session_info}
+sessionInfo()
+```

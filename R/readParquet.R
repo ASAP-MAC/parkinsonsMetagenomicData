@@ -145,7 +145,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     }
 
     ## Get repo file information
-    url_tbl <- suppressMessages(get_hf_parquet_urls(repo_row$repo_name))
+    url_tbl <- get_hf_parquet_urls(repo_row$repo_name, verbose = FALSE)
 
     if (is.null(data_types)) {
         data_types <- output_file_types()$data_type
@@ -158,9 +158,10 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     missing_types <- setdiff(data_types, url_tbl$data_type)
 
     if (length(missing_types) != 0) {
-        message(paste0("The following data types are not present in the repo ",
-                       repo_row$repo_name, " and will be skipped:\n",
-                       paste(missing_types, collapse = ", ")))
+        miss_message <- paste(missing_types, collapse = ", ")
+        message("The following data types are not present in the repo ",
+                repo_row$repo_name, " and will be skipped:\n",
+                miss_message)
     }
 
     ## Convert URLs to httpfs protocol
@@ -954,7 +955,7 @@ get_cdata_only <- function(con, data_type, uuids) {
 #' @importFrom jsonlite fromJSON
 #' @importFrom dplyr left_join mutate
 #' @importFrom utils read.csv
-get_hf_parquet_urls <- function(repo_name = NULL) {
+get_hf_parquet_urls <- function(repo_name = NULL, verbose = FALSE) {
     ## Check input
     # repo
     confirm_repo(repo_name)
@@ -998,7 +999,8 @@ get_hf_parquet_urls <- function(repo_name = NULL) {
     parquet_files <- all_files[endsWith(all_files, ".parquet")]
 
     if (length(parquet_files) == 0) {
-        message("No Parquet files found in the '", repo_name, "' repository.")
+        if (verbose) message("No Parquet files found in the '", repo_name,
+                             "' repository.")
         # Return an empty data.frame with the correct structure
         return(data.frame(
             filename = character(0), URL = character(0), DataType = character(0),
@@ -1012,7 +1014,8 @@ get_hf_parquet_urls <- function(repo_name = NULL) {
     base_url <- paste0("https://huggingface.co/datasets/", repo_name, "/resolve/main/")
     parquet_urls <- paste0(base_url, parquet_files)
 
-    message("Found ", length(parquet_urls), " Parquet file(s) in '", repo_name, "'.")
+    if (verbose) message("Found ", length(parquet_urls),
+                         " Parquet file(s) in '", repo_name, "'.")
 
     # --- Step 4: Create initial data.frame ---
     result_df <- data.frame(
@@ -1034,14 +1037,14 @@ get_hf_parquet_urls <- function(repo_name = NULL) {
     )
 
     if (nzchar(def_path) && file.exists(def_path)) {
-        message("Found definitions file. Joining metadata.")
+        if (verbose) message("Found definitions file. Joining metadata.")
         definitions <- utils::read.csv(def_path, stringsAsFactors = FALSE)
 
         # Perform the join
         result_df <- dplyr::left_join(result_df, definitions, by = "data_type")
 
     } else {
-        message(
+        if (verbose) message(
             "Data type definition file not found. ",
             "Install 'parkinsonsMetagenomicData' to add full metadata."
         )
@@ -1089,8 +1092,7 @@ load_ref <- function(ref, repo = NULL) {
     }
 
     ## retrieve URL
-    rurl <- get_hf_parquet_urls(repo) |>
-        suppressMessages() |>
+    rurl <- get_hf_parquet_urls(repo, verbose = FALSE) |>
         dplyr::filter(.data$data_type == "reference") |>
         dplyr::filter(.data$filename == paste0(ref, ".parquet")) |>
         dplyr::pull(url)
