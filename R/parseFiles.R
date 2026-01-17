@@ -18,16 +18,12 @@
 #' TreeSummarizedExperiment object and is intended to be used for integration of
 #' sample metadata.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_metaphlan_bugs_list.tsv.gz")
-#'  parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       file_path = fpath,
-#'                       data_type = "relative_abundance")
-#'  }
-#' }
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_metaphlan_bugs_list.tsv.gz")
+#' parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                      file_path = fpath,
+#'                      data_type = "relative_abundance")
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}
@@ -151,7 +147,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 #' TreeSummarizedExperiment object and is intended to be used for integration of
 #' sample metadata.
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' if(interactive()){
 #'  #EXAMPLE1
 #'  }
@@ -219,14 +215,10 @@ parse_humann <- function(sample_id, file_path, data_type) {
 #' within the fastqc_data.txt file, but gathers only the 'Basic Statistics'
 #' module.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_fastqc_data.txt")
-#'  parse_fastqc_stats(fpath)
-#'  }
-#' }
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_fastqc_data.txt")
+#' parse_fastqc_stats(fpath)
 #' @rdname parse_fastqc_stats
 #' @export
 parse_fastqc_stats <- function(file_path) {
@@ -258,14 +250,10 @@ parse_fastqc_stats <- function(file_path) {
 #' information within the out_kneaddata_log.txt file, but gathers only the lines
 #' with read counts.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_out_kneaddata_log.txt")
-#'  parse_kneaddata_stats(fpath)
-#'  }
-#' }
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_out_kneaddata_log.txt")
+#' parse_kneaddata_stats(fpath)
 #' @rdname parse_kneaddata_stats
 #' @export
 parse_kneaddata_stats <- function(file_path) {

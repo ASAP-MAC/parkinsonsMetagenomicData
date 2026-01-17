@@ -16,11 +16,7 @@ default.
 each Hugging Face repo that contains relevant parquet files.
 }
 \examples{
-\dontrun{
-if(interactive()){
- get_repo_info()
- }
-}
+get_repo_info()
 }
 \seealso{
 \code{\link[readr]{read_delim}}

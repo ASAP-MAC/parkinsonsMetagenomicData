@@ -39,7 +39,7 @@ fpath <- file.path(system.file("extdata",
                    "sample_metaphlan_bugs_list.tsv.gz")
 parsed_bugs_list <- parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
                                          file_path = fpath,
-                                         data_type = "bugs")
+                                         data_type = "relative_abundance")
 
 # write to inst/extdata/sample_experiment.Rds
 extdata_path <- file.path(system.file("extdata",
@@ -48,16 +48,23 @@ extdata_path <- file.path(system.file("extdata",
 saveRDS(parsed_bugs_list, extdata_path)
 
 ## sample_experiment_list
-sample_experiments <- getMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
-                                                   "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
-                                         data_types = "bugs",
-                                         load = TRUE)
+cache_table <- cacheMetagenomicData(uuids = c("0001a4de-a907-46bd-8523-d7bfc1cdb544",
+                                                          "004c5d07-ec87-40fe-9a72-6b23d6ec584e"),
+                                                data_type = "relative_abundance")
+
+se_list <- vector("list", nrow(cache_table))
+for (i in seq_len(nrow(cache_table))) {
+    se_list[[i]] <- parse_metaphlan_list(cache_table$uuid[i],
+                                         cache_table$cache_path[i],
+                                         cache_table$data_type[i])
+}
+names(se_list) <- paste(cache_table$uuid, cache_table$data_type, sep = "_")
 
 # write to inst/extdata/sample_experiment_list.Rds
 extdata_path <- file.path(system.file("extdata",
                                       package = "parkinsonsMetagenomicData"),
                           "sample_experiment_list.Rds")
-saveRDS(sample_experiments, extdata_path)
+saveRDS(se_list, extdata_path)
 
 ## sample_fastc_data
 basic_stats_header <- c("##FastQC	0.12.1",

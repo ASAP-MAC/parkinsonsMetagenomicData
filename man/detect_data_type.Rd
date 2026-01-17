@@ -17,11 +17,7 @@ String(s): detected data type values
 output_file_types()$data_type.
 }
 \examples{
-\dontrun{
-if(interactive()){
- detect_data_type("genefamilies_cpm_but_sorted")
- }
-}
+detect_data_type("genefamilies_cpm_but_sorted")
 }
 \seealso{
 \code{\link[stringr]{str_extract}}

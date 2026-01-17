@@ -33,16 +33,12 @@ TreeSummarizedExperiment object and is intended to be used for integration of
 sample metadata.
 }
 \examples{
-\dontrun{
-if(interactive()){
- fpath <- file.path(system.file("extdata",
-                                package = "parkinsonsMetagenomicData"),
-                    "sample_metaphlan_bugs_list.tsv.gz")
- parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                      file_path = fpath,
-                      data_type = "relative_abundance")
- }
-}
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "sample_metaphlan_bugs_list.tsv.gz")
+parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+                     file_path = fpath,
+                     data_type = "relative_abundance")
 }
 \seealso{
 \code{\link[readr]{read_delim}}

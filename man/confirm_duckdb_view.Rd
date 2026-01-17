@@ -19,11 +19,9 @@ input validation. If the input is valid, nothing will happen. If it is not,
 the function will throw a 'stop()' error.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(data_types = "pathcoverage_unstratified")
  view <- tbl(con, "pathcoverage_unstratified_uuid")
  confirm_duckdb_view(view)
- }
 }
 }

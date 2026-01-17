@@ -22,10 +22,6 @@ Google Bucket gs://metagenomics-mac. Output is requested by associated sample
 UUID and type of output file.
 }
 \examples{
-\dontrun{
-if(interactive()){
- get_bucket_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                     data_type = "relative_abundance")
- }
-}
+get_bucket_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+                    data_type = "relative_abundance")
 }

@@ -22,15 +22,13 @@ table using one of the connection's views/tables as a source and returns the
 source URL.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "pathcoverage_unstratified")
  lazy <- tbl(con, "pathcoverage_unstratified_pathway") |>
              filter(grepl("UMP biosynthesis", pathway))
 
  get_view_source(con, lazy)
- }
 }
 }
 \seealso{

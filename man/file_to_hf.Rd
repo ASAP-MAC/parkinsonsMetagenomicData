@@ -19,11 +19,7 @@ in a Hugging Face repo to URLs compatible with httpfs as described in the
 \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
 }
 \examples{
-\dontrun{
-if(interactive()){
- file <- paste0("https://huggingface.co/datasets/waldronlab/",
-                "metagenomics_mac/resolve/main/relative_abundance.parquet")
- file_to_hf(file)
- }
-}
+file <- paste0("https://huggingface.co/datasets/waldronlab/",
+               "metagenomics_mac/resolve/main/relative_abundance.parquet")
+file_to_hf(file)
 }

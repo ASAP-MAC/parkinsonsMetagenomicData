@@ -5,7 +5,10 @@
 \alias{sampleMetadata}
 \title{Manually Curated Sample Metadata}
 \format{
-An object of class \code{data.frame} with 3535 rows and 530 columns.
+A data frame with curated and uncurated columns
+}
+\source{
+internal package data
 }
 \usage{
 sampleMetadata

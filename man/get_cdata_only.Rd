@@ -27,8 +27,7 @@ returns a single row for each uuid containing only the data marked as 'cdata'
 in the 'se_role' column of 'parquet_colinfo()'.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(data_types = "relative_abundance")
  uuids <- c("c3eb1e35-9a43-413d-8078-6a0a7ac064ba",
             "a82385f0-d1be-4d79-854c-a7fbfe4473e1",
@@ -46,7 +45,6 @@ if(interactive()){
             "6a034c9f-f7c9-4ead-812b-123ee99b1e0b",
             "ee26b6f0-89fd-45d0-8af9-bc1d9647a700")
  get_cdata_only(con, data_type = "relative_abundance", uuids)
- }
 }
 }
 \seealso{

@@ -31,7 +31,7 @@ TreeSummarizedExperiment object and is intended to be used for integration of
 sample metadata.
 }
 \examples{
-\dontrun{
+\donttest{
 if(interactive()){
  #EXAMPLE1
  }

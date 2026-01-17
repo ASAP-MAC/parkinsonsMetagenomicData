@@ -27,13 +27,11 @@ performing that filtering in an efficient way. If no view is tailored to the
 specific feature, a view/table sorted by UUID will be the default.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "relative_abundance")
  pick_projection(con, "relative_abundance", "clade_name_species")
  pick_projection(con, "relative_abundance")
- }
 }
 }
 \seealso{

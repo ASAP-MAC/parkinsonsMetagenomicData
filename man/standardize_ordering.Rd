@@ -21,13 +21,9 @@ same delimiter. This confirms that when calling unique(), there are no
 strings that contain the same elements but in a different order.
 }
 \examples{
-\dontrun{
-if(interactive()){
- vec <- c("horse|gecko|frog",
-          "cow|camel|fish",
-          "frog|gecko|horse")
+vec <- c("horse|gecko|frog",
+         "cow|camel|fish",
+         "frog|gecko|horse")
 
- standardize_ordering(vec, delim = "|")
- }
-}
+standardize_ordering(vec, delim = "|")
 }

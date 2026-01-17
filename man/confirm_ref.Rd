@@ -19,10 +19,6 @@ input validation. If the input is valid, nothing will happen. If it is not,
 the function will throw a 'stop()' error.
 }
 \examples{
-\dontrun{
-if(interactive()){
- confirm_ref("horse")
- confirm_ref("clade_name_ref")
- }
-}
+confirm_ref("horse")
+confirm_ref("clade_name_ref")
 }

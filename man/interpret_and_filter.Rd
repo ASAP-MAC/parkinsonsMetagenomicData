@@ -25,8 +25,7 @@ or table is additionally selected by this function in order to optimize
 filtering.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "relative_abundance")
  fvalues <- list(clade_name_species = c("s__GGB52130_SGB14966",
@@ -35,7 +34,6 @@ if(interactive()){
                           "38d449c8-1462-4d30-ba87-d032d95942ce",
                           "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"))
  interpret_and_filter(con, "relative_abundance", fvalues)
- }
 }
 }
 \seealso{

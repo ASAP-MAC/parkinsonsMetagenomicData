@@ -17,9 +17,7 @@ last updated
 }
 \examples{
 \dontrun{
-if(interactive()){
  listMetagenomicData()
- }
 }
 }
 \seealso{

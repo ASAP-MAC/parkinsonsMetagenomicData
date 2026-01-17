@@ -22,7 +22,7 @@ DBI::dbListTables(con), indicating which views to consider when collecting
 data.}
 
 \item{sample_data}{Data frame: a table of sample metadata with a 'uuid'
-column. Often created by accessing 'sampleMetadata' and filtering or
+column. Often created by accessing 'data(sampleMetadata)' and filtering or
 otherwise transforming the result to only include samples of interest.}
 
 \item{feature_data}{Data frame: a table of feature data. Each column will
@@ -61,8 +61,11 @@ Files stored remotely and locally cannot be combined in the same
 connection.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
+ if (!exists("sampleMetadata", envir = environment())) {
+     data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+ }
+
  table(sampleMetadata$control, useNA = "ifany")
  sample_data <- sampleMetadata \%>\%
      filter(control \%in\% c("Case", "Study Control") &
@@ -79,7 +82,6 @@ if(interactive()){
                            sample_data = sample_data_small,
                            feature_data = feature_data_genus)
  genus_ex
- }
 }
 }
 \seealso{

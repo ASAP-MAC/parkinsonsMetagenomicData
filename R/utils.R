@@ -3,10 +3,8 @@
 #' parkinsonsMetagenomicData file cache or creates it if it does not exist.
 #' @return BiocFileCache cache object
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  pMD_get_cache()
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[tools]{userdir}}
@@ -34,12 +32,8 @@ pMD_get_cache <- function() {
 #' to filter the selected column with.
 #' @return Tibble with columns 'tool', 'data_type', 'file_name', and 'subdir'
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  output_file_types()
-#'  output_file_types("tool", "metaphlan")
-#'  }
-#' }
+#' output_file_types()
+#' output_file_types("tool", "metaphlan")
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname output_file_types
@@ -73,11 +67,7 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
 #' Units/Normalization'
 #' @details DETAILS
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  biobakery_files()
-#'  }
-#' }
+#' biobakery_files()
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname biobakery_files
@@ -102,11 +92,7 @@ biobakery_files <- function() {
 #' @return Data frame with columns 'general_data_type', 'col_name', 'col_class',
 #' 'description', 'se_role', and 'position'
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  parquet_colinfo("viral_clusters")
-#'  }
-#' }
+#' parquet_colinfo("viral_clusters")
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{arrange}}
@@ -146,11 +132,7 @@ parquet_colinfo <- function(data_type) {
 #' @param string String(s): a single string or vector of strings to parse
 #' @return String(s): detected data type values
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  detect_data_type("genefamilies_cpm_but_sorted")
-#'  }
-#' }
+#' detect_data_type("genefamilies_cpm_but_sorted")
 #' @seealso
 #'  \code{\link[stringr]{str_extract}}
 #' @rdname detect_data_type
@@ -198,13 +180,11 @@ detect_data_type <- function(string) {
 #' intended to be filtered by. Default = "uuid"
 #' @return Single string: the name of a DuckDB view/table
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "relative_abundance")
 #'  pick_projection(con, "relative_abundance", "clade_name_species")
 #'  pick_projection(con, "relative_abundance")
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}
@@ -255,11 +235,7 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
 #' overall organization, name, URL, and whether or not the repo is the selected
 #' default.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  get_repo_info()
-#'  }
-#' }
+#' get_repo_info()
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname get_repo_info
@@ -281,11 +257,7 @@ get_repo_info <- function() {
 #' @return Data frame: A table of metadata feature information, including
 #' information on allowed values and requiredness as well as other parameters.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  data_dict()
-#'  }
-#' }
+#' data_dict()
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname data_dict
@@ -315,11 +287,7 @@ data_dict <- function() {
 #' @return Data frame: A table of ref information, including information on
 #' general data types and tools served as well as descriptions.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  get_ref_info()
-#'  }
-#' }
+#' get_ref_info()
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname get_ref_info
@@ -354,13 +322,9 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
 #' @return String: a URL referencing the same file in a format matching the
 #' httpfs protocol.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  file <- paste0("https://huggingface.co/datasets/waldronlab/",
-#'                 "metagenomics_mac/resolve/main/relative_abundance.parquet")
-#'  file_to_hf(file)
-#'  }
-#' }
+#' file <- paste0("https://huggingface.co/datasets/waldronlab/",
+#'                "metagenomics_mac/resolve/main/relative_abundance.parquet")
+#' file_to_hf(file)
 #' @export
 file_to_hf <- function(url) {
     hf_url <- url |>
@@ -376,11 +340,7 @@ file_to_hf <- function(url) {
 #' @param file_path String: file name or path to get extension(s) from
 #' @return String: file extension, including pseudo-extensions
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  get_exts("path/file.tsv.gz")
-#'  }
-#' }
+#' get_exts("path/file.tsv.gz")
 #' @seealso
 #'  \code{\link[stringr]{str_split}}
 #' @rdname get_exts
@@ -401,12 +361,8 @@ get_exts <- function(file_path) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  confirm_uuids("56aa2ad5-007d-407c-a644-48aac1e9a8f0")
-#'  confirm_uuids("horse")
-#'  }
-#' }
+#' confirm_uuids("56aa2ad5-007d-407c-a644-48aac1e9a8f0")
+#' confirm_uuids("horse")
 #' @rdname confirm_uuids
 #' @export
 confirm_uuids <- function(uuids) {
@@ -439,14 +395,10 @@ confirm_uuids <- function(uuids) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  confirm_data_type("relative_abundance")
-#'  confirm_data_type("relative_abundance", "tool", "humann")
-#'  confirm_data_type(c("relative_abundance", "viral_clusters"))
-#'  confirm_data_type("horse")
-#'  }
-#' }
+#' confirm_data_type("relative_abundance")
+#' confirm_data_type("relative_abundance", "tool", "humann")
+#' confirm_data_type(c("relative_abundance", "viral_clusters"))
+#' confirm_data_type("horse")
 #' @rdname confirm_data_type
 #' @export
 confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL) {
@@ -506,16 +458,12 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  l1 <- list(uuid = "56aa2ad5-007d-407c-a644-48aac1e9a8f0", animals = c("frog", "horse"))
-#'  l2 <- list(uuid = "blue")
-#'  confirm_filter_values(l1)
-#'  confirm_filter_values(l1, c("uuid", "animals", "shapes"))
-#'  confirm_filter_values(l1, c("animals", "shapes"))
-#'  confirm_filter_values(l2)
-#'  }
-#' }
+#' l1 <- list(uuid = "56aa2ad5-007d-407c-a644-48aac1e9a8f0", animals = c("frog", "horse"))
+#' l2 <- list(uuid = "blue")
+#' confirm_filter_values(l1)
+#' confirm_filter_values(l1, c("uuid", "animals", "shapes"))
+#' confirm_filter_values(l1, c("animals", "shapes"))
+#' confirm_filter_values(l2)
 #' @rdname confirm_filter_values
 #' @export
 confirm_filter_values <- function(filter_values, available_features = NULL) {
@@ -552,12 +500,10 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- db_connect()
 #'  confirm_duckdb_con(con)
 #'  confirm_duckdb_con("horse")
-#'  }
 #' }
 #' @rdname confirm_duckdb_con
 #' @export
@@ -577,12 +523,10 @@ confirm_duckdb_con <- function(con) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(data_types = "pathcoverage_unstratified")
 #'  view <- tbl(con, "pathcoverage_unstratified_uuid")
 #'  confirm_duckdb_view(view)
-#'  }
 #' }
 #' @rdname confirm_duckdb_view
 #' @export
@@ -602,13 +546,9 @@ confirm_duckdb_view <- function(view) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  confirm_repo(NULL)
-#'  confirm_repo("horse")
-#'  confirm_repo("waldronlab/metagenomics_mac")
-#'  }
-#' }
+#' confirm_repo(NULL)
+#' confirm_repo("horse")
+#' confirm_repo("waldronlab/metagenomics_mac")
 #' @rdname confirm_repo
 #' @export
 confirm_repo <- function(repo) {
@@ -630,12 +570,8 @@ confirm_repo <- function(repo) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  confirm_ref("horse")
-#'  confirm_ref("clade_name_ref")
-#'  }
-#' }
+#' confirm_ref("horse")
+#' confirm_ref("clade_name_ref")
 #' @rdname confirm_ref
 #' @export
 confirm_ref <- function(ref) {
@@ -656,15 +592,11 @@ confirm_ref <- function(ref) {
 #' @param delim Character: delimiter to split each of the strings by.
 #' @return Vector of strings
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  vec <- c("horse|gecko|frog",
-#'           "cow|camel|fish",
-#'           "frog|gecko|horse")
+#' vec <- c("horse|gecko|frog",
+#'          "cow|camel|fish",
+#'          "frog|gecko|horse")
 #'
-#'  standardize_ordering(vec, delim = "|")
-#'  }
-#' }
+#' standardize_ordering(vec, delim = "|")
 #' @rdname standardize_ordering
 #' @export
 #' @importFrom stringr str_split str_escape
@@ -692,15 +624,13 @@ standardize_ordering <- function(vec, delim) {
 #' source.
 #' @return String: the URL of the data source used
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "pathcoverage_unstratified")
 #'  lazy <- tbl(con, "pathcoverage_unstratified_pathway") |>
 #'              filter(grepl("UMP biosynthesis", pathway))
 #'
 #'  get_view_source(con, lazy)
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[stringr]{str_extract}}

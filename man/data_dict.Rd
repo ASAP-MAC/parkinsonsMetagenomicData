@@ -15,11 +15,7 @@ information on allowed values and requiredness as well as other parameters.
 each curated feature (not prefixed with "uncurated_") in sampleMetadata.
 }
 \examples{
-\dontrun{
-if(interactive()){
- data_dict()
- }
-}
+data_dict()
 }
 \seealso{
 \code{\link[readr]{read_delim}}

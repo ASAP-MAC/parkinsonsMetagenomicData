@@ -22,12 +22,8 @@ The table can optionally be filtered by providing a column name to filter by
 and a string/regular expression to filter the selected column with.
 }
 \examples{
-\dontrun{
-if(interactive()){
- output_file_types()
- output_file_types("tool", "metaphlan")
- }
-}
+output_file_types()
+output_file_types("tool", "metaphlan")
 }
 \seealso{
 \code{\link[readr]{read_delim}}

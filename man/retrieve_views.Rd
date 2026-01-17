@@ -29,8 +29,7 @@ data types to retrieve, and checks if they exist as parquet files in the repo
 of interest. If they do not, they are simply skipped and the user is notified.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- db_connect()
 
  retrieve_views(con, repo = "waldronlab/metagenomics_mac",
@@ -38,6 +37,5 @@ if(interactive()){
                                "viral_clusters",
                                "pathcoverage_unstratified"))
  DBI::dbListTables(con)
- }
 }
 }

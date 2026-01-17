@@ -4,7 +4,7 @@
 \alias{get_hf_parquet_urls}
 \title{Get Parquet File URLs and Metadata from a Hugging Face Repository}
 \usage{
-get_hf_parquet_urls(repo_name = NULL)
+get_hf_parquet_urls(repo_name = NULL, verbose = FALSE)
 }
 \arguments{
 \item{repo_name}{A character string specifying the Hugging Face dataset
@@ -35,10 +35,8 @@ file, which is expected to be in the \code{inst/extdata} directory of the
 the metadata columns will be populated with \code{NA}.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  file_info <- get_hf_parquet_urls()
  head(file_info)
- }
 }
 }

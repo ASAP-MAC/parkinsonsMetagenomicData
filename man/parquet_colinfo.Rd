@@ -21,11 +21,7 @@ Data frame with columns 'general_data_type', 'col_name', 'col_class',
 parquet file made from a particular output file type.
 }
 \examples{
-\dontrun{
-if(interactive()){
- parquet_colinfo("viral_clusters")
- }
-}
+parquet_colinfo("viral_clusters")
 }
 \seealso{
 \code{\link[readr]{read_delim}}

@@ -19,14 +19,12 @@ files provided. If view names are not also provided, they are imputed from
 the file names.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- db_connect(dbdir = ":memory:")
  fpath <- file.path(system.file("extdata",
                                 package = "parkinsonsMetagenomicData"),
                     "sample_table.parquet")
  retrieve_local_views(con, fpath)
  DBI::dbListTables(con)
- }
 }
 }

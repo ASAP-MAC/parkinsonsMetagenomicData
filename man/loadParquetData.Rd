@@ -61,8 +61,7 @@ If 'custom_view' is provided, it must use one of the views indicated
 by data_type'.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "pathcoverage_unstratified")
 
@@ -81,7 +80,6 @@ if(interactive()){
                                filter_values = list(uuid = uuids),
                                custom_view = custom_filter)
  custom_tse
- }
 }
 }
 \seealso{

@@ -8,12 +8,8 @@
 #' Default: ':memory:'
 #' @return DuckDB connection object of class 'duckdb_connection'
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  connection <- db_connect(dbdir = ":memory:")
-#'  class(connection)
-#'  }
-#' }
+#' connection <- db_connect(dbdir = ":memory:")
+#' class(connection)
 #' @seealso
 #'  \code{\link[DBI]{dbConnect}}, \code{\link[DBI]{dbExecute}}
 #'  \code{\link[duckdb]{duckdb}}
@@ -47,15 +43,13 @@ db_connect <- function(dbdir = ":memory:") {
 #' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
 #' for more information on httpfs-compatible URLs.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- db_connect()
-#'  view_parquet(con,
-#'               "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
-#'               "relative_abundance_uuid")
+#'  view_parquet(con = con,
+#'               httpfs_url = "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
+#'               view_name = "relative_abundance_uuid")
 #'
 #'  DBI::dbListTables(con)
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[DBI]{dbExecute}}
@@ -111,8 +105,7 @@ view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
 #' data types to retrieve, and checks if they exist as parquet files in the repo
 #' of interest. If they do not, they are simply skipped and the user is notified.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- db_connect()
 #'
 #'  retrieve_views(con, repo = "waldronlab/metagenomics_mac",
@@ -120,7 +113,6 @@ view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
 #'                                "viral_clusters",
 #'                                "pathcoverage_unstratified"))
 #'  DBI::dbListTables(con)
-#'  }
 #' }
 #' @rdname retrieve_views
 #' @export
@@ -188,15 +180,13 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' instead of imputing from file names.
 #' @return NULL
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- db_connect(dbdir = ":memory:")
 #'  fpath <- file.path(system.file("extdata",
 #'                                 package = "parkinsonsMetagenomicData"),
 #'                     "sample_table.parquet")
 #'  retrieve_local_views(con, fpath)
 #'  DBI::dbListTables(con)
-#'  }
 #' }
 #' @rdname retrieve_local_views
 #' @export
@@ -244,8 +234,7 @@ retrieve_local_views <- function(con, local_files) {
 #' schemas, interpret_and_filter() will select the appropriate view and apply
 #' the filter for you.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "genefamilies_stratified")
 #'  fvalues <- list(uuid = c("d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
@@ -256,7 +245,6 @@ retrieve_local_views <- function(con, local_files) {
 #'
 #'  filter_parquet_view(view = tbl(con, "genefamilies_stratified_uuid"),
 #'                 filter_values = fvalues)
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{setops}}
@@ -319,8 +307,7 @@ filter_parquet_view <- function(view, filter_values) {
 #' @return A filtered DuckDB database view or table. This is still lazy until
 #' collect() is called.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "relative_abundance")
 #'  fvalues <- list(clade_name_species = c("s__GGB52130_SGB14966",
@@ -329,7 +316,6 @@ filter_parquet_view <- function(view, filter_values) {
 #'                           "38d449c8-1462-4d30-ba87-d032d95942ce",
 #'                           "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"))
 #'  interpret_and_filter(con, "relative_abundance", fvalues)
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[dplyr]{tbl}}
@@ -390,15 +376,13 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' @return A TreeSummarizedExperiment object with process metadata, row data, column
 #' names, and relevant assays.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "pathcoverage_unstratified")
 #'  parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
 #'
 #'  se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
 #'  se
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
@@ -423,6 +407,11 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
 
     # data_type
     confirm_data_type(data_type)
+
+    ## Load sampleMetadata
+    if (!exists("sampleMetadata", envir = environment())) {
+        data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+    }
 
     ## Get parameters by data type
     colinfo <- parquet_colinfo(data_type)
@@ -528,13 +517,12 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
 #' connection.
 #' @examples
 #' \dontrun{
-#' if(interactive()){
 #'  prepared_db <- accessParquetData()
 #'  DBI::dbListTables(prepared_db)
-#'
+#' }
+#' \donttest{
 #'  single_type <- accessParquetData(data_types = "pathcoverage_unstratified")
 #'  DBI::dbListTables(single_type)
-#'  }
 #' }
 #' @rdname accessParquetData
 #' @export
@@ -603,8 +591,7 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @details If 'custom_view' is provided, it must use one of the views indicated
 #' by data_type'.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "pathcoverage_unstratified")
 #'
@@ -623,7 +610,6 @@ accessParquetData <- function(dbdir = ":memory:",
 #'                                filter_values = list(uuid = uuids),
 #'                                custom_view = custom_filter)
 #'  custom_tse
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}
@@ -733,7 +719,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' DBI::dbListTables(con), indicating which views to consider when collecting
 #' data.
 #' @param sample_data Data frame: a table of sample metadata with a 'uuid'
-#' column. Often created by accessing 'sampleMetadata' and filtering or
+#' column. Often created by accessing 'data(sampleMetadata)' and filtering or
 #' otherwise transforming the result to only include samples of interest.
 #' @param feature_data Data frame: a table of feature data. Each column will
 #' become a filtering argument. Often created by accessing one of the files
@@ -758,8 +744,11 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' @details Files stored remotely and locally cannot be combined in the same
 #' connection.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
+#'  if (!exists("sampleMetadata", envir = environment())) {
+#'      data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+#'  }
+#'
 #'  table(sampleMetadata$control, useNA = "ifany")
 #'  sample_data <- sampleMetadata %>%
 #'      filter(control %in% c("Case", "Study Control") &
@@ -776,7 +765,6 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'                            sample_data = sample_data_small,
 #'                            feature_data = feature_data_genus)
 #'  genus_ex
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}, \code{\link[DBI]{dbDisconnect}}
@@ -875,8 +863,7 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
 #' @return A data frame with a 'uuid' column as well as all columns marked as
 #' 'cdata' in the 'se_role' column of 'parquet_colinfo()'.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  con <- accessParquetData(data_types = "relative_abundance")
 #'  uuids <- c("c3eb1e35-9a43-413d-8078-6a0a7ac064ba",
 #'             "a82385f0-d1be-4d79-854c-a7fbfe4473e1",
@@ -894,7 +881,6 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
 #'             "6a034c9f-f7c9-4ead-812b-123ee99b1e0b",
 #'             "ee26b6f0-89fd-45d0-8af9-bc1d9647a700")
 #'  get_cdata_only(con, data_type = "relative_abundance", uuids)
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[dplyr]{select}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{distinct}}, \code{\link[dplyr]{compute}}
@@ -944,11 +930,9 @@ get_cdata_only <- function(con, data_type, uuids) {
 #' `parkinsonsMetagenomicData` package. If this package is not available,
 #' the metadata columns will be populated with `NA`.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  file_info <- get_hf_parquet_urls()
 #'  head(file_info)
-#'  }
 #' }
 #' @export
 #' @importFrom httr GET status_code content
@@ -1066,10 +1050,8 @@ get_hf_parquet_urls <- function(repo_name = NULL, verbose = FALSE) {
 #' selected. Default: NULL
 #' @return A table of reference information
 #' @examples
-#' \dontrun{
-#' if(interactive()){
+#' \donttest{
 #'  load_ref("clade_name_ref")
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{pull}}

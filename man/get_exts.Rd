@@ -17,11 +17,7 @@ String: file extension, including pseudo-extensions
 including pseudo-extensions such as ".tsv" in "file.tsv.gz".
 }
 \examples{
-\dontrun{
-if(interactive()){
- get_exts("path/file.tsv.gz")
- }
-}
+get_exts("path/file.tsv.gz")
 }
 \seealso{
 \code{\link[stringr]{str_split}}

@@ -23,12 +23,8 @@ information within the out_kneaddata_log.txt file, but gathers only the lines
 with read counts.
 }
 \examples{
-\dontrun{
-if(interactive()){
- fpath <- file.path(system.file("extdata",
-                                package = "parkinsonsMetagenomicData"),
-                    "sample_out_kneaddata_log.txt")
- parse_kneaddata_stats(fpath)
- }
-}
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "sample_out_kneaddata_log.txt")
+parse_kneaddata_stats(fpath)
 }

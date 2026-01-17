@@ -10,12 +10,8 @@
 #' Default: 'relative_abundance'
 #' @return Vector of strings: names of requested Google Bucket objects
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  get_bucket_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                      data_type = "relative_abundance")
-#'  }
-#' }
+#' get_bucket_locators(uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                     data_type = "relative_abundance")
 #' @rdname get_bucket_locators
 #' @export
 get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
@@ -51,12 +47,10 @@ get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
 #' are the paths to the cached files
 #' @examples
 #' \dontrun{
-#' if(interactive()){
 #'  locator <- paste0("results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/",
 #'                    "metaphlan_lists/metaphlan_bugs_list.tsv.gz")
 #'  cache_gcb(locator = locator,
 #'            redownload = "ask")
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[googleCloudStorageR]{gcs_download_url}}, \code{\link[googleCloudStorageR]{gcs_get_object}}
@@ -155,11 +149,9 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 #' type, Google Cloud Bucket object name, local cache ID, and cached file path
 #' @examples
 #' \dontrun{
-#' if(interactive()){
 #'  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
 #'                       data_type = "relative_abundance",
 #'                       redownload = "ask")
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[stringr]{str_split}}
@@ -268,11 +260,9 @@ cacheMetagenomicData <- function(uuids,
 #' TreeSummarizedExperiment objects.
 #' @examples
 #' \dontrun{
-#' if(interactive()){
 #'  cache_table <- cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
 #'                                      data_type = "relative_abundance")
 #'  loadMetagenomicData(cache_table = cache_table)
-#'  }
 #' }
 #' @rdname loadMetagenomicData
 #' @export
@@ -332,9 +322,7 @@ loadMetagenomicData <- function(cache_table) {
 #' last updated
 #' @examples
 #' \dontrun{
-#' if(interactive()){
 #'  listMetagenomicData()
-#'  }
 #' }
 #' @seealso
 #'  \code{\link[googleCloudStorageR]{gcs_list_objects}}
@@ -397,18 +385,14 @@ listMetagenomicData <- function() {
 #' the duplicate columns), or ignored (leaving only the old version of the
 #' duplicate columns)
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_experiment.Rds")
-#'  sample_experiment <- readRDS(fpath)
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_experiment.Rds")
+#' sample_experiment <- readRDS(fpath)
 #'
-#'  add_metadata(sample_ids = colnames(sample_experiment),
-#'               id_col = "uuid",
-#'               experiment = sample_experiment)
-#'  }
-#' }
+#' add_metadata(sample_ids = colnames(sample_experiment),
+#'              id_col = "uuid",
+#'              experiment = sample_experiment)
 #' @seealso
 #'  \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
@@ -426,6 +410,10 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     stopifnot(methods::is(experiment, "TreeSummarizedExperiment"))
 
     ## Retrieve sample metadata
+    if (!exists("sampleMetadata", envir = environment())) {
+        data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+    }
+
     meta <- sampleMetadata
 
     ## Check that id_col and method are valid
@@ -480,16 +468,12 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' be of the same type (i.e. have the same name) and be in the same order if
 #' there are multiple assays.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_experiment_list.Rds")
-#'  sample_experiment_list <- readRDS(fpath)
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_experiment_list.Rds")
+#' sample_experiment_list <- readRDS(fpath)
 #'
-#'  mergeExperiments(sample_experiment_list)
-#'  }
-#' }
+#' mergeExperiments(sample_experiment_list)
 #' @seealso
 #'  \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}

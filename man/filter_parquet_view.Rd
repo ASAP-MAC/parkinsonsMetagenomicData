@@ -34,8 +34,7 @@ schemas, interpret_and_filter() will select the appropriate view and apply
 the filter for you.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "genefamilies_stratified")
  fvalues <- list(uuid = c("d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
@@ -46,7 +45,6 @@ if(interactive()){
 
  filter_parquet_view(view = tbl(con, "genefamilies_stratified_uuid"),
                 filter_values = fvalues)
- }
 }
 }
 \seealso{

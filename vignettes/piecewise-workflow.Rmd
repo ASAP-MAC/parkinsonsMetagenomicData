@@ -73,6 +73,11 @@ again an optional step, as you may want to get data across all samples for
 meta-analyses.
 
 ```{r re_pick_metadata}
+# Load sampleMetadata
+if (!exists("sampleMetadata", envir = environment())) {
+    data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+}
+
 sample_table <- sampleMetadata |>
     filter(study_name == "ZhangM_2023") |>
     select(where(~ !any(is.na(.x))))

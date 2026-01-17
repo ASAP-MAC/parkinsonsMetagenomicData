@@ -30,15 +30,13 @@ Summarized Experiment object. Associated sample metadata is automatically
 attached as colData.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "pathcoverage_unstratified")
  parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
 
  se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
  se
- }
 }
 }
 \seealso{

@@ -21,10 +21,8 @@ A table of reference information
 designated repo and loads it into a table in R.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  load_ref("clade_name_ref")
- }
 }
 }
 \seealso{

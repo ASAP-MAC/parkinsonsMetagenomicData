@@ -24,16 +24,12 @@ be of the same type (i.e. have the same name) and be in the same order if
 there are multiple assays.
 }
 \examples{
-\dontrun{
-if(interactive()){
- fpath <- file.path(system.file("extdata",
-                                package = "parkinsonsMetagenomicData"),
-                    "sample_experiment_list.Rds")
- sample_experiment_list <- readRDS(fpath)
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "sample_experiment_list.Rds")
+sample_experiment_list <- readRDS(fpath)
 
- mergeExperiments(sample_experiment_list)
- }
-}
+mergeExperiments(sample_experiment_list)
 }
 \seealso{
 \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}

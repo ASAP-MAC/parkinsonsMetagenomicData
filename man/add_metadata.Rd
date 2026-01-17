@@ -35,18 +35,14 @@ the duplicate columns), or ignored (leaving only the old version of the
 duplicate columns)
 }
 \examples{
-\dontrun{
-if(interactive()){
- fpath <- file.path(system.file("extdata",
-                                package = "parkinsonsMetagenomicData"),
-                    "sample_experiment.Rds")
- sample_experiment <- readRDS(fpath)
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "sample_experiment.Rds")
+sample_experiment <- readRDS(fpath)
 
- add_metadata(sample_ids = colnames(sample_experiment),
-              id_col = "uuid",
-              experiment = sample_experiment)
- }
-}
+add_metadata(sample_ids = colnames(sample_experiment),
+             id_col = "uuid",
+             experiment = sample_experiment)
 }
 \seealso{
 \code{\link[S4Vectors]{DataFrame-class}}

@@ -45,12 +45,11 @@ connection.
 }
 \examples{
 \dontrun{
-if(interactive()){
  prepared_db <- accessParquetData()
  DBI::dbListTables(prepared_db)
-
+}
+\donttest{
  single_type <- accessParquetData(data_types = "pathcoverage_unstratified")
  DBI::dbListTables(single_type)
- }
 }
 }

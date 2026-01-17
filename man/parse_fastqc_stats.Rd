@@ -23,12 +23,8 @@ within the fastqc_data.txt file, but gathers only the 'Basic Statistics'
 module.
 }
 \examples{
-\dontrun{
-if(interactive()){
- fpath <- file.path(system.file("extdata",
-                                package = "parkinsonsMetagenomicData"),
-                    "sample_fastqc_data.txt")
- parse_fastqc_stats(fpath)
- }
-}
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "sample_fastqc_data.txt")
+parse_fastqc_stats(fpath)
 }

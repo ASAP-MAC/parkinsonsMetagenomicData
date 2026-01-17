@@ -31,15 +31,13 @@ See
 for more information on httpfs-compatible URLs.
 }
 \examples{
-\dontrun{
-if(interactive()){
+\donttest{
  con <- db_connect()
- view_parquet(con,
-              "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
-              "relative_abundance_uuid")
+ view_parquet(con = con,
+              httpfs_url = "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
+              view_name = "relative_abundance_uuid")
 
  DBI::dbListTables(con)
- }
 }
 }
 \seealso{

@@ -18,11 +18,7 @@ extdata/biobakery_file_definitions.csv.
 DETAILS
 }
 \examples{
-\dontrun{
-if(interactive()){
- biobakery_files()
- }
-}
+biobakery_files()
 }
 \seealso{
 \code{\link[readr]{read_delim}}

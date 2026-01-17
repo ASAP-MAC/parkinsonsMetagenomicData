@@ -81,6 +81,11 @@ file paths and cache IDs for each requested file.
 We will first select samples from a particular study that we want to investigate:
 
 ```{r}
+## Load sampleMetadata
+if (!exists("sampleMetadata", envir = environment())) {
+    data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+}
+
 selected_samples <- sampleMetadata |>
     filter(study_name == "ZhangM_2023") |>
     select(where(~ !any(is.na(.x))))

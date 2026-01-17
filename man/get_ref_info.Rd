@@ -25,11 +25,7 @@ providing a column name to filter by and a string/regular expression to
 filter the selected column with.
 }
 \examples{
-\dontrun{
-if(interactive()){
- get_ref_info()
- }
-}
+get_ref_info()
 }
 \seealso{
 \code{\link[readr]{read_delim}}
