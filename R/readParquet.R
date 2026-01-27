@@ -368,13 +368,15 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' @param data_type Single string: value found in the data_type' column of
 #' output_file_types() and also as part of the name of a file in the repo of
 #' interest.
-#' @param empty_data Table or data frame: data on samples not included in
-#' parquet_table. Must include a "uuid" column. Usually the samples were not
-#' included due to their assay data not passing a filter even though they were
-#' present in the original parquet file. The extra data included is usually the
-#' headers of the original output files.
-#' @return A TreeSummarizedExperiment object with process metadata, row data, column
-#' names, and relevant assays.
+#' @param empty_data Table or data frame (optional): data on samples not
+#' included in parquet_table. Must include a "uuid" column. Usually the samples
+#' were not included due to their assay data not passing a filter even though
+#' they were present in the original parquet file. The extra data included is
+#' usually the headers of the original output files. Default: NULL
+#' @param clean_meta Boolean (optional): should sampleMetadata columns that have
+#' >90% NA be removed. Default: NULL
+#' @return A TreeSummarizedExperiment object with process metadata, row data,
+#' column names, and relevant assays.
 #' @examples
 #' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
@@ -398,7 +400,8 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' @importFrom S4Vectors DataFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 #' @importFrom tidyselect any_of all_of
-parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
+parquet_to_tse <- function(parquet_table, data_type,
+                           empty_data = NULL, clean_meta = TRUE) {
     ## Check input
     # parquet_table
     if (!is.data.frame(parquet_table)) {
@@ -476,6 +479,11 @@ parquet_to_tse <- function(parquet_table, data_type, empty_data = NULL) {
     cdata <- cdata %>%
         dplyr::left_join(sampleMetadata, dplyr::join_by("uuid"))
     rownames(cdata) <- cdata[[cnames_col]]
+
+    # Remove columns with >90% NA
+    if (clean_meta) {
+        cdata <- cdata[colMeans(is.na(cdata)) <= 0.9]
+    }
 
     ## Confirm rows and columns are in the same order
     rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
