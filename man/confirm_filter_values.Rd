@@ -12,6 +12,9 @@ confirm_filter_values(filter_values, available_features = NULL)
 \item{available_features}{Character vector: features that the list element
 names should be found in. Default: NULL}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'confirm_filter_values' checks that a named list is valid to be
 used as a 'filter_values' argument for various functions in

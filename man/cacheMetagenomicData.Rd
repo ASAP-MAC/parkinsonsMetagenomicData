@@ -38,7 +38,7 @@ specified, in order to reduce excessive downloads.
 \examples{
 \dontrun{
  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-                      data_type = "relative_abundance",
+                      data_type = "pathabundance_unstratified",
                       redownload = "ask")
 }
 }

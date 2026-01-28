@@ -9,6 +9,9 @@ confirm_ref(ref)
 \arguments{
 \item{ref}{String: input to be validated}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'confirm_ref' checks that a single string is a valid reference
 file name as listed in get_ref_info() or a NULL value.

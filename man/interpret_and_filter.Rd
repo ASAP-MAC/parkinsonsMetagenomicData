@@ -35,6 +35,24 @@ filtering.
                           "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"))
  interpret_and_filter(con, "relative_abundance", fvalues)
 }
+
+fpaths <- c(file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_uuid.parquet"),
+            file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_pathway.parquet"))
+
+con <- accessParquetData(local_files = fpath,
+                         data_types = "pathcoverage_unstratified")
+
+fvalues <- list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+                         "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+                         "fb7e8210-002a-4554-b265-873c4003e25f"),
+                pathway = c("PWY-6859: all-trans-farnesol biosynthesis",
+                            "RUMP-PWY: formaldehyde oxidation I"))
+
+interpret_and_filter(con, "pathcoverage_unstratified", fvalues)
 }
 \seealso{
 \code{\link[dplyr]{tbl}}

@@ -46,6 +46,22 @@ the filter for you.
  filter_parquet_view(view = tbl(con, "genefamilies_stratified_uuid"),
                 filter_values = fvalues)
 }
+
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "pathcoverage_unstratified_uuid.parquet")
+
+con <- accessParquetData(local_files = fpath,
+                         data_types = "pathcoverage_unstratified")
+
+fvalues <- list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+                         "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+                         "fb7e8210-002a-4554-b265-873c4003e25f"),
+                pathway = c("PWY-6859: all-trans-farnesol biosynthesis",
+                            "RUMP-PWY: formaldehyde oxidation I"))
+
+filter_parquet_view(view = tbl(con, "pathcoverage_unstratified_uuid"),
+               filter_values = fvalues)
 }
 \seealso{
 \code{\link[dplyr]{filter}}, \code{\link[dplyr]{setops}}

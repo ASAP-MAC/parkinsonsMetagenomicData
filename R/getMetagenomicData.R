@@ -150,7 +150,7 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 #' @examples
 #' \dontrun{
 #'  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
-#'                       data_type = "relative_abundance",
+#'                       data_type = "pathabundance_unstratified",
 #'                       redownload = "ask")
 #' }
 #' @seealso

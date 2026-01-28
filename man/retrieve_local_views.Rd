@@ -13,18 +13,19 @@ retrieve_local_views(con, local_files)
 If the elements are named, those names will be used for the created views
 instead of imputing from file names.}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'retrieve_local_views' creates database views for each of the
 files provided. If view names are not also provided, they are imputed from
 the file names.
 }
 \examples{
-\donttest{
- con <- db_connect(dbdir = ":memory:")
- fpath <- file.path(system.file("extdata",
-                                package = "parkinsonsMetagenomicData"),
-                    "sample_table.parquet")
- retrieve_local_views(con, fpath)
- DBI::dbListTables(con)
-}
+con <- db_connect(dbdir = ":memory:")
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "sample_table.parquet")
+retrieve_local_views(con, fpath)
+DBI::dbListTables(con)
 }

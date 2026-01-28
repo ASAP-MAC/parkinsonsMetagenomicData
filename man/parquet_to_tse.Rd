@@ -4,7 +4,7 @@
 \alias{parquet_to_tse}
 \title{Convert tabulated parquet file data to a Summarized Experiment}
 \usage{
-parquet_to_tse(parquet_table, data_type, empty_data = NULL)
+parquet_to_tse(parquet_table, data_type, empty_data = NULL, clean_meta = TRUE)
 }
 \arguments{
 \item{parquet_table}{Table or data frame: data taken directly from a parquet
@@ -14,15 +14,18 @@ file found in the repo of interest (see inst/extdata/parquet_repos.csv).}
 output_file_types() and also as part of the name of a file in the repo of
 interest.}
 
-\item{empty_data}{Table or data frame: data on samples not included in
-parquet_table. Must include a "uuid" column. Usually the samples were not
-included due to their assay data not passing a filter even though they were
-present in the original parquet file. The extra data included is usually the
-headers of the original output files.}
+\item{empty_data}{Table or data frame (optional): data on samples not
+included in parquet_table. Must include a "uuid" column. Usually the samples
+were not included due to their assay data not passing a filter even though
+they were present in the original parquet file. The extra data included is
+usually the headers of the original output files. Default: NULL}
+
+\item{clean_meta}{Boolean (optional): should sampleMetadata columns that have
+greater than 90\% NA be removed. Default: NULL}
 }
 \value{
-A TreeSummarizedExperiment object with process metadata, row data, column
-names, and relevant assays.
+A TreeSummarizedExperiment object with process metadata, row data,
+column names, and relevant assays.
 }
 \description{
 'parquet_to_tse' takes tabulated data from a parquet file to a
@@ -38,6 +41,21 @@ attached as colData.
  se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
  se
 }
+
+fpaths <- c(file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_uuid.parquet"),
+            file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_pathway.parquet"))
+
+con <- accessParquetData(local_files = fpath,
+                         data_types = "pathcoverage_unstratified")
+
+parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+
+se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
+se
 }
 \seealso{
 \code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}

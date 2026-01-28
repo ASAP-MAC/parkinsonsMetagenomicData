@@ -147,11 +147,12 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 #' TreeSummarizedExperiment object and is intended to be used for integration of
 #' sample metadata.
 #' @examples
-#' \donttest{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_out_pathabundance_unstratified.tsv.gz")
+#' parse_humann(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                      file_path = fpath,
+#'                      data_type = "pathabundance_unstratified")
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}
@@ -307,8 +308,8 @@ parse_kneaddata_stats <- function(file_path) {
 
     clean_stats <- lapply(kneaddata_stats, trimws)
 
-    final_stats <- sapply(clean_stats, "[[", 2)
-    names(final_stats) <- sapply(clean_stats, "[[", 1)
+    final_stats <- vapply(clean_stats, "[[", 2, FUN.VALUE = character(1))
+    names(final_stats) <- vapply(clean_stats, "[[", 1, FUN.VALUE = character(1))
 
     return(final_stats)
 }

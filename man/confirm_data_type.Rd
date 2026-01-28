@@ -14,6 +14,9 @@ confirm_data_type(data_type, filter_col = NULL, filter_string = NULL)
 \item{filter_string}{String (optional): string to filter for within
 'filter_col'}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'confirm_data_type' checks that a single string is valid to be
 used as a 'data_type' argument for various functions in

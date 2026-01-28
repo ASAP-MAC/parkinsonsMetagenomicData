@@ -52,4 +52,15 @@ connection.
  single_type <- accessParquetData(data_types = "pathcoverage_unstratified")
  DBI::dbListTables(single_type)
 }
+
+fpaths <- c(file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_uuid.parquet"),
+            file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_pathway.parquet"))
+
+local_db <- accessParquetData(local_files = fpaths,
+                              data_types = "pathcoverage_unstratified")
+DBI::dbListTables(local_db)
 }

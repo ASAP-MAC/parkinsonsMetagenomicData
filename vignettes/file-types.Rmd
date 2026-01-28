@@ -7,7 +7,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r chunk_set, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -33,7 +33,7 @@ This is the primary output for taxonomic profiling, showing the relative
 abundance of each microbial taxon (from kingdom to species and strain level).
 The base MetaPhlAn call to obtain this file is:
 
-```{bash, eval=FALSE}
+```{bash ex_relab_call, eval=FALSE}
 $ metaphlan metagenome.fastq --input_type fastq -o profiled_metagenome.txt
 ```
 
@@ -41,7 +41,7 @@ Here are 15 rows of this file for one sample. It contains a header with
 information on the database, exact `metaphlan` command, and number of reads
 processed as well as the standard MetaPhlAn header row and column names.
 
-```{text}
+```{text ex_relab_out}
 #mpa_vJun23_CHOCOPhlAnSGB_202403
 #/usr/local/bin/metaphlan --input_type bowtie2out --index latest --bowtie2db metaphlan --nproc 1 --unclassified_estimation -o metaphlan_unknown_list.tsv /dev/fd/63
 #35820609 reads processed
@@ -74,13 +74,13 @@ This is the output file when performing Viral Sequence Clusters Analysis,
 showing the coverage of viral genomes. The base MetaPhlAn call to obtain this
 file is:
 
-```{bash, eval=FALSE}
+```{bash ex_vc_call, eval=FALSE}
 $ metaphlan metagenome.fastq --input_type fastq \
         --profile_vsc --vsc_out profiled_viruses.txt \
         -o profiled_metagenome.txt
 ```
 
-```{text}
+```{text ex_vc_out}
 #mpa_vJun23_CHOCOPhlAnSGB_202403
 #/usr/local/bin/metaphlan --input_type fastq --index latest --bowtie2db metaphlan --samout sam.bz2 --bowtie2out bowtie2.out --nproc 16 --profile_vsc --vsc_breadth 0.75 --vsc_out metaphlan_viruses_list.tsv -o metaphlan_bugs_list.tsv out.fastq
 #SampleID    Metaphlan_Analysis

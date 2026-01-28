@@ -9,6 +9,9 @@ confirm_duckdb_con(con)
 \arguments{
 \item{con}{Object to validate}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'confirm_duckdb_con' checks that an object is a valid DuckDB
 connection object.

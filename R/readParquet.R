@@ -38,7 +38,7 @@ db_connect <- function(dbdir = ":memory:") {
 #' @param view_name String (optional): name of the database view to be created. If not
 #' provided, it will be generated from the name of the file indicated by
 #' 'httpfs_url'. Default: NULL
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details See
 #' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
 #' for more information on httpfs-compatible URLs.
@@ -51,6 +51,16 @@ db_connect <- function(dbdir = ":memory:") {
 #'
 #'  DBI::dbListTables(con)
 #' }
+#'
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "pathcoverage_unstratified_pathway.parquet")
+#' con <- db_connect()
+#' view_parquet(con = con,
+#'              file_path = fpath,
+#'              view_name = "pathcoverage_unstratified_pathway")
+#'
+#' DBI::dbListTables(con)
 #' @seealso
 #'  \code{\link[DBI]{dbExecute}}
 #' @rdname view_parquet
@@ -100,7 +110,7 @@ view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
 #' @param data_types Character vector (optional): list of data types to
 #' establish database views for. If NULL, views will be created for all available
 #' data types. Default: NULL
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details 'retrieve_views' uses 'output_file_types' as the initial list of
 #' data types to retrieve, and checks if they exist as parquet files in the repo
 #' of interest. If they do not, they are simply skipped and the user is notified.
@@ -178,16 +188,14 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' @param local_files String or vector of strings: path(s) to parquet file(s).
 #' If the elements are named, those names will be used for the created views
 #' instead of imputing from file names.
-#' @return NULL
+#' @return NULL (invisibly)
 #' @examples
-#' \donttest{
-#'  con <- db_connect(dbdir = ":memory:")
-#'  fpath <- file.path(system.file("extdata",
-#'                                 package = "parkinsonsMetagenomicData"),
-#'                     "sample_table.parquet")
-#'  retrieve_local_views(con, fpath)
-#'  DBI::dbListTables(con)
-#' }
+#' con <- db_connect(dbdir = ":memory:")
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_table.parquet")
+#' retrieve_local_views(con, fpath)
+#' DBI::dbListTables(con)
 #' @rdname retrieve_local_views
 #' @export
 retrieve_local_views <- function(con, local_files) {
@@ -246,6 +254,22 @@ retrieve_local_views <- function(con, local_files) {
 #'  filter_parquet_view(view = tbl(con, "genefamilies_stratified_uuid"),
 #'                 filter_values = fvalues)
 #' }
+#'
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "pathcoverage_unstratified_uuid.parquet")
+#'
+#' con <- accessParquetData(local_files = fpath,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' fvalues <- list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'                          "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'                          "fb7e8210-002a-4554-b265-873c4003e25f"),
+#'                 pathway = c("PWY-6859: all-trans-farnesol biosynthesis",
+#'                             "RUMP-PWY: formaldehyde oxidation I"))
+#'
+#' filter_parquet_view(view = tbl(con, "pathcoverage_unstratified_uuid"),
+#'                filter_values = fvalues)
 #' @seealso
 #'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{setops}}
 #'  \code{\link[rlang]{sym}}
@@ -317,6 +341,24 @@ filter_parquet_view <- function(view, filter_values) {
 #'                           "5f8d4254-7653-46e3-814e-ed72cdfcb4d0"))
 #'  interpret_and_filter(con, "relative_abundance", fvalues)
 #' }
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpath,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' fvalues <- list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'                          "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'                          "fb7e8210-002a-4554-b265-873c4003e25f"),
+#'                 pathway = c("PWY-6859: all-trans-farnesol biosynthesis",
+#'                             "RUMP-PWY: formaldehyde oxidation I"))
+#'
+#' interpret_and_filter(con, "pathcoverage_unstratified", fvalues)
 #' @seealso
 #'  \code{\link[dplyr]{tbl}}
 #' @rdname interpret_and_filter
@@ -340,7 +382,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
              replacement = "")
 
     # Determine primary filter column and values
-    sorted_inds <- order(sapply(filter_values, length))
+    sorted_inds <- order(vapply(filter_values, length, FUN.VALUE = integer(1)))
     sorted_args <- filter_values[sorted_inds]
 
     fcols <- intersect(projs, names(filter_values))
@@ -374,7 +416,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' they were present in the original parquet file. The extra data included is
 #' usually the headers of the original output files. Default: NULL
 #' @param clean_meta Boolean (optional): should sampleMetadata columns that have
-#' >90% NA be removed. Default: NULL
+#' greater than 90% NA be removed. Default: NULL
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays.
 #' @examples
@@ -386,6 +428,21 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #'  se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
 #'  se
 #' }
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpath,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+#'
+#' se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
+#' se
 #' @seealso
 #'  \code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
 #'  \code{\link[tidyr]{pivot_wider}}
@@ -442,7 +499,7 @@ parquet_to_tse <- function(parquet_table, data_type,
     rownames(rdata) <- rdata[[rnames_col]]
 
     ## Create assay table(s)
-    alist <- sapply(assay_cols, function(acol) {
+    alist <- lapply(assay_cols, function(acol) {
       pdata <- parquet_table %>%
         select(tidyselect::all_of(c(rnames_col, acol, "uuid"))) %>%
         tidyr::pivot_wider(
@@ -457,7 +514,8 @@ parquet_to_tse <- function(parquet_table, data_type,
                       dimnames = list(NULL, esamps))
 
       cbind(pdata, edata)
-    }, USE.NAMES = TRUE, simplify = FALSE)
+    })
+    names(alist) <- assay_cols
 
     ## Create colData table with sampleMetadata added
     if (!is.null(empty_data)) {
@@ -532,6 +590,17 @@ parquet_to_tse <- function(parquet_table, data_type,
 #'  single_type <- accessParquetData(data_types = "pathcoverage_unstratified")
 #'  DBI::dbListTables(single_type)
 #' }
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' local_db <- accessParquetData(local_files = fpaths,
+#'                               data_types = "pathcoverage_unstratified")
+#' DBI::dbListTables(local_db)
 #' @rdname accessParquetData
 #' @export
 accessParquetData <- function(dbdir = ":memory:",
@@ -619,6 +688,32 @@ accessParquetData <- function(dbdir = ":memory:",
 #'                                custom_view = custom_filter)
 #'  custom_tse
 #' }
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' custom_filter <- tbl(con, "pathcoverage_unstratified_pathway") |>
+#'                  filter(grepl("UMP biosynthesis", pathway))
+#'
+#' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'            "fb7e8210-002a-4554-b265-873c4003e25f",
+#'            "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'            "4985aa08-6138-4146-8ae3-952716575395",
+#'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+#'
+#' custom_tse <- loadParquetData(con,
+#'                               data_type = "pathcoverage_unstratified",
+#'                               filter_values = list(uuid = uuids),
+#'                               custom_view = custom_filter)
+#' custom_tse
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}
 #'  \code{\link[dplyr]{tbl}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{compute}}

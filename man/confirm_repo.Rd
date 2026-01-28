@@ -9,6 +9,9 @@ confirm_repo(repo)
 \arguments{
 \item{repo}{String or NULL: input to be validated}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'confirm_repo' checks that a single string is a valid repo name
 as listed in get_repo_info() or a NULL value.

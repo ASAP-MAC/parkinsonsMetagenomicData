@@ -17,6 +17,9 @@ selected. Default: NULL}
 establish database views for. If NULL, views will be created for all available
 data types. Default: NULL}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'retrieve_views' creates database views for all of the data
 types available in a repo of interest (see inst/extdata/parquet_repos.csv).

@@ -9,6 +9,9 @@ confirm_duckdb_view(view)
 \arguments{
 \item{view}{Object to validate}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'confirm_duckdb_view' checks that an object is a valid DuckDB
 table connection object

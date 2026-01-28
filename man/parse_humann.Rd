@@ -31,11 +31,12 @@ TreeSummarizedExperiment object and is intended to be used for integration of
 sample metadata.
 }
 \examples{
-\donttest{
-if(interactive()){
- #EXAMPLE1
- }
-}
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "sample_out_pathabundance_unstratified.tsv.gz")
+parse_humann(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+                     file_path = fpath,
+                     data_type = "pathabundance_unstratified")
 }
 \seealso{
 \code{\link[readr]{read_delim}}

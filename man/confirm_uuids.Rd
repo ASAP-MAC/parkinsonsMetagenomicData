@@ -9,6 +9,9 @@ confirm_uuids(uuids)
 \arguments{
 \item{uuids}{String or character vector: strings to validate}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'confirm_uuids' checks that a single string or vector of strings
 are valid UUIDs.

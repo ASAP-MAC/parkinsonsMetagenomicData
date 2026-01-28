@@ -19,6 +19,9 @@ Default: NULL}
 provided, it will be generated from the name of the file indicated by
 'httpfs_url'. Default: NULL}
 }
+\value{
+NULL (invisibly)
+}
 \description{
 'view_parquet' creates a database view with the provided DuckDB
 connection object. The view is created from a parquet file hosted at a
@@ -39,6 +42,16 @@ for more information on httpfs-compatible URLs.
 
  DBI::dbListTables(con)
 }
+
+fpath <- file.path(system.file("extdata",
+                               package = "parkinsonsMetagenomicData"),
+                   "pathcoverage_unstratified_pathway.parquet")
+con <- db_connect()
+view_parquet(con = con,
+             file_path = fpath,
+             view_name = "pathcoverage_unstratified_pathway")
+
+DBI::dbListTables(con)
 }
 \seealso{
 \code{\link[DBI]{dbExecute}}

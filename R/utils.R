@@ -356,7 +356,7 @@ get_exts <- function(file_path) {
 #' @description 'confirm_uuids' checks that a single string or vector of strings
 #' are valid UUIDs.
 #' @param uuids String or character vector: strings to validate
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
@@ -390,7 +390,7 @@ confirm_uuids <- function(uuids) {
 #' @param filter_col String (optional): name of column to filter by
 #' @param filter_string String (optional): string to filter for within
 #' 'filter_col'
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
@@ -453,7 +453,7 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 #' @param filter_values Named list: input to be validated
 #' @param available_features Character vector: features that the list element
 #' names should be found in. Default: NULL
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
@@ -495,7 +495,7 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
 #' @description 'confirm_duckdb_con' checks that an object is a valid DuckDB
 #' connection object.
 #' @param con Object to validate
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
@@ -518,7 +518,7 @@ confirm_duckdb_con <- function(con) {
 #' @description 'confirm_duckdb_view' checks that an object is a valid DuckDB
 #' table connection object
 #' @param view Object to validate
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
@@ -541,7 +541,7 @@ confirm_duckdb_view <- function(view) {
 #' @description 'confirm_repo' checks that a single string is a valid repo name
 #' as listed in get_repo_info() or a NULL value.
 #' @param repo String or NULL: input to be validated
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
@@ -565,7 +565,7 @@ confirm_repo <- function(repo) {
 #' @description 'confirm_ref' checks that a single string is a valid reference
 #' file name as listed in get_ref_info() or a NULL value.
 #' @param ref String: input to be validated
-#' @return NULL
+#' @return NULL (invisibly)
 #' @details This function is intended to be used within another function as
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.

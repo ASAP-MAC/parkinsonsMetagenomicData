@@ -1,5 +1,6 @@
 ## Construction of sample files for function examples:
 ## sample_metaphlan_bugs_list.tsv.gz for parse_metaphlan_list()
+## sample_out_pathabundance_unstratified.tsv.gz for parse_humann()
 ## sample_experiment for add_metadata()
 ## sample_experiment_list for mergeExperiments()
 ## sample_parquet for retrieve_local_files()
@@ -24,12 +25,35 @@ bugs_list <- data.frame(clade_name = c("k__Bacteria",
                         additional_species = rep(NA, 6))
 colnames(bugs_list)[1] <- "#clade_name"
 
-# write to inst/extdata/sample_metaphlan_bugs_list.tsv.gz
+# write to inst/extdata/sample_metaphlan_bugs_list.tsv
 extdata_path <- file.path(system.file("extdata",
                                       package = "parkinsonsMetagenomicData"),
                           "sample_metaphlan_bugs_list.tsv")
 writeLines(metadata_header, extdata_path)
 write.table(bugs_list, extdata_path, append = TRUE, sep = "\t",
+            col.names = TRUE, row.names = FALSE, quote = FALSE)
+R.utils::gzip(extdata_path, overwrite = TRUE)
+
+## sample_out_pathabundance_unstratified
+pathcoverage_list <- data.frame(Pathway = c("UNMAPPED",
+                                            "UNINTEGRATED",
+                                            "TRNA-CHARGING-PWY: tRNA charging",
+                                            "PWY-1042: glycolysis IV",
+                                            "PWY-6609: adenine and adenosine salvage III",
+                                            "PWY-7221: guanosine ribonucleotides de novo biosynthesis"),
+                                out_Abundance = c("1963761.2729906905",
+                                                  "3026993.4709948450",
+                                                  "2697.9004105228",
+                                                  "2360.2965535212",
+                                                  "2328.2392201336",
+                                                  "2292.9280094236"))
+colnames(pathcoverage_list)[1] <- "#Pathway"
+
+# write to inst/extdata/sample_out_pathabundance_unstratified.tsv
+extdata_path <- file.path(system.file("extdata",
+                                      package = "parkinsonsMetagenomicData"),
+                          "sample_out_pathabundance_unstratified.tsv")
+write.table(pathcoverage_list, extdata_path, append = TRUE, sep = "\t",
             col.names = TRUE, row.names = FALSE, quote = FALSE)
 R.utils::gzip(extdata_path, overwrite = TRUE)
 
