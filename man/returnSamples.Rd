@@ -83,6 +83,45 @@ connection.
                            feature_data = feature_data_genus)
  genus_ex
 }
+
+if (!exists("sampleMetadata", envir = environment())) {
+    data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+}
+
+uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+           "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+           "fb7e8210-002a-4554-b265-873c4003e25f",
+           "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+           "4985aa08-6138-4146-8ae3-952716575395",
+           "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+
+sample_data <- sampleMetadata \%>\%
+    filter(uuid \%in\% uuids) \%>\%
+    select(where(~ !any(is.na(.x))))
+
+fpaths <- c(file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_uuid.parquet"),
+            file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_pathway.parquet"))
+
+refpath <- file.path(system.file("extdata",
+                                 package = "parkinsonsMetagenomicData"),
+                     "pathway_ref.parquet")
+
+pathway_ref <- load_ref("pathway_ref", file_path = refpath)
+feature_data_genus <- pathway_ref \%>\%
+    dplyr::filter(grepl("Faecalibacterium", pathway_genus)) \%>\%
+    dplyr::select(pathway_uniref) \%>\%
+    dplyr::rename(pathway = pathway_uniref)
+
+genus_ex <- returnSamples(data_type = "pathcoverage_unstratified",
+                          sample_data = sample_data,
+                          feature_data = feature_data_genus,
+                          local_files = fpaths,
+                          include_empty_samples = FALSE)
+genus_ex
 }
 \seealso{
 \code{\link[DBI]{dbListTables}}, \code{\link[DBI]{dbDisconnect}}

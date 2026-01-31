@@ -22,9 +22,7 @@ input validation. If the input is valid, nothing will happen. If it is not,
 the function will throw a 'stop()' error.
 }
 \examples{
-\donttest{
- con <- db_connect()
- confirm_duckdb_con(con)
- confirm_duckdb_con("horse")
-}
+con <- db_connect()
+confirm_duckdb_con(con)
+confirm_duckdb_con("horse")
 }

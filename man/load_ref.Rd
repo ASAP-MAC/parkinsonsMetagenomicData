@@ -4,7 +4,7 @@
 \alias{load_ref}
 \title{Load a single parquet reference file}
 \usage{
-load_ref(ref, repo = NULL)
+load_ref(ref, repo = NULL, file_path = NULL)
 }
 \arguments{
 \item{ref}{String: the name of a reference file as found in get_ref_info()}
@@ -12,6 +12,9 @@ load_ref(ref, repo = NULL)
 \item{repo}{String (optional): Hugging Face repo where the parquet files are
 stored. If NULL, the repo listed as the default in get_repo_info() will be
 selected. Default: NULL}
+
+\item{file_path}{String (optional): path to locally stored parquet file.
+Default: NULL}
 }
 \value{
 A table of reference information
@@ -24,6 +27,12 @@ designated repo and loads it into a table in R.
 \donttest{
  load_ref("clade_name_ref")
 }
+
+refpath <- file.path(system.file("extdata",
+                                 package = "parkinsonsMetagenomicData"),
+                     "pathway_ref.parquet")
+
+load_ref("pathway_ref", file_path = refpath)
 }
 \seealso{
 \code{\link[dplyr]{filter}}, \code{\link[dplyr]{pull}}

@@ -869,6 +869,45 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'                            feature_data = feature_data_genus)
 #'  genus_ex
 #' }
+#'
+#' if (!exists("sampleMetadata", envir = environment())) {
+#'     data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+#' }
+#'
+#' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'            "fb7e8210-002a-4554-b265-873c4003e25f",
+#'            "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'            "4985aa08-6138-4146-8ae3-952716575395",
+#'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+#'
+#' sample_data <- sampleMetadata %>%
+#'     filter(uuid %in% uuids) %>%
+#'     select(where(~ !any(is.na(.x))))
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' refpath <- file.path(system.file("extdata",
+#'                                  package = "parkinsonsMetagenomicData"),
+#'                      "pathway_ref.parquet")
+#'
+#' pathway_ref <- load_ref("pathway_ref", file_path = refpath)
+#' feature_data_genus <- pathway_ref %>%
+#'     dplyr::filter(grepl("Faecalibacterium", pathway_genus)) %>%
+#'     dplyr::select(pathway_uniref) %>%
+#'     dplyr::rename(pathway = pathway_uniref)
+#'
+#' genus_ex <- returnSamples(data_type = "pathcoverage_unstratified",
+#'                           sample_data = sample_data,
+#'                           feature_data = feature_data_genus,
+#'                           local_files = fpaths,
+#'                           include_empty_samples = FALSE)
+#' genus_ex
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}, \code{\link[DBI]{dbDisconnect}}
 #' @rdname returnSamples
@@ -985,6 +1024,25 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
 #'             "ee26b6f0-89fd-45d0-8af9-bc1d9647a700")
 #'  get_cdata_only(con, data_type = "relative_abundance", uuids)
 #' }
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'            "fb7e8210-002a-4554-b265-873c4003e25f",
+#'            "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'            "4985aa08-6138-4146-8ae3-952716575395",
+#'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+#'
+#' get_cdata_only(con, data_type = "pathcoverage_unstratified", uuids)
 #' @seealso
 #'  \code{\link[dplyr]{select}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{distinct}}, \code{\link[dplyr]{compute}}
 #'  \code{\link[rlang]{sym}}
@@ -1151,11 +1209,19 @@ get_hf_parquet_urls <- function(repo_name = NULL, verbose = FALSE) {
 #' @param repo String (optional): Hugging Face repo where the parquet files are
 #' stored. If NULL, the repo listed as the default in get_repo_info() will be
 #' selected. Default: NULL
+#' @param file_path String (optional): path to locally stored parquet file.
+#' Default: NULL
 #' @return A table of reference information
 #' @examples
 #' \donttest{
 #'  load_ref("clade_name_ref")
 #' }
+#'
+#' refpath <- file.path(system.file("extdata",
+#'                                  package = "parkinsonsMetagenomicData"),
+#'                      "pathway_ref.parquet")
+#'
+#' load_ref("pathway_ref", file_path = refpath)
 #' @seealso
 #'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{pull}}
 #'  \code{\link[arrow]{read_parquet}}
@@ -1163,8 +1229,13 @@ get_hf_parquet_urls <- function(repo_name = NULL, verbose = FALSE) {
 #' @export
 #' @importFrom dplyr filter pull
 #' @importFrom arrow read_parquet
-load_ref <- function(ref, repo = NULL) {
+load_ref <- function(ref, repo = NULL, file_path = NULL) {
     ## Check input
+    # repo/file_path
+    if (!is.null(repo) & !is.null(file_path)) {
+        stop("Values for both 'repo' and 'file_path' have been provided. Please choose only one.")
+    }
+
     # ref
     confirm_ref(ref)
 
@@ -1173,14 +1244,18 @@ load_ref <- function(ref, repo = NULL) {
 
     if (is.null(repo)) {
         ri <- get_repo_info()
-        repo <- ri$repo_name[ri$default == "Y"]
+        default_repo <- ri$repo_name[ri$default == "Y"]
     }
 
     ## retrieve URL
-    rurl <- get_hf_parquet_urls(repo, verbose = FALSE) |>
-        dplyr::filter(.data$data_type == "reference") |>
-        dplyr::filter(.data$filename == paste0(ref, ".parquet")) |>
-        dplyr::pull(url)
+    if (!is.null(repo)) {
+        rurl <- get_hf_parquet_urls(default_repo, verbose = FALSE) |>
+            dplyr::filter(.data$data_type == "reference") |>
+            dplyr::filter(.data$filename == paste0(ref, ".parquet")) |>
+            dplyr::pull(url)
+    } else {
+        rurl <- file_path
+    }
 
     ## Collect ref file
     ref_tbl <- arrow::read_parquet(rurl)

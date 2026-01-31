@@ -21,3 +21,16 @@ download.file("https://huggingface.co/datasets/waldronlab/metagenomics_mac_examp
               destfile = extdata_path,
               method = "wget")
 
+## pathway_ref
+extdata_path <- file.path(system.file("extdata",
+                                      package = "parkinsonsMetagenomicData"),
+                          "pathway_ref.parquet")
+
+download.file("https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples/resolve/main/pathway_ref.parquet?download=true",
+              destfile = extdata_path,
+              method = "wget")
+
+full_file <- read_parquet(extdata_path)
+part_file <- full_file[50:200,]
+
+write_parquet(part_file, extdata_path)

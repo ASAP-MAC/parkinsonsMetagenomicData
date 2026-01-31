@@ -3,9 +3,7 @@
 #' parkinsonsMetagenomicData file cache or creates it if it does not exist.
 #' @return BiocFileCache cache object
 #' @examples
-#' \donttest{
-#'  pMD_get_cache()
-#' }
+#' pMD_get_cache()
 #' @seealso
 #'  \code{\link[tools]{userdir}}
 #'  \code{\link[BiocFileCache]{BiocFileCache-class}}, \code{\link[BiocFileCache]{BiocFileCache}}
@@ -180,12 +178,16 @@ detect_data_type <- function(string) {
 #' intended to be filtered by. Default = "uuid"
 #' @return Single string: the name of a DuckDB view/table
 #' @examples
-#' \donttest{
-#'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
-#'                           data_types = "relative_abundance")
-#'  pick_projection(con, "relative_abundance", "clade_name_species")
-#'  pick_projection(con, "relative_abundance")
-#' }
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_type = "pathcoverage_unstratified")
+#' pick_projection(con, "pathcoverage_unstratified")
+#' pick_projection(con, "pathcoverage_unstratified", feature_name = "pathway")
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}
 #' @rdname pick_projection
@@ -500,11 +502,9 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \donttest{
-#'  con <- db_connect()
-#'  confirm_duckdb_con(con)
-#'  confirm_duckdb_con("horse")
-#' }
+#' con <- db_connect()
+#' confirm_duckdb_con(con)
+#' confirm_duckdb_con("horse")
 #' @rdname confirm_duckdb_con
 #' @export
 confirm_duckdb_con <- function(con) {
@@ -523,11 +523,16 @@ confirm_duckdb_con <- function(con) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' \donttest{
-#'  con <- accessParquetData(data_types = "pathcoverage_unstratified")
-#'  view <- tbl(con, "pathcoverage_unstratified_uuid")
-#'  confirm_duckdb_view(view)
-#' }
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#' view <- tbl(con, "pathcoverage_unstratified_uuid")
+#' confirm_duckdb_view(view)
 #' @rdname confirm_duckdb_view
 #' @export
 confirm_duckdb_view <- function(view) {

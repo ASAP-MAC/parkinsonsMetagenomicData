@@ -22,9 +22,14 @@ input validation. If the input is valid, nothing will happen. If it is not,
 the function will throw a 'stop()' error.
 }
 \examples{
-\donttest{
- con <- accessParquetData(data_types = "pathcoverage_unstratified")
- view <- tbl(con, "pathcoverage_unstratified_uuid")
- confirm_duckdb_view(view)
-}
+fpaths <- c(file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_uuid.parquet"),
+            file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_pathway.parquet"))
+con <- accessParquetData(local_files = fpaths,
+                         data_types = "pathcoverage_unstratified")
+view <- tbl(con, "pathcoverage_unstratified_uuid")
+confirm_duckdb_view(view)
 }

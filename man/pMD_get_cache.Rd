@@ -14,9 +14,7 @@ BiocFileCache cache object
 parkinsonsMetagenomicData file cache or creates it if it does not exist.
 }
 \examples{
-\donttest{
- pMD_get_cache()
-}
+pMD_get_cache()
 }
 \seealso{
 \code{\link[tools]{userdir}}

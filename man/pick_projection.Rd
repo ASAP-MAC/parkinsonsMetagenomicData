@@ -27,12 +27,16 @@ performing that filtering in an efficient way. If no view is tailored to the
 specific feature, a view/table sorted by UUID will be the default.
 }
 \examples{
-\donttest{
- con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
-                          data_types = "relative_abundance")
- pick_projection(con, "relative_abundance", "clade_name_species")
- pick_projection(con, "relative_abundance")
-}
+fpaths <- c(file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_uuid.parquet"),
+            file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_pathway.parquet"))
+con <- accessParquetData(local_files = fpaths,
+                         data_type = "pathcoverage_unstratified")
+pick_projection(con, "pathcoverage_unstratified")
+pick_projection(con, "pathcoverage_unstratified", feature_name = "pathway")
 }
 \seealso{
 \code{\link[DBI]{dbListTables}}
