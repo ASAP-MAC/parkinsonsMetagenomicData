@@ -1,6 +1,6 @@
 Package: parkinsonsMetagenomicData
 Title: Suite of Functions to Retrieve Parkinson's Metagenomics Data from the Google Cloud Bucket and Hugging Face
-Version: 0.5.1
+Version: 0.99.0
 Authors@R: person("Kaelyn", "Long",
     email = "krlong586@gmail.com",
     role = c("aut", "cre"),
