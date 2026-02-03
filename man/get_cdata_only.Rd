@@ -67,6 +67,9 @@ uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
 get_cdata_only(con, data_type = "pathcoverage_unstratified", uuids)
 }
 \seealso{
-\code{\link[dplyr]{select}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{distinct}}, \code{\link[dplyr]{compute}}
+\code{\link[dplyr]{select}}
+\code{\link[dplyr]{filter}}
+\code{\link[dplyr]{distinct}}
+\code{\link[dplyr]{compute}}
 \code{\link[rlang]{sym}}
 }

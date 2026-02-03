@@ -15,8 +15,8 @@ specific parquet file hosted in a repo of interest. Default: NULL}
 \item{file_path}{String (optional): path to locally stored parquet file.
 Default: NULL}
 
-\item{view_name}{String (optional): name of the database view to be created. If not
-provided, it will be generated from the name of the file indicated by
+\item{view_name}{String (optional): name of the database view to be created.
+If not provided, it will be generated from the name of the file indicated by
 'httpfs_url'. Default: NULL}
 }
 \value{
@@ -30,14 +30,17 @@ specific file is specified via the httpfs-compatible URL or local file path.
 }
 \details{
 See
-\href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
+\href{https://duckdb.org/docs/stable/core_extensions/httpfs/
+hugging_face.html}{DuckDB Docs}
 for more information on httpfs-compatible URLs.
 }
 \examples{
 \donttest{
  con <- db_connect()
+ url <- paste0("hf://datasets/waldronlab/metagenomics_mac/",
+               "relative_abundance_uuid.parquet")
  view_parquet(con = con,
-              httpfs_url = "hf://datasets/waldronlab/metagenomics_mac/relative_abundance_uuid.parquet",
+              httpfs_url = url,
               view_name = "relative_abundance_uuid")
 
  DBI::dbListTables(con)

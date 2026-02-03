@@ -41,5 +41,6 @@ parse_humann(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
 \seealso{
 \code{\link[readr]{read_delim}}
 \code{\link[S4Vectors]{DataFrame-class}}
-\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }

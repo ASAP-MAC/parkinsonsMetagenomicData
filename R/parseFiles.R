@@ -11,8 +11,8 @@
 #' TSV format
 #' @param data_type String: The type of MetaPhlAn output file to be parsed,
 #' either 'relative_abundance' or 'viral_clusters'
-#' @return A TreeSummarizedExperiment object with process metadata, row data, column
-#' names, and relevant assays.
+#' @return A TreeSummarizedExperiment object with process metadata, row data,
+#' column names, and relevant assays.
 #' @details This function does not integrate sample metadata as column data. The
 #' provided sample_id is used as the column name for assays within the
 #' TreeSummarizedExperiment object and is intended to be used for integration of
@@ -27,7 +27,8 @@
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}
-#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_metaphlan_list
 #' @export
 #' @importFrom readr read_tsv
@@ -44,26 +45,28 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
         meta <- gsub("#| reads processed", "", meta)
         meta_list <- as.list(meta)
         names(meta_list) <- c("metaphlan_database",
-                              "command",
-                              "reads_processed")
+                                "command",
+                                "reads_processed")
 
         ## Read remainder of output file
         load_file <- readr::read_tsv(file_path, skip = 5,
-                                     col_names = c("clade_name", "ncbi_tax_id",
-                                                                        "relative_abundance", "additional_species"),
-                                     col_types = readr::cols("factor", "factor", "double", "factor"))
+                                    col_names = c("clade_name", "ncbi_tax_id",
+                                                    "relative_abundance",
+                                                    "additional_species"),
+                                    col_types = readr::cols("factor", "factor",
+                                                            "double", "factor"))
 
         ## Standardize "additional_species" ordering
         species_delim <- ","
         load_file$additional_species <- lapply(load_file$additional_species,
-                                        function(x) {
-                                            if (!is.na(x)) {
-                                                str_split(x, pattern = species_delim) |>
-                                                    unlist() |>
-                                                    sort() |>
-                                                    paste(collapse = species_delim)
-                                            } else { x }
-                                            }) |>
+                                function(x) {
+                                    if (!is.na(x)) {
+                                        str_split(x, pattern = species_delim) |>
+                                            unlist() |>
+                                            sort() |>
+                                            paste(collapse = species_delim)
+                                    } else { x }
+                                    }) |>
                                         unlist()
 
         ## Separate out row data
@@ -86,15 +89,15 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
         meta <- gsub("#", "", meta)
         meta_list <- as.list(meta)
         names(meta_list) <- c("metaphlan_database",
-                              "command")
+                                "command")
 
         ## Read remainder of output file
         load_file <- readr::read_tsv(file_path, skip = 3)
         colnames(load_file) <- c("m_group_cluster", "genome_name", "length",
-                                 "breadth_of_coverage",
-                                 "depth_of_coverage_mean",
-                                 "depth_of_coverage_median", "m_group_type_k_u",
-                                 "first_genome_in_cluster", "other_genomes")
+                                "breadth_of_coverage",
+                                "depth_of_coverage_mean",
+                                "depth_of_coverage_median", "m_group_type_k_u",
+                                "first_genome_in_cluster", "other_genomes")
 
         ## Separate out row data
         rdata_cols <- c("m_group_cluster", "length", "m_group_type_k_u",
@@ -111,22 +114,24 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
         depth_mean <- as.matrix(load_file$depth_of_coverage_mean)
         depth_median <- as.matrix(load_file$depth_of_coverage_median)
         alist <- list(breadth,
-                      depth_mean,
-                      depth_median)
+                        depth_mean,
+                        depth_median)
         names(alist) <- c("viral_breadth_of_coverage",
-                          "viral_depth_of_coverage_mean",
-                          "viral_depth_of_coverage_median")
+                            "viral_depth_of_coverage_mean",
+                            "viral_depth_of_coverage_median")
     } else {
         ## Notify if output file is not able to be parsed by this function
-        stop("data_type '", data_type, "' is not 'relative_abundance' or 'viral_clusters'. Please enter one of these values or use a different parsing function.")
+        stop(paste0("data_type '", data_type, "' is not 'relative_abundance' ",
+                    "or 'viral_clusters'. Please enter one of these values or ",
+                    "use a different parsing function."))
     }
 
     ## Combine process metadata, row data, sample ID, and assays into
     ## TreeSummarizedExperiment object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
-                                                             rowData = rdata,
-                                                             colData = cdata,
-                                                             metadata = meta_list)
+                                                        rowData = rdata,
+                                                        colData = cdata,
+                                                        metadata = meta_list)
 
     return(ex)
 }
@@ -156,7 +161,8 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}
-#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_humann
 #' @export
 #' @importFrom readr read_tsv
@@ -197,11 +203,11 @@ parse_humann <- function(sample_id, file_path, data_type) {
     alist <- list(thisassay)
     names(alist) <- aname
 
-    ## Combine sample ID, assays, and row names into TreeSummarizedExperiment object
+    ## Combine sample ID, assays, and row names into TreeSummarizedExperiment
+    ## object
     ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
-                                                             rowData = rdata,
-                                                             colData = cdata)
-
+                                                            rowData = rdata,
+                                                            colData = cdata)
 
     return(ex)
 }
@@ -236,7 +242,7 @@ parse_fastqc_stats <- function(file_path) {
     ## Format as named vector
     final_stats <- vapply(stats_mod, "[[", 2, FUN.VALUE=character(1))
     names(final_stats) <- vapply(stats_mod, "[[", 1,
-                                 FUN.VALUE=character(1))
+                                FUN.VALUE=character(1))
 
     return(final_stats)
 }
@@ -270,40 +276,49 @@ parse_kneaddata_stats <- function(file_path) {
     drop_reads <- unlist(regmatches(reads, regexec("Dropped: \\d*", reads)))
 
     # Total contaminate sequences in file
-    total_contaminate <- file_lines[grep("Total contaminate sequences in file", file_lines)]
+    total_contaminate <- file_lines[grep("Total contaminate sequences in file",
+                                        file_lines)]
 
     parsed_contaminate <- c()
     for (line in total_contaminate) {
-        full <- unlist(regmatches(line, regexec("Total contaminate sequences in file .*$", line)))
-        db <- unlist(regmatches(line, regexec("([^\\/]+).(?=\\s\\))", line, perl = TRUE)))[1]
+        full <- unlist(regmatches(line,
+                            regexec("Total contaminate sequences in file .*$",
+                            line)))
+        db <- unlist(regmatches(line, regexec("([^\\/]+).(?=\\s\\))", line,
+                                                perl = TRUE)))[1]
         repdb <- gsub("(?<=\\()[^)]*(?=\\))", db, full, perl = TRUE)
-        #repdb <- gsub("out_kneaddata_|_contam.fastq", "", repdb)
         parsed_contaminate <- c(parsed_contaminate, repdb)
     }
 
     # Total reads after removing those found in reference database
-    reads_after_ref <- file_lines[grep("Total reads after removing those found in reference database", file_lines)]
+    reads_after_ref <- file_lines[grep(paste0("Total reads after removing ",
+                                        "those found in reference database"),
+                                        file_lines)]
 
     parsed_ref <- c()
     for (line in reads_after_ref) {
-        full <- unlist(regmatches(line, regexec("Total reads after removing those found in reference database .*$", line)))
-        db <- unlist(regmatches(line, regexec("([^\\/]+).(?=\\s\\))", line, perl = TRUE)))[1]
+        full <- unlist(regmatches(line, regexec(paste0("Total reads after ",
+                            "removing those found in reference database .*$"),
+                            line)))
+        db <- unlist(regmatches(line, regexec("([^\\/]+).(?=\\s\\))", line,
+                                                perl = TRUE)))[1]
         repdb <- gsub("(?<=\\()[^)]*(?=\\))", db, full, perl = TRUE)
-        #repdb <- gsub("out_kneaddata_|_contam.fastq", "", repdb)
         parsed_ref <- c(parsed_ref, repdb)
     }
 
     # Total reads after merging results from multiple databases
-    reads_after_merge <- file_lines[grep("Total reads after merging results from multiple databases", file_lines)]
+    reads_after_merge <- file_lines[grep(paste0("Total reads after merging ",
+                                            "results from multiple databases"),
+                                            file_lines)]
 
-    merge_info <- unlist(regmatches(reads_after_merge,
-                                    regexec("Total reads after merging results from multiple databases .*$",
+    merge_info <- unlist(regmatches(reads_after_merge, regexec(paste0("Total ",
+                    "reads after merging results from multiple databases .*$"),
                                             reads_after_merge)))
     final_reads_after_merge <- gsub("\\([^)]*\\)", "", merge_info)
 
     ## Combine and format info as named vector
     kneaddata_stats <- c(in_reads, surv_reads, drop_reads, parsed_contaminate,
-                         parsed_ref, final_reads_after_merge) |>
+                        parsed_ref, final_reads_after_merge) |>
         strsplit(":")
 
     clean_stats <- lapply(kneaddata_stats, trimws)

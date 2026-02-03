@@ -17,8 +17,8 @@ TSV format}
 either 'relative_abundance' or 'viral_clusters'}
 }
 \value{
-A TreeSummarizedExperiment object with process metadata, row data, column
-names, and relevant assays.
+A TreeSummarizedExperiment object with process metadata, row data,
+column names, and relevant assays.
 }
 \description{
 'parse_metaphlan_list' reads a file obtained from running
@@ -43,5 +43,6 @@ parse_metaphlan_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
 \seealso{
 \code{\link[readr]{read_delim}}
 \code{\link[S4Vectors]{DataFrame-class}}
-\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }

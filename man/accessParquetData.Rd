@@ -33,8 +33,8 @@ DuckDB connection object of class 'duckdb_connection'
 }
 \description{
 'accessParquetData' is a wrapper function for 'db_connect' and
-'retrieve_views'. A DuckDB connection is established and views are created for
-either all provided local files or all data types available in a repo of
+'retrieve_views'. A DuckDB connection is established and views are created
+for either all provided local files or all data types available in a repo of
 interest (see inst/extdata/parquet_repos.csv). When using a remote repo, a
 vector of specific data types can be supplied as doing this for all data
 types can take longer.

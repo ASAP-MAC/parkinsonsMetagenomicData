@@ -14,6 +14,7 @@ internal package data
 sampleMetadata
 }
 \description{
-Manually curated sample metadata for all samples in parkinsonsMetagenomicData.
+Manually curated sample metadata for all samples in
+parkinsonsMetagenomicData.
 }
 \keyword{datasets}

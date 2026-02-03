@@ -16,17 +16,18 @@ A data.frame with the following columns:
 \describe{
 \item{filename}{The name of the Parquet file.}
 \item{URL}{The full download URL for the file.}
-\item{DataType}{The base name of the file, used for joining with metadata.}
+\item{DataType}{The base name of the file, used for joining with
+metadata.}
 \item{Tool}{The bioBakery tool that typically produces the data type.}
 \item{Description}{A brief description of the data type.}
 \item{Units.Normalization}{The units or normalization method used.}
 }
 }
 \description{
-This function queries the Hugging Face Hub API to find all Parquet files
-within a specified dataset repository. It constructs the direct download URLs
-and then joins this information with a local file containing definitions
-for BioBakery data types.
+This function queries the Hugging Face Hub API to find all
+Parquet files within a specified dataset repository. It constructs the direct
+download URLs and then joins this information with a local file containing
+definitions for BioBakery data types.
 }
 \details{
 The metadata is sourced from the "biobakery-file-definitions.csv"

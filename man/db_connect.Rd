@@ -16,7 +16,8 @@ DuckDB connection object of class 'duckdb_connection'
 }
 \description{
 'db_connect' establishes a DuckDB connection in the location
-specified or in memory, and confirms that the 'httpfs' extension is installed.
+specified or in memory, and confirms that the 'httpfs' extension is
+installed.
 }
 \examples{
 connection <- db_connect(dbdir = ":memory:")

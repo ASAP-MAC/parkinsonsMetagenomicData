@@ -14,8 +14,8 @@ stored. If NULL, the repo listed as the default in get_repo_info() will be
 selected. Default: NULL}
 
 \item{data_types}{Character vector (optional): list of data types to
-establish database views for. If NULL, views will be created for all available
-data types. Default: NULL}
+establish database views for. If NULL, views will be created for all
+available data types. Default: NULL}
 }
 \value{
 NULL (invisibly)
@@ -29,7 +29,8 @@ views.
 \details{
 'retrieve_views' uses 'output_file_types' as the initial list of
 data types to retrieve, and checks if they exist as parquet files in the repo
-of interest. If they do not, they are simply skipped and the user is notified.
+of interest. If they do not, they are simply skipped and the user is
+notified.
 }
 \examples{
 \donttest{

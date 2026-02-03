@@ -33,6 +33,7 @@ needed, and returns the path of the cached file.
 }
 }
 \seealso{
-\code{\link[googleCloudStorageR]{gcs_download_url}}, \code{\link[googleCloudStorageR]{gcs_get_object}}
+\code{\link[googleCloudStorageR]{gcs_download_url}}
+\code{\link[googleCloudStorageR]{gcs_get_object}}
 \code{\link[BiocFileCache]{BiocFileCache-class}}
 }

@@ -18,5 +18,6 @@ pMD_get_cache()
 }
 \seealso{
 \code{\link[tools]{userdir}}
-\code{\link[BiocFileCache]{BiocFileCache-class}}, \code{\link[BiocFileCache]{BiocFileCache}}
+\code{\link[BiocFileCache]{BiocFileCache-class}},
+\code{\link[BiocFileCache]{BiocFileCache}}
 }

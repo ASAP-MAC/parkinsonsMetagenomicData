@@ -63,7 +63,8 @@ connection.
 \examples{
 \donttest{
  if (!exists("sampleMetadata", envir = environment())) {
-     data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+     data("sampleMetadata", package = "parkinsonsMetagenomicData",
+     envir = environment())
  }
 
  table(sampleMetadata$control, useNA = "ifany")
@@ -85,7 +86,8 @@ connection.
 }
 
 if (!exists("sampleMetadata", envir = environment())) {
-    data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+    envir = environment())
 }
 
 uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",

@@ -2,26 +2,27 @@
 % Please edit documentation in R/getMetagenomicData.R
 \name{mergeExperiments}
 \alias{mergeExperiments}
-\title{Merge TreeSummarizedExperiment objects with the same assay types together}
+\title{Merge TreeSummarizedExperiment objects with the same assay types
+together}
 \usage{
 mergeExperiments(merge_list)
 }
 \arguments{
-\item{merge_list}{List of TreeSummarizedExperiment objects: to be merged into a
-single TreeSummarizedExperiment object}
+\item{merge_list}{List of TreeSummarizedExperiment objects: to be merged into
+a single TreeSummarizedExperiment object}
 }
 \value{
 TreeSummarizedExperiment object with multiple samples
 }
 \description{
-'mergeExperiments' takes a list of TreeSummarizedExperiment objects
-with the same assays but different samples, and combines them into a single
-TreeSummarizedExperiment object.
+'mergeExperiments' takes a list of TreeSummarizedExperiment
+objects with the same assays but different samples, and combines them into a
+single TreeSummarizedExperiment object.
 }
 \details{
-The assays contained in the TreeSummarizedExperiments to be merged must
-be of the same type (i.e. have the same name) and be in the same order if
-there are multiple assays.
+The assays contained in the TreeSummarizedExperiments to be merged
+must be of the same type (i.e. have the same name) and be in the same order
+if there are multiple assays.
 }
 \examples{
 fpath <- file.path(system.file("extdata",
@@ -33,11 +34,14 @@ mergeExperiments(sample_experiment_list)
 }
 \seealso{
 \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
-\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 \code{\link[tibble]{rownames}}
-\code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
+\code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}
+\code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
 \code{\link[tidyselect]{everything}}
 \code{\link[tidyr]{replace_na}}
-\code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{DataFrame-class}}
+\code{\link[S4Vectors]{SimpleList-class}}
+\code{\link[S4Vectors]{DataFrame-class}}
 \code{\link[magrittr]{extract}}
 }

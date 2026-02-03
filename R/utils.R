@@ -6,7 +6,8 @@
 #' pMD_get_cache()
 #' @seealso
 #'  \code{\link[tools]{userdir}}
-#'  \code{\link[BiocFileCache]{BiocFileCache-class}}, \code{\link[BiocFileCache]{BiocFileCache}}
+#'  \code{\link[BiocFileCache]{BiocFileCache-class}},
+#'  \code{\link[BiocFileCache]{BiocFileCache}}
 #' @rdname pMD_get_cache
 #' @export
 #' @importFrom tools R_user_dir
@@ -40,7 +41,7 @@ pMD_get_cache <- function() {
 output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     ## Read file
     fpath <- system.file("extdata", "output_files.csv",
-                         package="parkinsonsMetagenomicData")
+                        package="parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
 
@@ -48,11 +49,14 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames)
+            stop(paste0("'", filter_col, "' is not a column of ",
+                    "output_files.csv. Please choose one of the following: ",
+                    print_colnames))
         }
 
         ftable <- ftable %>%
-            filter(grepl(filter_string, .data[[filter_col]], ignore.case = TRUE))
+            filter(grepl(filter_string, .data[[filter_col]],
+                        ignore.case = TRUE))
     }
 
     return(ftable)
@@ -74,7 +78,7 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
 biobakery_files <- function() {
     ## Read file
     fpath <- system.file("extdata", "biobakery_file_definitions.csv",
-                         package = "parkinsonsMetagenomicData")
+                        package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE)
 
     return(ftable)
@@ -101,7 +105,7 @@ biobakery_files <- function() {
 parquet_colinfo <- function(data_type) {
     ## Load in parquet column dictionary
     fpath <- system.file("extdata", "parquet_dictionary.csv",
-                         package = "parkinsonsMetagenomicData")
+                        package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
 
@@ -109,12 +113,12 @@ parquet_colinfo <- function(data_type) {
     g_types <- unique(ftable$general_data_type)
     type_string <- paste(g_types, collapse = "|")
     confirm_data_type(data_type,
-                      filter_col = "general_data_type",
-                      filter_string = type_string)
+                        filter_col = "general_data_type",
+                        filter_string = type_string)
 
     ## Find corresponding general_data_type
     gen_type <- output_file_types(filter_col = "data_type",
-                                  filter_string = data_type)$general_data_type |>
+                                filter_string = data_type)$general_data_type |>
         unique()
 
     ## Pull and return column info
@@ -154,7 +158,6 @@ detect_data_type <- function(string) {
         } else {
             ## Extract first match from input
             match <- stringr::str_extract(s, reg_types)
-
         }
 
         ## Save current type
@@ -222,7 +225,8 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
         } else {
             cview <- matching_views[1]
         }
-        message("Exact match for '", eview, "' not found, selecting '", cview, "'")
+        message("Exact match for '", eview, "' not found, selecting '", cview,
+                "'")
     } else {
         cview <- eview
     }
@@ -246,7 +250,7 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
 get_repo_info <- function() {
     ## Load in parquet repo URL table
     fpath <- system.file("extdata", "parquet_repos.csv",
-                         package = "parkinsonsMetagenomicData")
+                        package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
 
@@ -268,7 +272,7 @@ get_repo_info <- function() {
 data_dict <- function() {
     ## Load in data dictionary table
     fpath <- system.file("extdata", "data_dictionary.csv",
-                         package = "parkinsonsMetagenomicData")
+                        package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
 
@@ -298,7 +302,7 @@ data_dict <- function() {
 get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
     ## Load in reference file info table
     fpath <- system.file("extdata", "ref_file_definitions.csv",
-                         package = "parkinsonsMetagenomicData")
+                        package = "parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE) |>
         as.data.frame()
 
@@ -306,11 +310,14 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames)
+            stop("'", filter_col, paste0("' is not a column of ",
+                    "output_files.csv. Please choose one of the following: "),
+                    print_colnames)
         }
 
         ftable <- ftable %>%
-            filter(grepl(filter_string, .data[[filter_col]], ignore.case = TRUE))
+            filter(grepl(filter_string, .data[[filter_col]],
+                         ignore.case = TRUE))
     }
 
     return(ftable)
@@ -319,7 +326,8 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
 #' @title Convert standard https:// URLs to httpfs-compatible hf:// URLs
 #' @description 'file_to_hf' converts standard https:// URLs representing files
 #' in a Hugging Face repo to URLs compatible with httpfs as described in the
-#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
+#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/
+#' hugging_face.html}{DuckDB Docs}
 #' @param url String: a URL referencing a single file in a Hugging Face repo.
 #' @return String: a URL referencing the same file in a format matching the
 #' httpfs protocol.
@@ -370,7 +378,8 @@ get_exts <- function(file_path) {
 confirm_uuids <- function(uuids) {
     results <- c()
     for (x in uuids) {
-        is_uuid <- grepl("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}", x)
+        is_uuid <- grepl(paste0("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}",
+                                "-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"), x)
         results <- c(results, is_uuid)
     }
 
@@ -403,7 +412,8 @@ confirm_uuids <- function(uuids) {
 #' confirm_data_type("horse")
 #' @rdname confirm_data_type
 #' @export
-confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL) {
+confirm_data_type <- function(data_type, filter_col = NULL,
+                                filter_string = NULL) {
     ## Get allowed types
     ftable <- output_file_types()
     all_types <- ftable$data_type
@@ -411,7 +421,9 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop("'", filter_col, "' is not a column of output_files.csv. Please choose one of the following: ", print_colnames)
+            stop("'", filter_col, paste0("' is not a column of ",
+                "output_files.csv. Please choose one of the following: "),
+                print_colnames)
         }
 
         filter_ind <- TRUE
@@ -430,14 +442,14 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
     if (filter_ind) {
         if (!data_type %in% filtered_types) {
             print_filtered <- paste(filtered_types, collapse = "\n")
-            stop("'", data_type,
-                 "' is not an allowed value for this function. Please enter one of the following values:\n",
-                 print_filtered)
+            stop("'", data_type, paste0("' is not an allowed value for this ",
+                "function. Please enter one of the following values:\n"),
+                print_filtered)
         }
     } else {
         if (!data_type %in% all_types) {
-            stop("'", data_type,
-                 "' is not an allowed value for 'data_type'. Please enter a value found in output_file_types().")
+            stop("'", data_type, paste0("' is not an allowed value for ",
+            "'data_type'. Please enter a value found in output_file_types()."))
         }
     }
 }
@@ -460,7 +472,8 @@ confirm_data_type <- function(data_type, filter_col = NULL, filter_string = NULL
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' l1 <- list(uuid = "56aa2ad5-007d-407c-a644-48aac1e9a8f0", animals = c("frog", "horse"))
+#' l1 <- list(uuid = "56aa2ad5-007d-407c-a644-48aac1e9a8f0",
+#'            animals = c("frog", "horse"))
 #' l2 <- list(uuid = "blue")
 #' confirm_filter_values(l1)
 #' confirm_filter_values(l1, c("uuid", "animals", "shapes"))
@@ -485,9 +498,9 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
         for (n in names(filter_values)) {
             if (!n %in% available_features) {
                 af_message <- paste(available_features, collapse = ", ")
-                stop("'", n,
-                     "' is not an available feature. All list elements should be named one of the following:\n",
-                     af_message)
+                stop("'", n, paste0("' is not an available feature. All list ",
+                    "elements should be named one of the following:\n"),
+                    af_message)
             }
         }
     }
@@ -538,7 +551,8 @@ confirm_duckdb_con <- function(con) {
 confirm_duckdb_view <- function(view) {
     ## Check that object class is valid
     if (!methods::is(view, "tbl_duckdb_connection")) {
-        stop("Please provide a valid object of the class 'tbl_duckdb_connection'.")
+        stop(paste0("Please provide a valid object of the class ",
+                    "'tbl_duckdb_connection'."))
     }
 }
 
@@ -562,7 +576,8 @@ confirm_repo <- function(repo) {
 
     if (!is.null(repo) && !repo %in% ri$repo_name) {
         ri_message <- paste(ri$repo_name, collapse = ", ")
-        stop("Please provide one of the following valid repo names or NULL to select the default (", d, "):\n", ri_message)
+        stop(paste0("Please provide one of the following valid repo names or ",
+                    "NULL to select the default ("), d, "):\n", ri_message)
     }
 }
 
@@ -584,7 +599,8 @@ confirm_ref <- function(ref) {
 
     if (!ref %in% ri$ref_file) {
         ri_message <- paste(ri$ref_file, collapse = ", ")
-        stop("Please provide one of the following valid reference file names:\n", ri_message)
+        stop(paste0("Please provide one of the following valid reference file ",
+                    "names:\n"), ri_message)
     }
 }
 
@@ -647,10 +663,12 @@ standardize_ordering <- function(vec, delim) {
 #' @importFrom dbplyr sql_render
 #' @importFrom DBI dbGetQuery
 get_view_source <- function(con, lazy) {
-    proj_name <- stringr::str_extract(as.character(dbplyr::sql_render(lazy)), "(?<=FROM (?=[^(])).+?(?=\\n)")
+    proj_name <- stringr::str_extract(as.character(dbplyr::sql_render(lazy)),
+                                      "(?<=FROM (?=[^(])).+?(?=\\n)")
     proj_source <- DBI::dbGetQuery(con,
-                                   paste0("SELECT sql FROM duckdb_views() WHERE view_name = '",
-                                          proj_name, "';"))[1,1]
+                                   paste0("SELECT sql FROM duckdb_views() ",
+                                            "WHERE view_name = '",
+                                            proj_name, "';"))[1,1]
     proj_url <- stringr::str_extract(proj_source, "(?<=').+?(?=')")
 
     return(proj_url)

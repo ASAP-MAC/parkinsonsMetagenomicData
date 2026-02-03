@@ -110,5 +110,7 @@ custom_tse
 }
 \seealso{
 \code{\link[DBI]{dbListTables}}
-\code{\link[dplyr]{tbl}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{compute}}
+\code{\link[dplyr]{tbl}}
+\code{\link[dplyr]{filter}}
+\code{\link[dplyr]{compute}}
 }

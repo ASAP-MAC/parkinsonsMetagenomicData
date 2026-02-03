@@ -26,10 +26,10 @@ get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
     subdir <- filerow$subdir
 
     locators <- paste0("results/cMDv4/",
-                       uuids,
-                       "/",
-                       subdir,
-                       file_name)
+                        uuids,
+                        "/",
+                        subdir,
+                        file_name)
 
     return(locators)
 }
@@ -53,7 +53,8 @@ get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
 #'            redownload = "ask")
 #' }
 #' @seealso
-#'  \code{\link[googleCloudStorageR]{gcs_download_url}}, \code{\link[googleCloudStorageR]{gcs_get_object}}
+#'  \code{\link[googleCloudStorageR]{gcs_download_url}}
+#'  \code{\link[googleCloudStorageR]{gcs_get_object}}
 #'  \code{\link[BiocFileCache]{BiocFileCache-class}}
 #' @rdname cache_gcb
 #' @export
@@ -64,7 +65,8 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)
     if (!p_redown %in% allowed_redown) {
-        stop("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'")
+        stop(paste0("'", redownload, "' is not an allowed value for ",
+                    "'redownload'. Please enter 'yes', 'no', or 'ask'"))
     }
 
     ## Get cache
@@ -77,8 +79,8 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 
     ## Check if file already cached
     bfcres <- BiocFileCache::bfcquery(x = bfc,
-                                      query = locator,
-                                      field = "rname")
+                                        query = locator,
+                                        field = "rname")
 
     if (nrow(bfcres) > 0) {
         rid <- bfcres$rid[bfcres$create_time == max(bfcres$create_time)]
@@ -90,9 +92,9 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
     if (!length(rid)) {
         ## Create cache location
         newpath <- BiocFileCache::bfcnew(x = bfc,
-                                         rname = locator,
-                                         ext = get_exts(locator),
-                                         fname = "exact")
+                                        rname = locator,
+                                        ext = get_exts(locator),
+                                        fname = "exact")
         rid <- names(newpath)
 
         ## Download file
@@ -109,20 +111,25 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
     } else if (length(rid)) {
 
         if (p_redown == "a" & interactive()) {
-            over <- readline(prompt = paste0("Resource with rname = '", locator, "' found in cache. Redownload and overwrite? (yes/no): "))
+            over <- readline(prompt = paste0("Resource with rname = '", locator,
+                                             "' found in cache. Redownload and",
+                                             " overwrite? (yes/no): "))
             response <- substr(tolower(over), 1, 1)
             doit <- switch(response, y = TRUE, n = FALSE, NA)
         } else if (p_redown == "y") {
             doit <- TRUE
-            message("Resource with rname = '", locator, "' found in cache, redownloading.")
+            message(paste0("Resource with rname = '", locator,
+                           "' found in cache, redownloading."))
         } else if (p_redown == "n") {
             doit <- FALSE
-            message("Resource with rname = '", locator, "' found in cache, proceeding with most recent version.")
+            message(paste0("Resource with rname = '", locator, "' found in ",
+                            "cache, proceeding with most recent version."))
         }
 
         if (doit) {
             rpath <- BiocFileCache::bfcrpath(bfc, rids = rid)
-            googleCloudStorageR::gcs_get_object(locator, saveToDisk = rpath, overwrite = TRUE)
+            googleCloudStorageR::gcs_get_object(locator, saveToDisk = rpath,
+                                                overwrite = TRUE)
         }
     }
 
@@ -162,9 +169,9 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 #' @importFrom tibble tibble
 #' @importFrom stats setNames
 cacheMetagenomicData <- function(uuids,
-                                 data_type = "relative_abundance",
-                                 redownload = "no",
-                                 custom_cache = NULL) {
+                                data_type = "relative_abundance",
+                                redownload = "no",
+                                custom_cache = NULL) {
     ## Confirm inputs are valid
     confirm_uuids(uuids)
     confirm_data_type(data_type)
@@ -173,7 +180,8 @@ cacheMetagenomicData <- function(uuids,
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)
     if (!p_redown %in% allowed_redown) {
-        stop("'", redownload, "' is not an allowed value for 'redownload'. Please enter 'yes', 'no', or 'ask'")
+        stop(paste0("'", redownload, "' is not an allowed value for ",
+                    "'redownload'. Please enter 'yes', 'no', or 'ask'"))
     }
 
     ## Check custom_cache
@@ -204,7 +212,7 @@ cacheMetagenomicData <- function(uuids,
                 list(
                     file = NA |> stats::setNames(NA),
                     error = paste0("Unable to cache ", locators[i], ": ",
-                                   conditionMessage(e))
+                                    conditionMessage(e))
                 )
             }
         )
@@ -222,9 +230,9 @@ cacheMetagenomicData <- function(uuids,
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
     parsed_filenames <- unlist(lapply(parsed_locators,
-                                      function(x) x[length(x)]))
+                                        function(x) x[length(x)]))
     fpath <- system.file("extdata", "output_files.csv",
-                         package="parkinsonsMetagenomicData")
+                        package="parkinsonsMetagenomicData")
     ftable <- readr::read_csv(fpath, show_col_types = FALSE)
     parsed_data_types <- ftable$data_type[match(parsed_filenames,
                                                 ftable$file_name)]
@@ -260,7 +268,8 @@ cacheMetagenomicData <- function(uuids,
 #' TreeSummarizedExperiment objects.
 #' @examples
 #' \dontrun{
-#'  cache_table <- cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'  uuid <- "004c5d07-ec87-40fe-9a72-6b23d6ec584e"
+#'  cache_table <- cacheMetagenomicData(uuid = uuid,
 #'                                      data_type = "relative_abundance")
 #'  loadMetagenomicData(cache_table = cache_table)
 #' }
@@ -274,13 +283,14 @@ loadMetagenomicData <- function(cache_table) {
     if (length(missing_cols) > 0) {
         print_missing <- paste(missing_cols, collapse = "\n")
         stop("One or more columns are not present in the input data frame.\n",
-             print_missing)
+            print_missing)
     }
 
     ## Check that all data_type values are the same and valid
     data_type <- unique(cache_table$data_type)
     if (length(data_type) > 1) {
-        stop("Multiple 'data_type' values detected. Please provide a table where all rows have the same value for 'data_type'.")
+        stop(paste0("Multiple 'data_type' values detected. Please provide a ",
+                "table where all rows have the same value for 'data_type'."))
     }
     confirm_data_type(data_type)
 
@@ -292,13 +302,13 @@ loadMetagenomicData <- function(cache_table) {
     for (i in seq_len(nrow(cache_table))) {
         if (data_type %in% metaphlan_types) {
             se_list[[i]] <- parse_metaphlan_list(cache_table$uuid[i],
-                                                 cache_table$cache_path[i],
-                                                 cache_table$data_type[i])
+                                                cache_table$cache_path[i],
+                                                cache_table$data_type[i])
 
         } else if (data_type %in% humann_types) {
             se_list[[i]] <- parse_humann(cache_table$uuid[i],
-                                         cache_table$cache_path[i],
-                                         cache_table$data_type[i])
+                                        cache_table$cache_path[i],
+                                        cache_table$data_type[i])
         }
     }
     names(se_list) <- paste(cache_table$uuid, cache_table$data_type, sep = "_")
@@ -308,8 +318,8 @@ loadMetagenomicData <- function(cache_table) {
 
     ## Add sample metadata
     merged_se <- add_metadata(colnames(merged_se),
-                              id_col = "uuid",
-                              merged_se)
+                                id_col = "uuid",
+                                merged_se)
 
     return(merged_se)
 }
@@ -354,15 +364,15 @@ listMetagenomicData <- function() {
     parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
 
     parsed_data_types <- unlist(lapply(parsed_locators,
-                                       function(x) x[length(x)]))
+                                        function(x) x[length(x)]))
     parsed_shorthand <- ftable$data_type[match(parsed_data_types,
-                                               ftable$file_name)]
+                                                ftable$file_name)]
 
     data_tbl <- tibble::tibble(uuid = parsed_uuids,
-                               data_type = parsed_shorthand,
-                               gcb_object = objs$name,
-                               size = objs$size,
-                               updated = objs$updated)
+                                data_type = parsed_shorthand,
+                                gcb_object = objs$name,
+                                size = objs$size,
+                                updated = objs$updated)
     return(data_tbl)
 }
 
@@ -400,10 +410,12 @@ listMetagenomicData <- function() {
 #' @export
 #' @importFrom S4Vectors DataFrame
 #' @importFrom SummarizedExperiment colData
-add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "append") {
+add_metadata <- function(sample_ids, id_col = "uuid", experiment,
+                        method = "append") {
     ## Check that the length of sample_ids matches the number of samples
     if (length(sample_ids) != ncol(experiment)) {
-        stop("'sample_ids' has a different number of samples than 'experiment'.")
+        stop(paste0("'sample_ids' has a different number of samples than ",
+                    "'experiment'."))
     }
 
     ## Check that 'experiment' is a TreeSummarizedExperiment object
@@ -411,7 +423,8 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 
     ## Retrieve sample metadata
     if (!exists("sampleMetadata", envir = environment())) {
-        data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+        data("sampleMetadata", package = "parkinsonsMetagenomicData",
+            envir = environment())
     }
 
     meta <- sampleMetadata
@@ -420,12 +433,14 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     if (!id_col %in% colnames(meta)) {
         stop("'", id_col, "' is not a column in sampleMetadata.")
     } else if (length(unique(meta[[id_col]])) != nrow(meta)) {
-        stop("'", id_col, "' is not unique for every sample and therefore cannot be used to retrieve metadata.")
+        stop(paste0("'", id_col, "' is not unique for every sample and ",
+                    "therefore cannot be used to retrieve metadata."))
     }
 
     valid_methods <- c("append", "overwrite", "ignore")
     if (!method %in% valid_methods) {
-        stop("'", method, "' is not a valid value for 'method'. Please enter 'append', 'overwrite', or 'ignore'.")
+        stop(paste0("'", method, "' is not a valid value for 'method'. Please ",
+                    "enter 'append', 'overwrite', or 'ignore'."))
     }
 
     ## Get metadata rows based on sample ID
@@ -439,7 +454,8 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     not_duplicated <- setdiff(colnames(meta), duplicated)
     if (length(duplicated) != 0) {
         dup_message <- paste(duplicated, collapse = ", ")
-        message("Duplicate metadata columns found, will be processed according to method '", method, "':")
+        message(paste0("Duplicate metadata columns found, will be processed ",
+                        "according to method '", method, "':"))
         message(dup_message)
     }
 
@@ -457,16 +473,17 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
     return(experiment)
 }
 
-#' @title Merge TreeSummarizedExperiment objects with the same assay types together
-#' @description 'mergeExperiments' takes a list of TreeSummarizedExperiment objects
-#' with the same assays but different samples, and combines them into a single
-#' TreeSummarizedExperiment object.
-#' @param merge_list List of TreeSummarizedExperiment objects: to be merged into a
-#' single TreeSummarizedExperiment object
+#' @title Merge TreeSummarizedExperiment objects with the same assay types
+#' together
+#' @description 'mergeExperiments' takes a list of TreeSummarizedExperiment
+#' objects with the same assays but different samples, and combines them into a
+#' single TreeSummarizedExperiment object.
+#' @param merge_list List of TreeSummarizedExperiment objects: to be merged into
+#' a single TreeSummarizedExperiment object
 #' @return TreeSummarizedExperiment object with multiple samples
-#' @details The assays contained in the TreeSummarizedExperiments to be merged must
-#' be of the same type (i.e. have the same name) and be in the same order if
-#' there are multiple assays.
+#' @details The assays contained in the TreeSummarizedExperiments to be merged
+#' must be of the same type (i.e. have the same name) and be in the same order
+#' if there are multiple assays.
 #' @examples
 #' fpath <- file.path(system.file("extdata",
 #'                                package = "parkinsonsMetagenomicData"),
@@ -476,12 +493,15 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment, method = "appe
 #' mergeExperiments(sample_experiment_list)
 #' @seealso
 #'  \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
-#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #'  \code{\link[tibble]{rownames}}
-#'  \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
+#'  \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}
+#'  \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
 #'  \code{\link[tidyselect]{everything}}
 #'  \code{\link[tidyr]{replace_na}}
-#'  \code{\link[S4Vectors]{SimpleList-class}}, \code{\link[S4Vectors]{DataFrame-class}}
+#'  \code{\link[S4Vectors]{SimpleList-class}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[magrittr]{extract}}
 #' @rdname mergeExperiments
 #' @export
@@ -501,7 +521,8 @@ mergeExperiments <- function(merge_list) {
 
     for (i in seq_along(merge_list)) {
         if (!methods::is(merge_list[[i]], "TreeSummarizedExperiment")) {
-            stop("The list item at index = ", i, " is not a TreeSummarizedExperiment object.")
+            stop(paste0("The list item at index = ", i, " is not a ",
+                        "TreeSummarizedExperiment object."))
         }
     }
 
@@ -511,7 +532,8 @@ mergeExperiments <- function(merge_list) {
         unique()
 
     if (length(assay_names) != 1) {
-        stop("'merge_list' contains multiple assay types, please provide a list where all assays match in type and order.")
+        stop(paste0("'merge_list' contains multiple assay types, please ",
+                    "provide a list where all assays match in type and order."))
     }
 
     ## Merge assays
@@ -560,8 +582,9 @@ mergeExperiments <- function(merge_list) {
         S4Vectors::DataFrame()
 
     ## Reformat as TreeSummarizedExperiment
-    se <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = assay_list,
-                                                             rowData = rowData,
-                                                             colData = colData)
+    se <- TreeSummarizedExperiment::TreeSummarizedExperiment(
+                                                            assays = assay_list,
+                                                            rowData = rowData,
+                                                            colData = colData)
     return(se)
 }

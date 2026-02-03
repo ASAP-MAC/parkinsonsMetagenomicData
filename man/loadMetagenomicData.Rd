@@ -30,7 +30,8 @@ TreeSummarizedExperiment objects.
 }
 \examples{
 \dontrun{
- cache_table <- cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+ uuid <- "004c5d07-ec87-40fe-9a72-6b23d6ec584e"
+ cache_table <- cacheMetagenomicData(uuid = uuid,
                                      data_type = "relative_abundance")
  loadMetagenomicData(cache_table = cache_table)
 }

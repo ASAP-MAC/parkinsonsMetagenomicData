@@ -58,9 +58,11 @@ se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
 se
 }
 \seealso{
-\code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{select}}
+\code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}
+\code{\link[dplyr]{select}}
 \code{\link[tidyr]{pivot_wider}}
 \code{\link[tibble]{rownames}}
 \code{\link[S4Vectors]{DataFrame-class}}
-\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}, \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+\code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }
