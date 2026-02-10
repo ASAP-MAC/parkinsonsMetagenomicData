@@ -136,13 +136,9 @@ view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
 #' @export
 retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     ## Check input
-    # con
+    # con, repo, data_types
     confirm_duckdb_con(con)
-
-    # repo
     confirm_repo(repo)
-
-    # data_types
     for (dt in data_types) confirm_data_type(dt)
 
     ## Get repo information
@@ -471,12 +467,10 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 parquet_to_tse <- function(parquet_table, data_type,
                             empty_data = NULL, clean_meta = TRUE) {
     ## Check input
-    # parquet_table
+    # parquet_table, data_type
     if (!is.data.frame(parquet_table)) {
         stop("'parquet_table' should be a data.frame.")
     }
-
-    # data_type
     confirm_data_type(data_type)
 
     ## Load sampleMetadata
@@ -741,29 +735,21 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
                             custom_view = NULL, include_empty_samples = FALSE,
                             dry_run = FALSE) {
     ## Check input
-    # con
+    # con, data_type, filter_values, custom_view, include_empty_samples
     confirm_duckdb_con(con)
-
-    # data_type
     confirm_data_type(data_type)
-
-    # filter_values
     if (!is.null(filter_values)) {
         confirm_filter_values(filter_values)
     }
-
-    # custom_view
     if (!is.null(custom_view)) {
         confirm_duckdb_view(custom_view)
     }
-
-    # include_empty_samples
     if (!methods::is(include_empty_samples, "logical")) {
         stop(paste0("Invalid value of 'include_empty_samples'. Please provide ",
                     "TRUE or FALSE."))
     } else if (include_empty_samples && !"uuid" %in% names(filter_values)) {
-        #message(paste0("'include_empty_samples' is TRUE but 'filter_values' ",
-        #                "does not contain a UUID argument."))
+        message(paste0("'include_empty_samples' is TRUE but 'filter_values' ",
+                        "does not contain a UUID argument."))
     }
 
     ## Apply any requested filtering, incorporating custom view if provided
@@ -943,33 +929,10 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
                             repo = NULL, local_files = NULL,
                             include_empty_samples = TRUE, dry_run = FALSE) {
     ## Check input
-    # repo
+    # repo, data_type, sample_data, feature_data
     confirm_repo(repo)
-
-    # data_type
     confirm_data_type(data_type)
-
-    # sample_data
-    if (!is.null(sample_data)) {
-        if (!is.data.frame(sample_data)) {
-            stop("'sample_data' should be a data.frame.")
-        } else if (!"uuid" %in% colnames(sample_data)) {
-            message(paste0("'sample_data' does not have a 'uuid' column, all ",
-                            "samples will be returned."))
-        }
-    }
-
-    # feature_data
-    if (!is.null(feature_data)) {
-        if (!is.data.frame(feature_data)) {
-            stop("'feature_data' should be a data.frame.")
-        }
-    }
-
-    if (is.null(sample_data) & is.null(feature_data)) {
-        message(paste0("No 'sample_data' or 'feature_data' provided, all data ",
-                        "will be returned."))
-    }
+    confirm_sample_feature_data(sample_data, feature_data)
 
     ## Create database connection and load views
     con <- accessParquetData(repo = repo, local_files = local_files,
@@ -977,7 +940,6 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
 
     ## Convert sample_data and feature_data to filter_values
     filter_values <- list()
-
     if (!is.null(feature_data)) {
         # Retrieve available projections
         projs <- DBI::dbListTables(con) |>
@@ -1281,7 +1243,7 @@ load_ref <- function(ref, repo = NULL, file_path = NULL) {
 
     if (is.null(repo)) {
         ri <- get_repo_info()
-        default_repo <- ri$repo_name[ri$default == "Y"]
+        repo <- ri$repo_name[ri$default == "Y"]
     }
 
     ## retrieve URL
