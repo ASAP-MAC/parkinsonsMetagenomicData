@@ -506,6 +506,52 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
     }
 }
 
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param sample_data PARAM_DESCRIPTION
+#' @param feature_data PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' sample_data <- data.frame(id = c(1, 2, 3),
+#'                           color = c("red", "blue", "yellow"))
+#' feature_data <- data.frame(phylum = c("Actinobacteria", "Actinobacteria",
+#'                                       "Firmicutes"),
+#'                            class = c("Actinomycetia", "Coriobacteriia",
+#'                                      "Clostridia"))
+#' confirm_sample_feature_data(sample_data, feature_data)
+#' sample_data$uuid <- c("a1", "b2", "c3")
+#' confirm_sample_feature_data(sample_data, feature_data)
+#' confirm_sample_feature_data(sample_data, "features")
+#' confirm_sample_feature_data(NULL, feature_data)
+#' confirm_sample_feature_data(NULL, NULL)
+#' @rdname confirm_sample_feature_data
+#' @export
+confirm_sample_feature_data <- function(sample_data, feature_data) {
+    ## Check that sample_data is a data frame that contains a 'uuid' column
+    if (!is.null(sample_data)) {
+        if (!is.data.frame(sample_data)) {
+            stop("'sample_data' should be a data.frame.")
+        } else if (!"uuid" %in% colnames(sample_data)) {
+            message(paste0("'sample_data' does not have a 'uuid' column, all ",
+                           "samples will be returned."))
+        }
+    }
+
+    ## Check that feature_data is a data frame
+    if (!is.null(feature_data)) {
+        if (!is.data.frame(feature_data)) {
+            stop("'feature_data' should be a data.frame.")
+        }
+    }
+
+    ## Warn if neither sample_data nor feature_data is provided
+    if (is.null(sample_data) & is.null(feature_data)) {
+        message(paste0("No 'sample_data' or 'feature_data' provided, all data ",
+                       "will be returned."))
+    }
+}
+
 #' @title Validate DuckDB connection argument
 #' @description 'confirm_duckdb_con' checks that an object is a valid DuckDB
 #' connection object.
