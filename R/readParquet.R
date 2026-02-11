@@ -1241,14 +1241,14 @@ load_ref <- function(ref, repo = NULL, file_path = NULL) {
     # repo
     confirm_repo(repo)
 
-    if (is.null(repo)) {
+    if (is.null(repo) & is.null(file_path)) {
         ri <- get_repo_info()
         repo <- ri$repo_name[ri$default == "Y"]
     }
 
     ## retrieve URL
     if (!is.null(repo)) {
-        rurl <- get_hf_parquet_urls(default_repo, verbose = FALSE) |>
+        rurl <- get_hf_parquet_urls(repo, verbose = FALSE) |>
             dplyr::filter(.data$data_type == "reference") |>
             dplyr::filter(.data$filename == paste0(ref, ".parquet")) |>
             dplyr::pull(url)
