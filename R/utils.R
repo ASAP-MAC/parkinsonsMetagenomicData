@@ -362,6 +362,50 @@ get_exts <- function(file_path) {
     return(exts)
 }
 
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param con PARAM_DESCRIPTION
+#' @param data_type PARAM_DESCRIPTION
+#' @param sample_data PARAM_DESCRIPTION
+#' @param feature_data PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[DBI]{dbListTables}}
+#' @rdname convert_to_filter_values
+#' @export
+#' @importFrom DBI dbListTables
+convert_to_filter_values <- function(con, data_type, sample_data,
+                                    feature_data) {
+    ## Convert sample_data and feature_data to filter_values
+    filter_values <- list()
+    if (!is.null(feature_data)) {
+        # Retrieve available projections
+        projs <- DBI::dbListTables(con) |>
+            gsub(pattern = paste0(data_type, "_"), replacement = "")
+
+        # Determine primary filter column and values
+        fcols <- colnames(feature_data)
+
+        fsets <- vector(mode = "list", length = length(fcols))
+        for (i in seq_along(fcols)) {
+            cur_col <- fcols[i]
+            names(fsets)[i] <- cur_col
+            fsets[i] <- as.vector(unique(feature_data[,cur_col]))
+        }
+
+        filter_values <- c(filter_values, fsets)
+    }
+
+    return(filter_values)
+}
+
 #' @title Validate UUIDs
 #' @description 'confirm_uuids' checks that a single string or vector of strings
 #' are valid UUIDs.
@@ -648,6 +692,199 @@ confirm_ref <- function(ref) {
         stop(paste0("Please provide one of the following valid reference file ",
                     "names:\n"), ri_message)
     }
+}
+
+#' @title Pull the individual column roles from parquet_colinfo() output
+#' @description 'find_tse_cols' saves space by organizing all column roles into
+#' a single list object.
+#' @param colinfo Dataframe: output from parquet_colinfo()
+#' @return A list of names of the columns marked as the following roles: cname,
+#' cdata, rname, rdata, and assay
+#' @examples
+#' find_tse_cols(parquet_colinfo("pathcoverage_unstratified"))
+#' @rdname find_tse_cols
+#' @export
+find_tse_cols <- function(colinfo) {
+    ## Get columns for each se_role value
+    cnames_col <- colinfo$col_name[colinfo$se_role == "cname"]
+    cdata_cols <- colinfo$col_name[colinfo$se_role == "cdata"]
+    rnames_col <- colinfo$col_name[colinfo$se_role == "rname"]
+    rdata_cols <- colinfo$col_name[colinfo$se_role == "rdata"]
+    assay_cols <- colinfo$col_name[colinfo$se_role == "assay"]
+
+    ## Combine into list
+    collist <- list(cnames_col = cnames_col, cdata_cols = cdata_cols,
+                    rnames_col = rnames_col, rdata_cols = rdata_cols,
+                    assay_cols = assay_cols)
+
+    return(collist)
+}
+
+#' @title Build SummarizedExperiment assay tables
+#' @description 'build_tse_assays' takes
+#' @param assay_cols Character vector: column(s) that indicate an assay
+#' @param rnames_col Character string: column that supplies row names
+#' @param cnames_col Character string: column that supplies column names
+#' @param esamps Character vector: IDs of requested samples not present in
+#' parquet_table. Default: NULL
+#' @param parquet_table Table or data frame: data taken directly from a parquet
+#' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
+#' @return A list of assay tables compatible with the SummarizedExperiment
+#' format
+#' @examples
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+#'
+#' atab <- build_tse_assays(assay_cols = "coverage",
+#'                          rnames_col = "pathway",
+#'                          cnames_col = "uuid",
+#'                          parquet_table = parquet_tbl)
+#' @seealso
+#'  \code{\link[tidyselect]{all_of}}
+#'  \code{\link[tidyr]{pivot_wider}}
+#'  \code{\link[tibble]{rownames}}
+#' @rdname build_tse_assays
+#' @export
+#' @importFrom tidyselect all_of
+#' @importFrom tidyr pivot_wider
+#' @importFrom tibble column_to_rownames
+build_tse_assays <- function(assay_cols, rnames_col, cnames_col, esamps = NULL,
+                            parquet_table) {
+    alist <- lapply(assay_cols, function(acol) {
+        ## Select columns relevant to assay tables and format
+        pdata <- parquet_table %>%
+            select(tidyselect::all_of(c(rnames_col, acol, "uuid"))) %>%
+            tidyr::pivot_wider(
+                names_from  = tidyselect::all_of(cnames_col),
+                values_from = tidyselect::all_of(acol),
+                values_fill = 0
+            ) %>%
+            tibble::column_to_rownames({{rnames_col}}) %>%
+            as.matrix()
+
+        ## Add data from "empty samples" if provided
+        edata <- matrix(NA, nrow(pdata), length(esamps),
+                        dimnames = list(NULL, esamps))
+
+        cbind(pdata, edata)
+    })
+    names(alist) <- assay_cols
+
+    return(alist)
+}
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param empty_data PARAM_DESCRIPTION
+#' @param esamps PARAM_DESCRIPTION
+#' @param cnames_col PARAM_DESCRIPTION
+#' @param cdata_cols PARAM_DESCRIPTION
+#' @param parquet_table PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[tidyselect]{all_of}}
+#'  \code{\link[dplyr]{distinct}}, \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{join_by}}
+#' @rdname build_tse_coldata
+#' @export
+#' @importFrom tidyselect any_of
+#' @importFrom dplyr distinct left_join join_by
+build_tse_coldata <- function(empty_data, esamps, cnames_col, cdata_cols,
+                            parquet_table) {
+    if (!is.null(empty_data)) {
+        etab <- empty_data %>%
+            filter(.data$uuid %in% esamps) %>%
+            select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
+            as.data.frame()
+    }
+
+    cdata <- parquet_table %>%
+        select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
+        dplyr::distinct() %>%
+        as.data.frame()
+
+    if (exists("etab")) {
+        cdata <- rbind(cdata, etab)
+    }
+
+    cdata <- cdata %>%
+        dplyr::left_join(sampleMetadata, dplyr::join_by("uuid"))
+    rownames(cdata) <- cdata[[cnames_col]]
+
+    return(cdata)
+}
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param parquet_table PARAM_DESCRIPTION
+#' @param rnames_col PARAM_DESCRIPTION
+#' @param rdata_cols PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso
+#'  \code{\link[tidyselect]{all_of}}
+#'  \code{\link[dplyr]{distinct}}
+#' @rdname build_tse_rowdata
+#' @export
+#' @importFrom tidyselect any_of
+#' @importFrom dplyr distinct
+build_tse_rowdata <- function(parquet_table, rnames_col, rdata_cols) {
+    rdata <- parquet_table %>%
+        select(tidyselect::any_of(c(rnames_col, rdata_cols))) %>%
+        dplyr::distinct() %>%
+        as.data.frame()
+    rownames(rdata) <- rdata[[rnames_col]]
+
+    return(rdata)
+}
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param rdata PARAM_DESCRIPTION
+#' @param cdata PARAM_DESCRIPTION
+#' @param alist PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname order_tse_elements
+#' @export
+order_tse_elements <- function(rdata, cdata, alist) {
+    rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
+    colids <- intersect(rownames(cdata), unlist(lapply(alist, colnames)))
+
+    rdata <- rdata[rowids,, drop = FALSE]
+    cdata <- cdata[colids,, drop = FALSE]
+    alist <- lapply(alist, function(x) x[rowids, colids, drop = FALSE])
+
+    combined <- list(rdata = rdata, cdata = cdata, alist = alist)
+
+    return(combined)
 }
 
 #' @title Standardize the order of a vector of delimited strings

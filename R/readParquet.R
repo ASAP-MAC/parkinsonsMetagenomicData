@@ -441,7 +441,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #'                                   package = "parkinsonsMetagenomicData"),
 #'                       "pathcoverage_unstratified_pathway.parquet"))
 #'
-#' con <- accessParquetData(local_files = fpath,
+#' con <- accessParquetData(local_files = fpaths,
 #'                          data_types = "pathcoverage_unstratified")
 #'
 #' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
@@ -449,25 +449,16 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
 #' se
 #' @seealso
-#'  \code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}
-#'  \code{\link[dplyr]{select}}
-#'  \code{\link[tidyr]{pivot_wider}}
-#'  \code{\link[tibble]{rownames}}
-#'  \code{\link[S4Vectors]{DataFrame-class}}
+#'  \code{\link[dplyr]{pull}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parquet_to_tse
 #' @export
-#' @importFrom dplyr rowwise mutate select
-#' @importFrom tidyr pivot_wider
-#' @importFrom tibble column_to_rownames
-#' @importFrom S4Vectors DataFrame
+#' @importFrom dplyr pull
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
-#' @importFrom tidyselect any_of all_of
 parquet_to_tse <- function(parquet_table, data_type,
                             empty_data = NULL, clean_meta = TRUE) {
-    ## Check input
-    # parquet_table, data_type
+    ## Check input: parquet_table, data_type
     if (!is.data.frame(parquet_table)) {
         stop("'parquet_table' should be a data.frame.")
     }
@@ -480,13 +471,7 @@ parquet_to_tse <- function(parquet_table, data_type,
     }
 
     ## Get parameters by data type
-    colinfo <- parquet_colinfo(data_type)
-
-    cnames_col <- colinfo$col_name[colinfo$se_role == "cname"]
-    cdata_cols <- colinfo$col_name[colinfo$se_role == "cdata"]
-    rnames_col <- colinfo$col_name[colinfo$se_role == "rname"]
-    rdata_cols <- colinfo$col_name[colinfo$se_role == "rdata"]
-    assay_cols <- colinfo$col_name[colinfo$se_role == "assay"]
+    cs <- find_tse_cols(parquet_colinfo(data_type))
 
     ## Account for row ordering issues
     if ("additional_species" %in% colnames(parquet_table)) {
@@ -496,72 +481,26 @@ parquet_to_tse <- function(parquet_table, data_type,
 
     ## Confirm empty samples
     esamps <- setdiff(empty_data$uuid,
-                        unique(dplyr::pull(parquet_table[,cnames_col])))
+                        unique(dplyr::pull(parquet_table[,cs$cnames_col])))
 
-    ## Create rowData table
-    rdata <- parquet_table %>%
-        select(tidyselect::any_of(c(rnames_col, rdata_cols))) %>%
-        dplyr::distinct() %>%
-        as.data.frame()
-    rownames(rdata) <- rdata[[rnames_col]]
+    ## Create assay, rowData, and colData tables
+    rdata <- build_tse_rowdata(parquet_table, cs$rnames_col, cs$rdata_cols)
+    alist <- build_tse_assays(cs$assay_cols, cs$rnames_col, cs$cnames_col,
+                                esamps, parquet_table)
+    cdata <- build_tse_coldata(cs$empty_data, esamps, cs$cnames_col,
+                                cs$cdata_cols, parquet_table)
 
-    ## Create assay table(s)
-    alist <- lapply(assay_cols, function(acol) {
-        pdata <- parquet_table %>%
-            select(tidyselect::all_of(c(rnames_col, acol, "uuid"))) %>%
-            tidyr::pivot_wider(
-                names_from  = tidyselect::all_of(cnames_col),
-                values_from = tidyselect::all_of(acol),
-                values_fill = 0
-            ) %>%
-        tibble::column_to_rownames({{rnames_col}}) %>%
-        as.matrix()
-
-        edata <- matrix(NA, nrow(pdata), length(esamps),
-                        dimnames = list(NULL, esamps))
-
-        cbind(pdata, edata)
-    })
-    names(alist) <- assay_cols
-
-    ## Create colData table with sampleMetadata added
-    if (!is.null(empty_data)) {
-        etab <- empty_data %>%
-            filter(.data$uuid %in% esamps) %>%
-            select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
-            as.data.frame()
-    }
-
-    cdata <- parquet_table %>%
-        select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
-        dplyr::distinct() %>%
-        as.data.frame()
-
-    if (exists("etab")) {
-        cdata <- rbind(cdata, etab)
-    }
-
-    cdata <- cdata %>%
-        dplyr::left_join(sampleMetadata, dplyr::join_by("uuid"))
-    rownames(cdata) <- cdata[[cnames_col]]
-
-    # Remove columns with >90% NA
-    if (clean_meta) {
-        cdata <- cdata[colMeans(is.na(cdata)) <= 0.9]
-    }
+    ## Remove columns with >90% NA
+    if (clean_meta) { cdata <- cdata[colMeans(is.na(cdata)) <= 0.9] }
 
     ## Confirm rows and columns are in the same order
-    rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
-    colids <- intersect(rownames(cdata), unlist(lapply(alist, colnames)))
-
-    rdata <- rdata[rowids,, drop = FALSE]
-    cdata <- cdata[colids,, drop = FALSE]
-    alist <- lapply(alist, function(x) x[rowids, colids, drop = FALSE])
+    ordered_elements <- order_tse_elements(rdata, cdata, alist)
 
     ## Create and return Summarized Experiment object
-    ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(assays = alist,
-                                                    rowData = DataFrame(rdata),
-                                                    colData = DataFrame(cdata))
+    ex <- TreeSummarizedExperiment::TreeSummarizedExperiment(
+                                    assays = ordered_elements$alist,
+                                    rowData = DataFrame(ordered_elements$rdata),
+                                    colData = DataFrame(ordered_elements$cdata))
 
     return(ex)
 }
@@ -921,10 +860,10 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'                           include_empty_samples = FALSE)
 #' genus_ex
 #' @seealso
-#'  \code{\link[DBI]{dbListTables}}, \code{\link[DBI]{dbDisconnect}}
+#'  \code{\link[DBI]{dbDisconnect}}
 #' @rdname returnSamples
 #' @export
-#' @importFrom DBI dbListTables dbDisconnect
+#' @importFrom DBI dbDisconnect
 returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
                             repo = NULL, local_files = NULL,
                             include_empty_samples = TRUE, dry_run = FALSE) {
@@ -939,25 +878,8 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
                             data_types = data_type)
 
     ## Convert sample_data and feature_data to filter_values
-    filter_values <- list()
-    if (!is.null(feature_data)) {
-        # Retrieve available projections
-        projs <- DBI::dbListTables(con) |>
-            gsub(pattern = paste0(data_type, "_"),
-                replacement = "")
-
-        # Determine primary filter column and values
-        fcols <- colnames(feature_data)
-
-        fsets <- vector(mode = "list", length = length(fcols))
-        for (i in seq_along(fcols)) {
-            cur_col <- fcols[i]
-            names(fsets)[i] <- cur_col
-            fsets[i] <- as.vector(unique(feature_data[,cur_col]))
-        }
-
-        filter_values <- c(filter_values, fsets)
-    }
+    filter_values <- convert_to_filter_values(con, data_type, sample_data,
+                                                feature_data)
 
     if (!is.null(sample_data)) {
         # Add sample uuids
