@@ -362,20 +362,65 @@ get_exts <- function(file_path) {
     return(exts)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param con PARAM_DESCRIPTION
-#' @param data_type PARAM_DESCRIPTION
-#' @param sample_data PARAM_DESCRIPTION
-#' @param feature_data PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @title Convert sample and feature metadata tables to a 'filter_values' list
+#' @description 'convert_to_filter_values' converts two tables containing sample
+#' and feature metadata to a list of the features and values that will be most
+#' useful to use as filters. This list format is used for the 'filter_values'
+#' argument in a number of readParquet.R functions.
+#' @param con DuckDB connection object of class 'duckdb_connection'
+#' @param data_type Single string: value found in the data_type' column of
+#' output_file_types() and also as part of the name of a view found in
+#' DBI::dbListTables(con), indicating which views to consider when collecting
+#' data.
+#' @param sample_data Data frame: a table of sample metadata with a 'uuid'
+#' column. Often created by accessing 'data(sampleMetadata)' and filtering or
+#' otherwise transforming the result to only include samples of interest.
+#' @param feature_data Data frame: a table of feature data. Each column will
+#' become a filtering argument. Often created by accessing one of the files
+#' listed in 'get_ref_info()' with 'load_ref()', then filtering or otherwise
+#' transforming the result to only include feature combinations of interest.
+#' @return Named list: element name equals the column name to be
+#' filtered and element value equals a vector of exact column values.
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
+#' if (!exists("sampleMetadata", envir = environment())) {
+#'     data("sampleMetadata", package = "parkinsonsMetagenomicData",
+#'     envir = environment())
 #' }
+#'
+#' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'            "fb7e8210-002a-4554-b265-873c4003e25f",
+#'            "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'            "4985aa08-6138-4146-8ae3-952716575395",
+#'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+#'
+#' sample_data <- sampleMetadata %>%
+#'     filter(uuid %in% uuids) %>%
+#'     select(where(~ !any(is.na(.x))))
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' refpath <- file.path(system.file("extdata",
+#'                                  package = "parkinsonsMetagenomicData"),
+#'                      "pathway_ref.parquet")
+#'
+#' pathway_ref <- load_ref("pathway_ref", file_path = refpath)
+#' feature_data_genus <- pathway_ref %>%
+#'     dplyr::filter(grepl("Faecalibacterium", pathway_genus)) %>%
+#'     dplyr::select(pathway_uniref) %>%
+#'     dplyr::rename(pathway = pathway_uniref)
+#'
+#' convert_to_filter_values(con = con, data_type = "pathcoverage_unstratified",
+#'                          sample_data = sample_data,
+#'                          feature_data = feature_data_genus)
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}
 #' @rdname convert_to_filter_values
@@ -721,14 +766,16 @@ find_tse_cols <- function(colinfo) {
 }
 
 #' @title Build SummarizedExperiment assay tables
-#' @description 'build_tse_assays' takes
+#' @description 'build_tse_assays' takes a number of pieces that are used to
+#' create assay tables consistent with the SummarizedExperiment data type and
+#' derivatives.
 #' @param assay_cols Character vector: column(s) that indicate an assay
 #' @param rnames_col Character string: column that supplies row names
 #' @param cnames_col Character string: column that supplies column names
-#' @param esamps Character vector: IDs of requested samples not present in
-#' parquet_table. Default: NULL
 #' @param parquet_table Table or data frame: data taken directly from a parquet
 #' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
+#' @param esamps Character vector: IDs of requested samples not present in
+#' parquet_table. Default: NULL
 #' @return A list of assay tables compatible with the SummarizedExperiment
 #' format
 #' @examples
@@ -747,7 +794,9 @@ find_tse_cols <- function(colinfo) {
 #' atab <- build_tse_assays(assay_cols = "coverage",
 #'                          rnames_col = "pathway",
 #'                          cnames_col = "uuid",
-#'                          parquet_table = parquet_tbl)
+#'                          parquet_table = parquet_tbl,
+#'                          esamps = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
+#'                                     "88a4d532-64fa-414c-b3d0-f02b291341c0"))
 #' @seealso
 #'  \code{\link[tidyselect]{all_of}}
 #'  \code{\link[tidyr]{pivot_wider}}
@@ -757,8 +806,8 @@ find_tse_cols <- function(colinfo) {
 #' @importFrom tidyselect all_of
 #' @importFrom tidyr pivot_wider
 #' @importFrom tibble column_to_rownames
-build_tse_assays <- function(assay_cols, rnames_col, cnames_col, esamps = NULL,
-                            parquet_table) {
+build_tse_assays <- function(assay_cols, rnames_col, cnames_col, parquet_table,
+                            esamps = NULL) {
     alist <- lapply(assay_cols, function(acol) {
         ## Select columns relevant to assay tables and format
         pdata <- parquet_table %>%
@@ -782,30 +831,55 @@ build_tse_assays <- function(assay_cols, rnames_col, cnames_col, esamps = NULL,
     return(alist)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param empty_data PARAM_DESCRIPTION
-#' @param esamps PARAM_DESCRIPTION
-#' @param cnames_col PARAM_DESCRIPTION
-#' @param cdata_cols PARAM_DESCRIPTION
-#' @param parquet_table PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @title Build SummarizedExperiment colData table
+#' @description 'build_tse_coldata' takes a number of pieces that are used to
+#' create a colData table consistent with the SummarizedExperiment data type and
+#' derivatives.
+#' @param cnames_col Character string: column that supplies column names
+#' @param cdata_cols Character string: column(s) that indicate colData
+#' @param parquet_table Table or data frame: data taken directly from a parquet
+#' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
+#' @param esamps Character vector: IDs of requested samples not present in
+#' parquet_table. Default: NULL
+#' @param empty_data Table or data frame (optional): data on samples not
+#' included in parquet_table. Default: NULL
+#' @return A colData table compatible with the SummarizedExperiment format
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+#'
+#' edat <- data.frame(uuid = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
+#'                             "88a4d532-64fa-414c-b3d0-f02b291341c0"),
+#'                    humann_header = c("# Pathway\tout_Coverage",
+#'                                      "# Pathway\tout_Coverage"))
+#'
+#' cdat <- build_tse_coldata(cnames_col = "uuid",
+#'                           cdata_cols = "humann_header",
+#'                           parquet_table = parquet_table,
+#'                           esamps = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
+#'                                      "88a4d532-64fa-414c-b3d0-f02b291341c0"),
+#'                           empty_data = edat)
 #' @seealso
 #'  \code{\link[tidyselect]{all_of}}
-#'  \code{\link[dplyr]{distinct}}, \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{join_by}}
+#'  \code{\link[dplyr]{distinct}}
+#'  \code{\link[dplyr]{mutate-joins}}
+#'  \code{\link[dplyr]{join_by}}
 #' @rdname build_tse_coldata
 #' @export
 #' @importFrom tidyselect any_of
 #' @importFrom dplyr distinct left_join join_by
-build_tse_coldata <- function(empty_data, esamps, cnames_col, cdata_cols,
-                            parquet_table) {
+build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
+                                esamps = NULL, empty_data = NULL) {
+    ## Check if empty data was supplied and pull relevant columns if so
     if (!is.null(empty_data)) {
         etab <- empty_data %>%
             filter(.data$uuid %in% esamps) %>%
@@ -813,15 +887,18 @@ build_tse_coldata <- function(empty_data, esamps, cnames_col, cdata_cols,
             as.data.frame()
     }
 
+    ## Select relevant info from main parquet table
     cdata <- parquet_table %>%
         select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
         dplyr::distinct() %>%
         as.data.frame()
 
+    ## Combine
     if (exists("etab")) {
         cdata <- rbind(cdata, etab)
     }
 
+    ## Add sample metadata
     cdata <- cdata %>%
         dplyr::left_join(sampleMetadata, dplyr::join_by("uuid"))
     rownames(cdata) <- cdata[[cnames_col]]
@@ -829,19 +906,32 @@ build_tse_coldata <- function(empty_data, esamps, cnames_col, cdata_cols,
     return(cdata)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param parquet_table PARAM_DESCRIPTION
-#' @param rnames_col PARAM_DESCRIPTION
-#' @param rdata_cols PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @title Build SummarizedExperiment rowData table
+#' @description 'build_tse_rowdata' takes a number of pieces that are used to
+#' create a rowData table consistent with the SummarizedExperiment data type and
+#' derivatives.
+#' @param parquet_table Table or data frame: data taken directly from a parquet
+#' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
+#' @param rnames_col Character string: column that supplies row names
+#' @param cdata_cols Character string: column(s) that indicate rowData
+#' @return A rowData table compatible with the SummarizedExperiment format
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+#'
+#' rdat <- build_tse_rowdata(parquet_table = parquet_table,
+#'                           rnames_col = "pathway",
+#'                           rdata_cols = c("pathway_uniref", "pathway_genus",
+#'                                          "pathway_species"))
 #' @seealso
 #'  \code{\link[tidyselect]{all_of}}
 #'  \code{\link[dplyr]{distinct}}
@@ -859,29 +949,52 @@ build_tse_rowdata <- function(parquet_table, rnames_col, rdata_cols) {
     return(rdata)
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param rdata PARAM_DESCRIPTION
-#' @param cdata PARAM_DESCRIPTION
-#' @param alist PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @title Confirm that SummarizedExperiment rowData, colData, and assays have
+#' the same row/column orders
+#' @description 'order_tse_elements' is a precaution to make sure that all
+#' SummarizedExperiment elements are ordered the same.
+#' @param rdata Table: SummarizedExperiment rowData
+#' @param cdata Table: SummarizedExperiment colData
+#' @param alist List of tables: SummarizedExperiment assays
+#' @return List of three elements: a rowData table, a colData table, and a list
+#' of assay tables
 #' @examples
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' rdata <- build_tse_rowdata(parquet_table = parquet_table,
+#'                           rnames_col = "pathway",
+#'                           rdata_cols = c("pathway_uniref", "pathway_genus",
+#'                                          "pathway_species"))
+#' cdata <- build_tse_coldata(cnames_col = "uuid",
+#'                           cdata_cols = "humann_header",
+#'                           parquet_table = parquet_table)
+#' alist <- build_tse_assays(assay_cols = "coverage",
+#'                          rnames_col = "pathway",
+#'                          cnames_col = "uuid",
+#'                          parquet_table = parquet_tbl)
+#'
+#' ordered <- order_tse_elements(rdata, cdata, alist)
 #' @rdname order_tse_elements
 #' @export
 order_tse_elements <- function(rdata, cdata, alist) {
+    ## Get rows that exist in both rowData/colData and assays
     rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
     colids <- intersect(rownames(cdata), unlist(lapply(alist, colnames)))
 
+    ## Order rowData, colData, and assays the same
     rdata <- rdata[rowids,, drop = FALSE]
     cdata <- cdata[colids,, drop = FALSE]
     alist <- lapply(alist, function(x) x[rowids, colids, drop = FALSE])
 
+    ## Package for return
     combined <- list(rdata = rdata, cdata = cdata, alist = alist)
 
     return(combined)

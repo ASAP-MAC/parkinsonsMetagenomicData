@@ -486,9 +486,9 @@ parquet_to_tse <- function(parquet_table, data_type,
     ## Create assay, rowData, and colData tables
     rdata <- build_tse_rowdata(parquet_table, cs$rnames_col, cs$rdata_cols)
     alist <- build_tse_assays(cs$assay_cols, cs$rnames_col, cs$cnames_col,
-                                esamps, parquet_table)
-    cdata <- build_tse_coldata(cs$empty_data, esamps, cs$cnames_col,
-                                cs$cdata_cols, parquet_table)
+                                parquet_table, esamps)
+    cdata <- build_tse_coldata(cs$cnames_col, cs$cdata_cols, parquet_table,
+                                esamps, cs$empty_data)
 
     ## Remove columns with >90% NA
     if (clean_meta) { cdata <- cdata[colMeans(is.na(cdata)) <= 0.9] }
