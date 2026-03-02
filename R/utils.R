@@ -234,6 +234,60 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
     return(cview)
 }
 
+prepare_view <- function(con, data_type, filter_values, custom_view,
+                         include_empty_samples) {
+    sample_headers <- NULL
+    if (!is.null(filter_values)) {
+        if (!is.null(custom_view)) {
+            working_view <- filter_parquet_view(custom_view, filter_values)
+        } else {
+            working_view <- interpret_and_filter(con, data_type, filter_values)
+
+            if ("uuid" %in% names(filter_values) && include_empty_samples) {
+                sample_headers <- get_cdata_only(con, data_type,
+                                                 filter_values$uuid)
+                full_empties <- setdiff(filter_values$uuid, sample_headers$uuid)
+                emat <- as.data.frame(matrix(nrow = length(full_empties),
+                                             ncol = ncol(sample_headers),
+                                             dimnames = list(c(),
+                                                             colnames(sample_headers))))
+                emat$uuid <- full_empties
+                sample_headers <- rbind(sample_headers, emat)
+            }
+        }
+    } else {
+        if (!is.null(custom_view)) {
+            working_view <- custom_view
+        } else {
+            proj <- pick_projection(con, data_type)
+            working_view <- tbl(con, proj)
+        }
+    }
+
+    wv_list <- list(working_view = working_view,
+                    sample_headers = sample_headers)
+
+    return(wv_list)
+}
+
+collect_and_notify <- function(con, data_type, working_view) {
+    current_gen <- output_file_types(filter_col = "data_type",
+                                     filter_string = paste0("^", data_type, "$"))$general_data_type
+    hf_ind <- get_view_source(con, working_view) |> startsWith("hf")
+    if (current_gen == "genefamilies" && hf_ind) {
+        message(paste0("'", data_type, "' is a large data type, and collecting",
+                       " the query can take a while. To avoid going through the Hugging Face ",
+                       "API, download the source file ", get_view_source(con, working_view),
+                       " and provide it to accessParquetData() in the 'local files' ",
+                       "argument."))
+    }
+
+    collected_view <- working_view |>
+        collect()
+
+    return(collected_view)
+}
+
 #' @title Return a table with information about available Hugging Face repos.
 #' @description 'get_repo_info' returns a table of information associated with
 #' each Hugging Face repo that contains relevant parquet files.
@@ -1068,4 +1122,75 @@ get_view_source <- function(con, lazy) {
     proj_url <- stringr::str_extract(proj_source, "(?<=').+?(?=')")
 
     return(proj_url)
+}
+
+get_hf_api <- function(repo_name) {
+    # --- Step 1: Construct API URL and get repo info ---
+    repo_api_url <- paste0("https://huggingface.co/api/datasets/", repo_name)
+
+    # Make the GET request
+    response <- httr::GET(repo_api_url)
+
+    # Check the status code before parsing
+    if (httr::status_code(response) != 200) {
+        stop(
+            "Failed to get repo info from Hugging Face API for '", repo_name,
+            "'.\n",
+            "Status code: ", httr::status_code(response), ".\n",
+            "Please check if the repository name is correct and public. ",
+            "The server may also be rate-limiting your IP."
+        )
+    }
+
+    # Parse the JSON response content
+    repo_info <- jsonlite::fromJSON(rawToChar(response$content))
+
+    return(repo_info)
+}
+
+check_for_parquet <- function(repo_info, repo_name) {
+    # --- Step 2: Filter for Parquet files ---
+    if (is.null(repo_info$siblings) || is.null(repo_info$siblings$rfilename)) {
+        stop("Could not find file listing in the API response for '", repo_name,
+             "'.")
+    }
+
+    all_files <- repo_info$siblings$rfilename
+    parquet_files <- all_files[endsWith(all_files, ".parquet")]
+
+    return(parquet_files)
+}
+
+add_defs <- function(result_df, verbose) {
+    # --- Step 5: Read definitions and join with file list ---
+    def_path <- system.file(
+        "extdata", "biobakery_file_definitions.csv",
+        package = "parkinsonsMetagenomicData"
+    )
+
+    # Create data_type column for joining
+    result_df <- dplyr::mutate(
+        result_df,
+        data_type = detect_data_type(.data$filename)
+    )
+
+    if (nzchar(def_path) && file.exists(def_path)) {
+        if (verbose) message("Found definitions file. Joining metadata.")
+        definitions <- utils::read.csv(def_path, stringsAsFactors = FALSE)
+
+        # Perform the join
+        result_df <- dplyr::left_join(result_df, definitions, by = "data_type")
+
+    } else {
+        if (verbose) message(
+            "Data type definition file not found. ",
+            "Install 'parkinsonsMetagenomicData' to add full metadata."
+        )
+        # Add empty columns so the function always returns the same structure
+        result_df$tool <- NA_character_
+        result_df$description <- NA_character_
+        result_df$units_normalization <- NA_character_
+    }
+
+    return(result_df)
 }
