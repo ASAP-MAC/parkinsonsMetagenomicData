@@ -62,23 +62,23 @@ parse_relab_list <- function(sample_id, file_path) {
 
     ## Read remainder of output file
     load_file <- readr::read_tsv(file_path, skip = 5,
-                                 col_names = c("clade_name", "ncbi_tax_id",
-                                               "relative_abundance",
-                                               "additional_species"),
-                                 col_types = readr::cols("factor", "factor",
-                                                         "double", "factor"))
+                                col_names = c("clade_name", "ncbi_tax_id",
+                                                "relative_abundance",
+                                                "additional_species"),
+                                col_types = readr::cols("factor", "factor",
+                                                        "double", "factor"))
 
     ## Standardize "additional_species" ordering
     species_delim <- ","
     load_file$additional_species <- lapply(load_file$additional_species,
-                               function(x) {
-                                   if (!is.na(x)) {
-                                       str_split(x, pattern = species_delim) |>
-                                           unlist() |>
-                                           sort() |>
-                                           paste(collapse = species_delim)
-                                   } else { x }
-                               }) |>
+                                function(x) {
+                                    if (!is.na(x)) {
+                                        str_split(x, pattern = species_delim) |>
+                                            unlist() |>
+                                            sort() |>
+                                            paste(collapse = species_delim)
+                                    } else { x }
+                                }) |>
         unlist()
 
     ## Separate out row data
@@ -110,15 +110,15 @@ parse_viral_list <- function(sample_id, file_path) {
     meta <- gsub("#", "", meta)
     meta_list <- as.list(meta)
     names(meta_list) <- c("metaphlan_database",
-                          "command")
+                            "command")
 
     ## Read remainder of output file
     load_file <- readr::read_tsv(file_path, skip = 3)
     colnames(load_file) <- c("m_group_cluster", "genome_name", "length",
-                             "breadth_of_coverage",
-                             "depth_of_coverage_mean",
-                             "depth_of_coverage_median", "m_group_type_k_u",
-                             "first_genome_in_cluster", "other_genomes")
+                            "breadth_of_coverage",
+                            "depth_of_coverage_mean",
+                            "depth_of_coverage_median", "m_group_type_k_u",
+                            "first_genome_in_cluster", "other_genomes")
 
     ## Separate out row data
     rdata_cols <- c("m_group_cluster", "length", "m_group_type_k_u",
@@ -135,11 +135,11 @@ parse_viral_list <- function(sample_id, file_path) {
     depth_mean <- as.matrix(load_file$depth_of_coverage_mean)
     depth_median <- as.matrix(load_file$depth_of_coverage_median)
     alist <- list(breadth,
-                  depth_mean,
-                  depth_median)
+                    depth_mean,
+                    depth_median)
     names(alist) <- c("viral_breadth_of_coverage",
-                      "viral_depth_of_coverage_mean",
-                      "viral_depth_of_coverage_median")
+                        "viral_depth_of_coverage_mean",
+                        "viral_depth_of_coverage_median")
 
     ## Combine process metadata, row data, sample ID, and assays into
     ## TreeSummarizedExperiment object
@@ -290,7 +290,7 @@ parse_kneaddata_stats <- function(file_path) {
 
     ## Contaminate and remaining sequences per database and overall
     total_contaminate <- file_lines[grep("Total contaminate sequences in file",
-                                        file_lines)]
+                                    file_lines)]
     parsed_contaminate <- c()
     for (line in total_contaminate) {
         full <- unlist(regmatches(line,

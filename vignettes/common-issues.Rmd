@@ -9,8 +9,8 @@ vignette: >
 
 ```{r chunk_set, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>"
 )
 ```
 
@@ -65,7 +65,7 @@ feature_table <- clade_name_ref %>%
 
 # Provide paths to local files
 local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
-                 "/path/to/relative_abundance_uuid.parquet")
+                "/path/to/relative_abundance_uuid.parquet")
 
 experiment <- returnSamples(data_type = "relative_abundance",
                             sample_data = sample_table,
@@ -110,19 +110,20 @@ spf_ids <- selected_samples |>
 
 # Run the queries
 spf_ex <- loadParquetData(con_gs, "genefamilies_stratified",
-                          filter_values = list(gene_family_uniref = "UniRef90_T4BVE4",
-                                               uuid = spf_ids))
+        filter_values = list(gene_family_uniref = "UniRef90_T4BVE4",
+                            uuid = spf_ids))
 spf_ex
 
 wildr_ex <- loadParquetData(con_gs, "genefamilies_stratified",
-                            filter_values = list(gene_family_uniref = "UniRef90_A0A1B1SA57",
-                                                 uuid = wildr_ids))
+    filter_values = list(gene_family_uniref = "UniRef90_A0A1B1SA57",
+                        uuid = wildr_ids))
 wildr_ex
 
 # The full sample ID list also works, but is a bit slower
 all_ex <- loadParquetData(con_gs, "genefamilies_stratified",
-                          filter_values = list(gene_family_uniref = c("UniRef90_T4BVE4", "UniRef90_A0A1B1SA57"),
-                                               uuid = selected_samples$uuid))
+                filter_values = list(gene_family_uniref = c("UniRef90_T4BVE4",
+                                                        "UniRef90_A0A1B1SA57"),
+                                    uuid = selected_samples$uuid))
 all_ex
 ```
 

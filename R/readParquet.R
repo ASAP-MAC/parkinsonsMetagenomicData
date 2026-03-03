@@ -71,7 +71,7 @@ db_connect <- function(dbdir = ":memory:") {
 #' @export
 #' @importFrom DBI dbExecute
 view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
-                         view_name = NULL) {
+                        view_name = NULL) {
     ## Check input
     # con
     confirm_duckdb_con(con)
@@ -464,12 +464,6 @@ parquet_to_tse <- function(parquet_table, data_type,
     }
     confirm_data_type(data_type)
 
-    ## Load sampleMetadata
-    if (!exists("sampleMetadata", envir = environment())) {
-        data("sampleMetadata", package = "parkinsonsMetagenomicData",
-            envir = environment())
-    }
-
     ## Get parameters by data type
     cs <- find_tse_cols(parquet_colinfo(data_type))
 
@@ -646,8 +640,8 @@ accessParquetData <- function(dbdir = ":memory:",
 #' con <- accessParquetData(local_files = fpaths,
 #'                          data_types = "pathcoverage_unstratified")
 #'
-#' custom_filter <- tbl(con, "pathcoverage_unstratified_pathway") |>
-#'                  filter(grepl("UMP biosynthesis", pathway))
+#' custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+#'                  dplyr::filter(grepl("UMP biosynthesis", pathway))
 #'
 #' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
 #'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",

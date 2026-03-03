@@ -90,52 +90,63 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 
     ## Cached file not found
     if (!length(rid)) {
-        ## Create cache location
-        newpath <- BiocFileCache::bfcnew(x = bfc,
-                                        rname = locator,
-                                        ext = get_exts(locator),
-                                        fname = "exact")
-        rid <- names(newpath)
-
-        ## Download file
-        tryCatch({
-            googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
-        }, error = function(e) {
-            ## Remove cache location if download fails
-            BiocFileCache::bfcremove(bfc, rid)
-            stop("The file was not able to be downloaded: ",
-                        conditionMessage(e))
-        })
-
+        cache_new(bfc, locator)
     ## Cached file found, follow "redownload" instructions
     } else if (length(rid)) {
-
-        if (p_redown == "a" & interactive()) {
-            over <- readline(prompt = paste0("Resource with rname = '", locator,
-                                             "' found in cache. Redownload and",
-                                             " overwrite? (yes/no): "))
-            response <- substr(tolower(over), 1, 1)
-            doit <- switch(response, y = TRUE, n = FALSE, NA)
-        } else if (p_redown == "y") {
-            doit <- TRUE
-            message(paste0("Resource with rname = '", locator,
-                           "' found in cache, redownloading."))
-        } else if (p_redown == "n") {
-            doit <- FALSE
-            message(paste0("Resource with rname = '", locator, "' found in ",
-                            "cache, proceeding with most recent version."))
-        }
-
-        if (doit) {
-            rpath <- BiocFileCache::bfcrpath(bfc, rids = rid)
-            googleCloudStorageR::gcs_get_object(locator, saveToDisk = rpath,
-                                                overwrite = TRUE)
-        }
+        handle_redownload(bfc, locator, rid, p_redown)
     }
 
     ## Return path of cached resource
     res <- BiocFileCache::bfcrpath(bfc, rids = rid)
     return(res)
+}
+
+cache_new <- function(bfc, locator) {
+    ## Create cache location
+    newpath <- BiocFileCache::bfcnew(x = bfc,
+                                    rname = locator,
+                                    ext = get_exts(locator),
+                                    fname = "exact")
+    rid <- names(newpath)
+
+    ## Download file
+    tryCatch({
+        googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
+    }, error = function(e) {
+        ## Remove cache location if download fails
+        BiocFileCache::bfcremove(bfc, rid)
+        stop("The file was not able to be downloaded: ",
+            conditionMessage(e))
+    })
+
+    return(rid)
+}
+
+handle_redownload <- function(bfc, locator, rid, p_redown) {
+    ## Follow "redownload" instructions
+    if (p_redown == "a" & interactive()) {
+        over <- readline(prompt = paste0("Resource with rname = '", locator,
+                                        "' found in cache. Redownload and",
+                                        " overwrite? (yes/no): "))
+        response <- substr(tolower(over), 1, 1)
+        doit <- switch(response, y = TRUE, n = FALSE, NA)
+    } else if (p_redown == "y") {
+        doit <- TRUE
+        message(paste0("Resource with rname = '", locator,
+                        "' found in cache, redownloading."))
+    } else if (p_redown == "n") {
+        doit <- FALSE
+        message(paste0("Resource with rname = '", locator, "' found in ",
+                    "cache, proceeding with most recent version."))
+    }
+
+    if (doit) {
+        rpath <- BiocFileCache::bfcrpath(bfc, rids = rid)
+        googleCloudStorageR::gcs_get_object(locator, saveToDisk = rpath,
+                                            overwrite = TRUE)
+    }
+
+    return(rid)
 }
 
 #' @title Retrieve and cache output files
@@ -175,16 +186,12 @@ cacheMetagenomicData <- function(uuids,
     ## Confirm inputs are valid
     confirm_uuids(uuids)
     confirm_data_type(data_type)
-
-    ## Check redownload value
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)
     if (!p_redown %in% allowed_redown) {
         stop(paste0("'", redownload, "' is not an allowed value for ",
                     "'redownload'. Please enter 'yes', 'no', or 'ask'"))
     }
-
-    ## Check custom_cache
     if (!is.null(custom_cache)) {
         stopifnot(methods::is(custom_cache, "BiocFileCache"))
     }
@@ -193,6 +200,35 @@ cacheMetagenomicData <- function(uuids,
     locators <- get_bucket_locators(uuids, data_type)
 
     ## Download and cache requested files
+    res <- cache_list(locators, p_redown, custom_cache)
+
+    ## Format cache information for user
+    parsed_locators <- stringr::str_split(locators, "/")
+    parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
+
+    parsed_filenames <- unlist(lapply(parsed_locators,
+                                        function(x) x[length(x)]))
+    fpath <- system.file("extdata", "output_files.csv",
+                        package="parkinsonsMetagenomicData")
+    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
+    parsed_data_types <- ftable$data_type[match(parsed_filenames,
+                                                ftable$file_name)]
+
+    cache_tbl <- tibble::tibble(uuid = parsed_uuids,
+                                data_type = parsed_data_types,
+                                gcb_object = locators,
+                                cache_id = names(res$cache_paths),
+                                cache_path = res$cache_paths)
+
+    ## Print any errors and return cache information
+    if (length(res$errors) > 0) {
+        warning(res$errors)
+    }
+
+    return(cache_tbl)
+}
+
+cache_list <- function(locators, p_redown, custom_cache) {
     cache_paths <- vector("list", length(locators))
     errors <- character(0)
 
@@ -225,30 +261,10 @@ cacheMetagenomicData <- function(uuids,
 
     cache_paths <- unlist(cache_paths)
 
-    ## Format cache information for user
-    parsed_locators <- stringr::str_split(locators, "/")
-    parsed_uuids <- unlist(lapply(parsed_locators, function(x) x[3]))
+    res <- list(cache_paths = cache_paths,
+                errors = errors)
 
-    parsed_filenames <- unlist(lapply(parsed_locators,
-                                        function(x) x[length(x)]))
-    fpath <- system.file("extdata", "output_files.csv",
-                        package="parkinsonsMetagenomicData")
-    ftable <- readr::read_csv(fpath, show_col_types = FALSE)
-    parsed_data_types <- ftable$data_type[match(parsed_filenames,
-                                                ftable$file_name)]
-
-    cache_tbl <- tibble::tibble(uuid = parsed_uuids,
-                                data_type = parsed_data_types,
-                                gcb_object = locators,
-                                cache_id = names(cache_paths),
-                                cache_path = cache_paths)
-
-    ## Print any errors and return cache information
-    if (length(errors) > 0) {
-        warning(errors)
-    }
-
-    return(cache_tbl)
+    return(res)
 }
 
 #' @title Load cached files into R as a merged TreeSummarizedExperiment object
@@ -412,31 +428,21 @@ listMetagenomicData <- function() {
 #' @importFrom SummarizedExperiment colData
 add_metadata <- function(sample_ids, id_col = "uuid", experiment,
                         method = "append") {
-    ## Check that the length of sample_ids matches the number of samples
+    ## Check input
     if (length(sample_ids) != ncol(experiment)) {
         stop(paste0("'sample_ids' has a different number of samples than ",
                     "'experiment'."))
     }
-
-    ## Check that 'experiment' is a TreeSummarizedExperiment object
     stopifnot(methods::is(experiment, "TreeSummarizedExperiment"))
-
-    ## Retrieve sample metadata
-    if (!exists("sampleMetadata", envir = environment())) {
-        data("sampleMetadata", package = "parkinsonsMetagenomicData",
-            envir = environment())
-    }
-
+    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+        envir = environment())
     meta <- sampleMetadata
-
-    ## Check that id_col and method are valid
     if (!id_col %in% colnames(meta)) {
         stop("'", id_col, "' is not a column in sampleMetadata.")
     } else if (length(unique(meta[[id_col]])) != nrow(meta)) {
         stop(paste0("'", id_col, "' is not unique for every sample and ",
                     "therefore cannot be used to retrieve metadata."))
     }
-
     valid_methods <- c("append", "overwrite", "ignore")
     if (!method %in% valid_methods) {
         stop(paste0("'", method, "' is not a valid value for 'method'. Please ",
@@ -458,7 +464,6 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
                         "according to method '", method, "':"))
         message(dup_message)
     }
-
     if (method == "append") {
         newdata <- cbind(cdata, meta)
     } else if (method == "overwrite") {
@@ -467,7 +472,6 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
     } else if (method == "ignore") {
         newdata <- cbind(cdata, meta[not_duplicated])
     }
-
     SummarizedExperiment::colData(experiment) <- newdata
 
     return(experiment)
@@ -526,6 +530,31 @@ mergeExperiments <- function(merge_list) {
         }
     }
 
+
+    ## Merge assays
+    assay_list <- merge_assays(merge_list)
+
+    ## Merge row data
+    rowData <- merge_rowdata(merge_list, assay_list)
+
+    ## Merge column data
+    colData <-
+        purrr::map(merge_list, SummarizedExperiment::colData) |>
+        purrr::map(as.data.frame) |>
+        purrr::map(tibble::rownames_to_column) |>
+        dplyr::bind_rows() |>
+        tibble::column_to_rownames() |>
+        S4Vectors::DataFrame()
+
+    ## Reformat as TreeSummarizedExperiment
+    se <- TreeSummarizedExperiment::TreeSummarizedExperiment(
+                                                            assays = assay_list,
+                                                            rowData = rowData,
+                                                            colData = colData)
+    return(se)
+}
+
+merge_assays <- function(merge_list) {
     ## Check that assays match
     assay_names <-
         lapply(merge_list, SummarizedExperiment::assayNames) |>
@@ -555,7 +584,10 @@ mergeExperiments <- function(merge_list) {
     assay_list <- assay_list |>
         S4Vectors::SimpleList()
 
-    ## Merge row data
+    return(assay_list)
+}
+
+merge_rowdata <- function(merge_list, assay_list) {
     rowData <-
         purrr::map(merge_list, SummarizedExperiment::rowData) |>
         purrr::map(as.data.frame) |>
@@ -572,19 +604,5 @@ mergeExperiments <- function(merge_list) {
 
     rowData <- rowData[match(rownames(assay_list[[1]]), rownames(rowData)),]
 
-    ## Merge column data
-    colData <-
-        purrr::map(merge_list, SummarizedExperiment::colData) |>
-        purrr::map(as.data.frame) |>
-        purrr::map(tibble::rownames_to_column) |>
-        dplyr::bind_rows() |>
-        tibble::column_to_rownames() |>
-        S4Vectors::DataFrame()
-
-    ## Reformat as TreeSummarizedExperiment
-    se <- TreeSummarizedExperiment::TreeSummarizedExperiment(
-                                                            assays = assay_list,
-                                                            rowData = rowData,
-                                                            colData = colData)
-    return(se)
+    return(rowData)
 }

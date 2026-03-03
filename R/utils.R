@@ -250,7 +250,7 @@ prepare_view <- function(con, data_type, filter_values, custom_view,
                 emat <- as.data.frame(matrix(nrow = length(full_empties),
                                              ncol = ncol(sample_headers),
                                              dimnames = list(c(),
-                                                             colnames(sample_headers))))
+                                                    colnames(sample_headers))))
                 emat$uuid <- full_empties
                 sample_headers <- rbind(sample_headers, emat)
             }
@@ -272,14 +272,14 @@ prepare_view <- function(con, data_type, filter_values, custom_view,
 
 collect_and_notify <- function(con, data_type, working_view) {
     current_gen <- output_file_types(filter_col = "data_type",
-                                     filter_string = paste0("^", data_type, "$"))$general_data_type
+                filter_string = paste0("^", data_type, "$"))$general_data_type
     hf_ind <- get_view_source(con, working_view) |> startsWith("hf")
     if (current_gen == "genefamilies" && hf_ind) {
         message(paste0("'", data_type, "' is a large data type, and collecting",
-                       " the query can take a while. To avoid going through the Hugging Face ",
-                       "API, download the source file ", get_view_source(con, working_view),
-                       " and provide it to accessParquetData() in the 'local files' ",
-                       "argument."))
+        " the query can take a while. To avoid going through the Hugging Face ",
+        "API, download the source file ", get_view_source(con, working_view),
+        " and provide it to accessParquetData() in the 'local files' ",
+        "argument."))
     }
 
     collected_view <- working_view |>
@@ -951,6 +951,10 @@ build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
     if (exists("etab")) {
         cdata <- rbind(cdata, etab)
     }
+
+    ## Load sampleMetadata
+    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+         envir = environment())
 
     ## Add sample metadata
     cdata <- cdata %>%
