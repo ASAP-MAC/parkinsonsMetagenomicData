@@ -53,6 +53,36 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
     return(ex)
 }
 
+#' @title Parse relative_abundance MetaPhlAn output for a single sample as a
+#' TreeSummarizedExperiment object
+#' @description 'parse_relab_list' reads a file obtained from running
+#' MetaPhlAn for microbial profiling (with or without unclassified fraction
+#' estimation). This file is parsed into a TreeSummarizedExperiment object.
+#' @param sample_id String: A sample identifier
+#' @param file_path String: Path to a locally stored MetaPhlAn output file in
+#' TSV format
+#' @return A TreeSummarizedExperiment object with process metadata, row data,
+#' column names, and relevant assays.
+#' @details This function does not integrate sample metadata as column data. The
+#' provided sample_id is used as the column name for assays within the
+#' TreeSummarizedExperiment object and is intended to be used for integration of
+#' sample metadata.
+#' @examples
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_metaphlan_bugs_list.tsv.gz")
+#' parse_relab_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                  file_path = fpath)
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+#' @rdname parse_metaphlan_list
+#' @export
+#' @importFrom readr read_tsv
+#' @importFrom S4Vectors DataFrame
+#' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 parse_relab_list <- function(sample_id, file_path) {
     ## Convert commented header lines to metadata
     meta <- readLines(file_path, n = 3)
@@ -104,6 +134,36 @@ parse_relab_list <- function(sample_id, file_path) {
     return(ex)
 }
 
+#' @title Parse viral_clusters MetaPhlAn output for a single sample as a
+#' TreeSummarizedExperiment object
+#' @description 'parse_viral_list' reads a file obtained from running
+#' MetaPhlAn for viral sequence cluster analysis. This file is parsed into a
+#' TreeSummarizedExperiment object.
+#' @param sample_id String: A sample identifier
+#' @param file_path String: Path to a locally stored MetaPhlAn output file in
+#' TSV format
+#' @return A TreeSummarizedExperiment object with process metadata, row data,
+#' column names, and relevant assays.
+#' @details This function does not integrate sample metadata as column data. The
+#' provided sample_id is used as the column name for assays within the
+#' TreeSummarizedExperiment object and is intended to be used for integration of
+#' sample metadata.
+#' @examples
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_metaphlan_viruses_list.tsv.gz")
+#' parse_viral_list(sample_id = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                  file_path = fpath)
+#' @seealso
+#'  \code{\link[readr]{read_delim}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
+#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
+#' @rdname parse_metaphlan_list
+#' @export
+#' @importFrom readr read_tsv
+#' @importFrom S4Vectors DataFrame
+#' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 parse_viral_list <- function(sample_id, file_path) {
     ## Convert commented header lines to metadata
     meta <- readLines(file_path, n = 2)

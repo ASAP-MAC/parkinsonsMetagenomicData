@@ -21,6 +21,93 @@ pMD_get_cache <- function() {
     BiocFileCache::BiocFileCache(cache = cache)
 }
 
+cache_new <- function(bfc, locator) {
+    ## Create cache location
+    newpath <- BiocFileCache::bfcnew(x = bfc,
+                                     rname = locator,
+                                     ext = get_exts(locator),
+                                     fname = "exact")
+    rid <- names(newpath)
+
+    ## Download file
+    tryCatch({
+        googleCloudStorageR::gcs_get_object(locator, saveToDisk = newpath)
+    }, error = function(e) {
+        ## Remove cache location if download fails
+        BiocFileCache::bfcremove(bfc, rid)
+        stop("The file was not able to be downloaded: ",
+             conditionMessage(e))
+    })
+
+    return(rid)
+}
+
+handle_redownload <- function(bfc, locator, rid, p_redown) {
+    ## Follow "redownload" instructions
+    if (p_redown == "a" & interactive()) {
+        over <- readline(prompt = paste0("Resource with rname = '", locator,
+                                         "' found in cache. Redownload and",
+                                         " overwrite? (yes/no): "))
+        response <- substr(tolower(over), 1, 1)
+        doit <- switch(response, y = TRUE, n = FALSE, NA)
+    } else if (p_redown == "y") {
+        doit <- TRUE
+        message(paste0("Resource with rname = '", locator,
+                       "' found in cache, redownloading."))
+    } else if (p_redown == "n") {
+        doit <- FALSE
+        message(paste0("Resource with rname = '", locator, "' found in ",
+                       "cache, proceeding with most recent version."))
+    }
+
+    if (doit) {
+        rpath <- BiocFileCache::bfcrpath(bfc, rids = rid)
+        googleCloudStorageR::gcs_get_object(locator, saveToDisk = rpath,
+                                            overwrite = TRUE)
+    }
+
+    return(rid)
+}
+
+cache_list <- function(locators, p_redown, custom_cache) {
+    cache_paths <- vector("list", length(locators))
+    errors <- character(0)
+
+    for (i in seq_along(locators)) {
+        res <- tryCatch(
+            {
+                list(
+                    file = cache_gcb(
+                        locators[i],
+                        redownload = p_redown,
+                        custom_cache = custom_cache
+                    ),
+                    error = NULL
+                )
+            },
+            error = function(e) {
+                list(
+                    file = NA |> stats::setNames(NA),
+                    error = paste0("Unable to cache ", locators[i], ": ",
+                                   conditionMessage(e))
+                )
+            }
+        )
+
+        cache_paths[[i]] <- res$file
+        if (!is.null(res$error)) {
+            errors <- c(errors, res$error)
+        }
+    }
+
+    cache_paths <- unlist(cache_paths)
+
+    res <- list(cache_paths = cache_paths,
+                errors = errors)
+
+    return(res)
+}
+
 #' @title Read in extdata/output_files.csv
 #' @description 'output_file_types' reads in the table extdata/output_files.csv.
 #' The table can optionally be filtered by providing a column name to filter by
@@ -1087,6 +1174,59 @@ standardize_ordering <- function(vec, delim) {
         unlist()
 
     return(vec)
+}
+
+merge_assays <- function(merge_list) {
+    ## Check that assays match
+    assay_names <-
+        lapply(merge_list, SummarizedExperiment::assayNames) |>
+        unique()
+
+    if (length(assay_names) != 1) {
+        stop(paste0("'merge_list' contains multiple assay types, please ",
+                    "provide a list where all assays match in type and order."))
+    }
+
+    ## Merge assays
+    assay_list <- vector("list", length(assay_names[[1]]))
+    names(assay_list) <- assay_names[[1]]
+    for (i in seq_along(assay_list)) {
+        assay_list[[i]] <-
+            purrr::map(merge_list, \(x) SummarizedExperiment::assay(x, i)) |>
+            purrr::map(as.matrix) |>
+            purrr::map(as.data.frame) |>
+            purrr::map(tibble::rownames_to_column) |>
+            purrr::reduce(dplyr::full_join, by = "rowname") |>
+            tibble::column_to_rownames() |>
+            dplyr::mutate(dplyr::across(tidyselect::everything(),
+                                        .fns = ~ tidyr::replace_na(.x, 0))) |>
+            as.matrix()
+    }
+
+    assay_list <- assay_list |>
+        S4Vectors::SimpleList()
+
+    return(assay_list)
+}
+
+merge_rowdata <- function(merge_list, assay_list) {
+    rowData <-
+        purrr::map(merge_list, SummarizedExperiment::rowData) |>
+        purrr::map(as.data.frame) |>
+        purrr::map(tibble::rownames_to_column)
+
+    join_by <-
+        purrr::map(rowData, colnames) |>
+        purrr::reduce(intersect)
+
+    rowData <-
+        purrr::reduce(rowData, dplyr::full_join, by = join_by) |>
+        tibble::column_to_rownames() |>
+        S4Vectors::DataFrame()
+
+    rowData <- rowData[match(rownames(assay_list[[1]]), rownames(rowData)),]
+
+    return(rowData)
 }
 
 #' @title Retrieve the URL of the data source from a lazy DuckDB connection

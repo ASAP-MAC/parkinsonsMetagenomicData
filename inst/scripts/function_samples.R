@@ -1,5 +1,6 @@
 ## Construction of sample files for function examples:
-## sample_metaphlan_bugs_list.tsv.gz for parse_metaphlan_list()
+## sample_metaphlan_bugs_list.tsv.gz for parse_relab_list()
+## sample_metaphlan_viruses_list.tsv.gz for parse_viral_list()
 ## sample_out_pathabundance_unstratified.tsv.gz for parse_humann()
 ## sample_experiment for add_metadata()
 ## sample_experiment_list for mergeExperiments()
@@ -31,6 +32,47 @@ extdata_path <- file.path(system.file("extdata",
                           "sample_metaphlan_bugs_list.tsv")
 writeLines(metadata_header, extdata_path)
 write.table(bugs_list, extdata_path, append = TRUE, sep = "\t",
+            col.names = TRUE, row.names = FALSE, quote = FALSE)
+R.utils::gzip(extdata_path, overwrite = TRUE)
+
+## sample_metaphlan_viruses_list
+metadata_header <- c("#mpa_vJun23_CHOCOPhlAnSGB_202403",
+                     "#/usr/local/bin/metaphlan --input_type fastq --index latest --bowtie2db metaphlan --samout sam.bz2 --bowtie2out bowtie2.out --nproc 16 --profile_vsc --vsc_breadth 0.75 --vsc_out metaphlan_viruses_list.tsv -o metaphlan_bugs_list.tsv out.fastq",
+                     "#SampleID\tMetaphlan_Analysis")
+viruses_list <- data.frame('M-Group/Cluster' = c("M867", "M892", "M251", "M460",
+                                                 "M351", "M638"),
+                           genomeName = c("VDB|0021-00B6-0-0027|M867-c3230-c0-c8",
+                                          "VDB|000E-000C-0-0002|M892-c3062-c0-c0",
+                                          "VDB|0021-0030-0-000B|M251-c1586-c0-c0",
+                                          "VDB|0002-0027-0-0005|M460-c1950-c0-c3",
+                                          "VDB|0021-000A-0-0001|M351-c1836-c1-c4",
+                                          "VDB|001F-0071-0-0007|M638-c3751-c0-c2"),
+                           len = c(1977, 19587, 5485, 2774, 4614, 2914),
+                           breadth_of_coverage = c(1, 1, 1, 1,
+                                                   0.999783268313828,
+                                                   0.999656829100892),
+                           depth_of_coverage_mean = c(376.888720283257,
+                                                      116.455301986011,
+                                                      299.981586144029,
+                                                      187.497116077866,
+                                                      39.6668111857793,
+                                                      12.266392035702),
+                           depth_of_coverage_median = c(419, 119, 307, 186, 39, 12),
+                           'M-Group-Type [k|u]' = rep("uVSG", 6),
+                           'First Genome in Cluster' = c("-", "-",
+                                                         "NC_001422_Coliphage_phiX174",
+                                                         "-", "-", "-"),
+                           'Other Genomes' = c("-", "-",
+                                               "NC_0014221_Coliphage_phiX174",
+                                               "-", "-", "-"),
+                           check.names = FALSE)
+
+# write to inst/extdata/sample_metaphlan_viruses_list.tsv
+extdata_path <- file.path(system.file("extdata",
+                                      package = "parkinsonsMetagenomicData"),
+                          "sample_metaphlan_viruses_list.tsv")
+writeLines(metadata_header, extdata_path)
+write.table(viruses_list, extdata_path, append = TRUE, sep = "\t",
             col.names = TRUE, row.names = FALSE, quote = FALSE)
 R.utils::gzip(extdata_path, overwrite = TRUE)
 
