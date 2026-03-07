@@ -663,7 +663,7 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @rdname loadParquetData
 #' @export
 #' @importFrom DBI dbListTables
-#' @importFrom dplyr tbl filter collect
+#' @importFrom dplyr filter
 loadParquetData <- function(con, data_type, filter_values = NULL,
                             custom_view = NULL, include_empty_samples = FALSE,
                             dry_run = FALSE) {
@@ -944,6 +944,7 @@ get_cdata_only <- function(con, data_type, uuids) {
 #' @param repo_name A character string specifying the Hugging Face dataset
 #' repository name in the format "user/repo" or "org/repo". If NULL, the repo
 #' listed as the default in get_repo_info() will be selected. Default: NULL
+#' @param verbose Boolean: should output be verbose, Default: FALSE
 #' @return A data.frame with the following columns:
 #'   \describe{
 #'     \item{filename}{The name of the Parquet file.}

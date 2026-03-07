@@ -10,6 +10,8 @@ get_hf_parquet_urls(repo_name = NULL, verbose = FALSE)
 \item{repo_name}{A character string specifying the Hugging Face dataset
 repository name in the format "user/repo" or "org/repo". If NULL, the repo
 listed as the default in get_repo_info() will be selected. Default: NULL}
+
+\item{verbose}{Boolean: should output be verbose, Default: FALSE}
 }
 \value{
 A data.frame with the following columns:

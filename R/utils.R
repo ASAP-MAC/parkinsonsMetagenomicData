@@ -21,6 +21,27 @@ pMD_get_cache <- function() {
     BiocFileCache::BiocFileCache(cache = cache)
 }
 
+#' @title Download and cache a new object with BiocFileCache
+#' @description 'cache_new' downloads and caches a file stored in a Google
+#' Bucket.
+#' @param bfc BiocFileCache cache object
+#' @param locator String: name of a Google Bucket object
+#' @return String: resource id of the cached object
+#' @examples
+#' \dontrun{
+#'  bfc <- pMD_get_cache()
+#'  locator <- get_bucket_locators(
+#'                   uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                   data_type = "relative_abundance")
+#'  cache_new(bfc, locator)
+#' }
+#' @seealso
+#'  \code{\link[BiocFileCache]{BiocFileCache-class}}
+#'  \code{\link[googleCloudStorageR]{gcs_get_object}}
+#' @rdname cache_new
+#' @export
+#' @importFrom BiocFileCache bfcnew bfcremove
+#' @importFrom googleCloudStorageR gcs_get_object
 cache_new <- function(bfc, locator) {
     ## Create cache location
     newpath <- BiocFileCache::bfcnew(x = bfc,
@@ -42,6 +63,31 @@ cache_new <- function(bfc, locator) {
     return(rid)
 }
 
+#' @title Redownload a file if requested by user
+#' @description 'handle_redownload' handles user input to redownload or leave
+#' alone a file in a BiocFileCache cache object.
+#' @param bfc BiocFileCache cache object
+#' @param locator String: name of a Google Bucket object
+#' @param rid String: resource id of the cached object
+#' @param p_redown String: "yes", "no", or "ask"; should the function
+#' re-download a file that is already present in the cache
+#' @return String: resource id of the cached object
+#' @examples
+#' \dontrun{
+#'  bfc <- pMD_get_cache()
+#'  locator <- get_bucket_locators(
+#'                   uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
+#'                   data_type = "relative_abundance")
+#'  rid <- cache_new(bfc, locator)
+#'  handle_redownload(bfc, locator, rid, "ask")
+#' }
+#' @seealso
+#'  \code{\link[BiocFileCache]{BiocFileCache-class}}
+#'  \code{\link[googleCloudStorageR]{gcs_get_object}}
+#' @rdname handle_redownload
+#' @export
+#' @importFrom BiocFileCache bfcrpath
+#' @importFrom googleCloudStorageR gcs_get_object
 handle_redownload <- function(bfc, locator, rid, p_redown) {
     ## Follow "redownload" instructions
     if (p_redown == "a" & interactive()) {
@@ -69,6 +115,27 @@ handle_redownload <- function(bfc, locator, rid, p_redown) {
     return(rid)
 }
 
+#' @title Cache a list of files
+#' @description 'cache_list' takes a list of Google Bucket files, downloads
+#' them, and stores them in a local parkinsonsMetagenomicData cache. If the same
+#' files are requested again through this function, they will not be
+#' re-downloaded unless explicitly specified, in order to reduce excessive
+#' downloads.
+#' @param locators Vector of strings: names of Google Bucket objects
+#' @param p_redown String: "yes", "no", or "ask"; should the function
+#' re-download a file that is already present in the cache
+#' @param custom_cache BiocFileCache object: a custom cache object may be
+#' specified instead of the default created by pMD_get_cache()
+#' @return Named list: the 'cache_paths' element lists the cached locations of
+#' all requested files, the 'errors' element reports any errors encountered.
+#' @examples
+#' \dontrun{
+#' }
+#' @seealso
+#'  \code{\link[stats]{setNames}}
+#' @rdname cache_list
+#' @export
+#' @importFrom stats setNames
 cache_list <- function(locators, p_redown, custom_cache) {
     cache_paths <- vector("list", length(locators))
     errors <- character(0)
@@ -321,6 +388,59 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
     return(cview)
 }
 
+#' @title Apply filtering and custom view transformations to a DuckDB view
+#' @description 'prepare_view' accesses a DuckDB view created by
+#' 'accessParquetData' and applies requested filtering and transformations.
+#' @param con DuckDB connection object of class 'duckdb_connection'
+#' @param data_type Single string: value found in the data_type' column of
+#' output_file_types() and also as part of the name of a view found in
+#' DBI::dbListTables(con), indicating which views to consider when collecting
+#' data.
+#' @param filter_values Named list: element name equals the column name to be
+#' filtered and element value equals a vector of exact column values.
+#' @param custom_view Saved object with the initial class
+#' 'tbl_duckdb_connection' (optional): DuckDB tables/views can be accessed with
+#' with the 'dplyr::tbl' function, and piped into additional functions such as
+#' 'dplyr::filter' prior to loading into memory with 'dplyr::collect'. A
+#' particular sequence of function calls can be saved and provided to this
+#' function for collection and formatting as a Summarized Experiment. See the
+#' function example.
+#' @param include_empty_samples Boolean (optional): should samples provided via
+#' a 'uuid' argument within 'filter_values' be included in the final
+#' TreeSummarizedExperiment if they do not show up in the results from filtering
+#' the source parquet data file.
+#' @return Named list: the 'working_view' element is a DuckDB database view or
+#' table. This is still lazy until collect() is called. The 'sample_headers'
+#' element contains metadata for any empty samples.
+#' @examples
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+#'                  dplyr::filter(grepl("UMP biosynthesis", pathway))
+#'
+#' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'            "fb7e8210-002a-4554-b265-873c4003e25f",
+#'            "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'            "4985aa08-6138-4146-8ae3-952716575395",
+#'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+#'
+#' working_view <- prepare_view(con,
+#'                              data_type = "pathcoverage_unstratified",
+#'                              filter_values = list(uuid = uuids),
+#'                              custom_view = custom_filter,
+#'                              include_empty_samples = FALSE)
+#' @rdname prepare_view
+#' @export
+#' @importFrom dplyr tbl
 prepare_view <- function(con, data_type, filter_values, custom_view,
                          include_empty_samples) {
     sample_headers <- NULL
@@ -347,7 +467,7 @@ prepare_view <- function(con, data_type, filter_values, custom_view,
             working_view <- custom_view
         } else {
             proj <- pick_projection(con, data_type)
-            working_view <- tbl(con, proj)
+            working_view <- dplyr::tbl(con, proj)
         }
     }
 
@@ -357,6 +477,50 @@ prepare_view <- function(con, data_type, filter_values, custom_view,
     return(wv_list)
 }
 
+#' @title Collect a DuckDB view and provide important notifications
+#' @description 'collect_and_notify' calls dplyr::collect() on a DuckDB database
+#' view or table and notifies the user if it accesses a remote resource that may
+#' cause delays or failure.
+#' @param con DuckDB connection object of class 'duckdb_connection'
+#' @param data_type Single string: value found in the data_type' column of
+#' output_file_types() and also as part of the name of a view found in
+#' DBI::dbListTables(con), indicating which views to consider when collecting
+#' data.
+#' @param working_view DuckDB database view or table
+#' @return Tibble data.frame
+#' @examples
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                          data_types = "pathcoverage_unstratified")
+#'
+#' custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+#'                  dplyr::filter(grepl("UMP biosynthesis", pathway))
+#'
+#' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+#'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+#'            "fb7e8210-002a-4554-b265-873c4003e25f",
+#'            "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
+#'            "4985aa08-6138-4146-8ae3-952716575395",
+#'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
+#'
+#' prep <- prepare_view(con,
+#'                      data_type = "pathcoverage_unstratified",
+#'                      filter_values = list(uuid = uuids),
+#'                      custom_view = custom_filter,
+#'                      include_empty_samples = FALSE)
+#'
+#' collected_view <- collect_and_notify(con,
+#'                                      data_type = "pathcoverage_unstratified",
+#'                                      prep$working_view)
+#' @rdname collect_and_notify
+#' @export
+#' @importFrom dplyr collect
 collect_and_notify <- function(con, data_type, working_view) {
     current_gen <- output_file_types(filter_col = "data_type",
                 filter_string = paste0("^", data_type, "$"))$general_data_type
@@ -370,7 +534,7 @@ collect_and_notify <- function(con, data_type, working_view) {
     }
 
     collected_view <- working_view |>
-        collect()
+        dplyr::collect()
 
     return(collected_view)
 }
@@ -1176,6 +1340,38 @@ standardize_ordering <- function(vec, delim) {
     return(vec)
 }
 
+#' @title Merge TreeSummarizedExperiment assays
+#' @description 'merge_assays' takes the assay elements of multiple
+#' TreeSummarizedExperiment objects and merges them into a single assay per
+#' type.
+#' @param merge_list List of TreeSummarizedExperiment objects
+#' @return List of tables formatted as TreeSummarizedExperiment assays
+#' @examples
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_experiment_list.Rds")
+#' sample_experiment_list <- readRDS(fpath)
+#' assay_list <- merge_assays(sample_experiment_list)
+#' @seealso
+#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}
+#'  \code{\link[purrr]{map}}
+#'  \code{\link[purrr]{reduce}}
+#'  \code{\link[tibble]{rownames}}
+#'  \code{\link[dplyr]{mutate-joins}}
+#'  \code{\link[dplyr]{mutate}}
+#'  \code{\link[dplyr]{across}}
+#'  \code{\link[tidyselect]{everything}}
+#'  \code{\link[tidyr]{replace_na}}
+#'  \code{\link[S4Vectors]{SimpleList-class}}
+#' @rdname merge_assays
+#' @export
+#' @importFrom SummarizedExperiment assayNames assay
+#' @importFrom purrr map reduce
+#' @importFrom tibble rownames_to_column column_to_rownames
+#' @importFrom dplyr full_join mutate across
+#' @importFrom tidyselect everything
+#' @importFrom tidyr replace_na
+#' @importFrom S4Vectors SimpleList
 merge_assays <- function(merge_list) {
     ## Check that assays match
     assay_names <-
@@ -1209,6 +1405,36 @@ merge_assays <- function(merge_list) {
     return(assay_list)
 }
 
+#' @title Merge TreeSummarizedExperiment rowData
+#' @description 'merge_rowdata' takes the rowData elements of multiple
+#' TreeSummarizedExperiment objects and merges them into a single DataFrame of
+#' rowData.
+#' @param merge_list List of TreeSummarizedExperiment objects
+#' @param assay_list List of TreeSummarizedExperiment assays or similarly
+#' formatted tables
+#' @return DataFrame formatted as a TreeSummarizedExperiment rowData object
+#' @examples
+#' fpath <- file.path(system.file("extdata",
+#'                                package = "parkinsonsMetagenomicData"),
+#'                    "sample_experiment_list.Rds")
+#' sample_experiment_list <- readRDS(fpath)
+#' assay_list <- merge_assays(sample_experiment_list)
+#' rowData <- merge_rowdata(sample_experiment_list, assay_list)
+#' @seealso
+#'  \code{\link[purrr]{map}}
+#'  \code{\link[purrr]{reduce}}
+#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}
+#'  \code{\link[tibble]{rownames}}
+#'  \code{\link[dplyr]{mutate-joins}}
+#'  \code{\link[S4Vectors]{DataFrame-class}}
+#'  \code{\link[S4Vectors]{S4VectorsOverview}}
+#' @rdname merge_rowdata
+#' @export
+#' @importFrom purrr map reduce
+#' @importFrom SummarizedExperiment rowData
+#' @importFrom tibble rownames_to_column column_to_rownames
+#' @importFrom dplyr full_join
+#' @importFrom S4Vectors DataFrame
 merge_rowdata <- function(merge_list, assay_list) {
     rowData <-
         purrr::map(merge_list, SummarizedExperiment::rowData) |>
@@ -1268,6 +1494,22 @@ get_view_source <- function(con, lazy) {
     return(proj_url)
 }
 
+#' @title Submit and parse a GET request to the Hugging Face API
+#' @description 'get_hf_api' composes, submits, and parses a GET request to the
+#' Hugging Face API for a particular repo.
+#' @param repo_name String: name of the Hugging Face repo to get info for
+#' @return List of response elements
+#' @examples
+#' \donttest{
+#'  get_hf_api("waldronlab/metagenomics_mac")
+#' }
+#' @seealso
+#'  \code{\link[httr]{GET}}, \code{\link[httr]{status_code}}
+#'  \code{\link[jsonlite]{toJSON, fromJSON}}
+#' @rdname get_hf_api
+#' @export
+#' @importFrom httr GET status_code
+#' @importFrom jsonlite fromJSON
 get_hf_api <- function(repo_name) {
     # --- Step 1: Construct API URL and get repo info ---
     repo_api_url <- paste0("https://huggingface.co/api/datasets/", repo_name)
@@ -1292,6 +1534,19 @@ get_hf_api <- function(repo_name) {
     return(repo_info)
 }
 
+#' @title Filter API response for parquet files
+#' @description 'check_for_parquet' filters the response obtained from calling
+#' get_hf_api() to find parquet files.
+#' @param repo_info List: API response elements from get_hf_api()
+#' @param repo_name String: name of Hugging face repo
+#' @return String vector: names of parquet files in repo
+#' @examples
+#' \donttest{
+#'  repo_info <- get_hf_api("waldronlab/metagenomics_mac")
+#'  check_for_parquet(repo_info, "waldronlab/metagenomics_mac")
+#' }
+#' @rdname check_for_parquet
+#' @export
 check_for_parquet <- function(repo_info, repo_name) {
     # --- Step 2: Filter for Parquet files ---
     if (is.null(repo_info$siblings) || is.null(repo_info$siblings$rfilename)) {
@@ -1304,7 +1559,19 @@ check_for_parquet <- function(repo_info, repo_name) {
 
     return(parquet_files)
 }
-
+#' @title Add file definitions to a list of file names
+#' @description 'add_defs' uses biobakery_file_definitions.csv to assign
+#' definitions to each parquet file provided.
+#' @param result_df Data frame: must have the column 'filename'
+#' @param verbose Boolean: should output be verbose, Default: FALSE
+#' @return Data frame
+#' @seealso
+#'  \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{mutate-joins}}
+#'  \code{\link[utils]{read.table}}
+#' @rdname add_defs
+#' @export
+#' @importFrom dplyr mutate left_join
+#' @importFrom utils read.csv
 add_defs <- function(result_df, verbose) {
     # --- Step 5: Read definitions and join with file list ---
     def_path <- system.file(

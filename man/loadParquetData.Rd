@@ -92,8 +92,8 @@ fpaths <- c(file.path(system.file("extdata",
 con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
-custom_filter <- tbl(con, "pathcoverage_unstratified_pathway") |>
-                 filter(grepl("UMP biosynthesis", pathway))
+custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+                 dplyr::filter(grepl("UMP biosynthesis", pathway))
 
 uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
