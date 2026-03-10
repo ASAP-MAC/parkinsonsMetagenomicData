@@ -1,3 +1,6 @@
+data("sampleMetadata", package = "parkinsonsMetagenomicData",
+     envir = environment())
+
 test_meta <- filter(sampleMetadata, study_name == "MazmanianS_DeCastroFonsecaM_1")
 data_type = "relative_abundance"
 

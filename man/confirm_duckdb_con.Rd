@@ -23,6 +23,6 @@ the function will throw a 'stop()' error.
 }
 \examples{
 con <- db_connect()
-confirm_duckdb_con(con)
-confirm_duckdb_con("horse")
+try(confirm_duckdb_con(con))
+try(confirm_duckdb_con("horse"))
 }

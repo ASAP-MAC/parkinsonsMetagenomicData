@@ -33,13 +33,15 @@ fpaths <- c(file.path(system.file("extdata",
 con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
-rdata <- build_tse_rowdata(parquet_table = parquet_table,
+parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
+rdata <- build_tse_rowdata(parquet_table = parquet_tbl,
                           rnames_col = "pathway",
                           rdata_cols = c("pathway_uniref", "pathway_genus",
                                          "pathway_species"))
 cdata <- build_tse_coldata(cnames_col = "uuid",
                           cdata_cols = "humann_header",
-                          parquet_table = parquet_table)
+                          parquet_table = parquet_tbl)
 alist <- build_tse_assays(assay_cols = "coverage",
                          rnames_col = "pathway",
                          cnames_col = "uuid",

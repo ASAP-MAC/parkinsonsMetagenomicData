@@ -16,8 +16,7 @@ httpfs protocol.
 \description{
 'file_to_hf' converts standard https:// URLs representing files
 in a Hugging Face repo to URLs compatible with httpfs as described in the
-\href{https://duckdb.org/docs/stable/core_extensions/httpfs/
-hugging_face.html}{DuckDB Docs}
+\href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
 }
 \examples{
 file <- paste0("https://huggingface.co/datasets/waldronlab/",

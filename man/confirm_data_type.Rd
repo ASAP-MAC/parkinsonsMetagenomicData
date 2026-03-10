@@ -32,8 +32,8 @@ input validation. If the input is valid, nothing will happen. If it is not,
 the function will throw a 'stop()' error.
 }
 \examples{
-confirm_data_type("relative_abundance")
-confirm_data_type("relative_abundance", "tool", "humann")
-confirm_data_type(c("relative_abundance", "viral_clusters"))
-confirm_data_type("horse")
+try(confirm_data_type("relative_abundance"))
+try(confirm_data_type("relative_abundance", "tool", "humann"))
+try(confirm_data_type(c("relative_abundance", "viral_clusters")))
+try(confirm_data_type("horse"))
 }

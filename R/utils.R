@@ -90,6 +90,7 @@ cache_new <- function(bfc, locator) {
 #' @importFrom googleCloudStorageR gcs_get_object
 handle_redownload <- function(bfc, locator, rid, p_redown) {
     ## Follow "redownload" instructions
+    doit <- FALSE
     if (p_redown == "a" & interactive()) {
         over <- readline(prompt = paste0("Resource with rname = '", locator,
                                          "' found in cache. Redownload and",
@@ -128,9 +129,6 @@ handle_redownload <- function(bfc, locator, rid, p_redown) {
 #' specified instead of the default created by pMD_get_cache()
 #' @return Named list: the 'cache_paths' element lists the cached locations of
 #' all requested files, the 'errors' element reports any errors encountered.
-#' @examples
-#' \dontrun{
-#' }
 #' @seealso
 #'  \code{\link[stats]{setNames}}
 #' @rdname cache_list
@@ -192,6 +190,7 @@ cache_list <- function(locators, p_redown, custom_cache) {
 #' @rdname output_file_types
 #' @export
 #' @importFrom readr read_csv
+#' @importFrom dplyr filter
 output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     ## Read file
     fpath <- system.file("extdata", "output_files.csv",
@@ -209,7 +208,7 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
         }
 
         ftable <- ftable %>%
-            filter(grepl(filter_string, .data[[filter_col]],
+            dplyr::filter(grepl(filter_string, .data[[filter_col]],
                         ignore.case = TRUE))
     }
 
@@ -221,7 +220,6 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
 #' extdata/biobakery_file_definitions.csv.
 #' @return Tibble with columns 'DataType', 'Tool', 'Description', and
 #' Units/Normalization'
-#' @details DETAILS
 #' @examples
 #' biobakery_files()
 #' @seealso
@@ -433,11 +431,12 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
 #'            "4985aa08-6138-4146-8ae3-952716575395",
 #'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
 #'
-#' working_view <- prepare_view(con,
-#'                              data_type = "pathcoverage_unstratified",
-#'                              filter_values = list(uuid = uuids),
-#'                              custom_view = custom_filter,
-#'                              include_empty_samples = FALSE)
+#' prep <- prepare_view(con,
+#'                      data_type = "pathcoverage_unstratified",
+#'                      filter_values = list(uuid = uuids),
+#'                      custom_view = custom_filter,
+#'                      include_empty_samples = FALSE)
+#' working_view <- prep$working_view
 #' @rdname prepare_view
 #' @export
 #' @importFrom dplyr tbl
@@ -604,6 +603,7 @@ data_dict <- function() {
 #' @rdname get_ref_info
 #' @export
 #' @importFrom readr read_csv
+#' @importFrom dplyr filter
 get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
     ## Load in reference file info table
     fpath <- system.file("extdata", "ref_file_definitions.csv",
@@ -621,7 +621,7 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
         }
 
         ftable <- ftable %>%
-            filter(grepl(filter_string, .data[[filter_col]],
+            dplyr::filter(grepl(filter_string, .data[[filter_col]],
                          ignore.case = TRUE))
     }
 
@@ -631,8 +631,7 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
 #' @title Convert standard https:// URLs to httpfs-compatible hf:// URLs
 #' @description 'file_to_hf' converts standard https:// URLs representing files
 #' in a Hugging Face repo to URLs compatible with httpfs as described in the
-#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/
-#' hugging_face.html}{DuckDB Docs}
+#' \href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
 #' @param url String: a URL referencing a single file in a Hugging Face repo.
 #' @return String: a URL referencing the same file in a format matching the
 #' httpfs protocol.
@@ -688,7 +687,7 @@ get_exts <- function(file_path) {
 #' filtered and element value equals a vector of exact column values.
 #' @examples
 #' if (!exists("sampleMetadata", envir = environment())) {
-#'     data("sampleMetadata", package = "parkinsonsMetagenomicData",
+#'     utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
 #'     envir = environment())
 #' }
 #'
@@ -700,8 +699,8 @@ get_exts <- function(file_path) {
 #'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
 #'
 #' sample_data <- sampleMetadata %>%
-#'     filter(uuid %in% uuids) %>%
-#'     select(where(~ !any(is.na(.x))))
+#'     dplyr::filter(uuid %in% uuids) %>%
+#'     dplyr::select(where(~ !any(is.na(.x))))
 #'
 #' fpaths <- c(file.path(system.file("extdata",
 #'                                   package = "parkinsonsMetagenomicData"),
@@ -736,10 +735,6 @@ convert_to_filter_values <- function(con, data_type, sample_data,
     ## Convert sample_data and feature_data to filter_values
     filter_values <- list()
     if (!is.null(feature_data)) {
-        # Retrieve available projections
-        projs <- DBI::dbListTables(con) |>
-            gsub(pattern = paste0(data_type, "_"), replacement = "")
-
         # Determine primary filter column and values
         fcols <- colnames(feature_data)
 
@@ -751,6 +746,12 @@ convert_to_filter_values <- function(con, data_type, sample_data,
         }
 
         filter_values <- c(filter_values, fsets)
+    }
+
+    if (!is.null(sample_data)) {
+        # Add sample uuids
+        uuid_arg <- list(uuid = sample_data$uuid)
+        filter_values <- c(filter_values, uuid_arg)
     }
 
     return(filter_values)
@@ -765,8 +766,8 @@ convert_to_filter_values <- function(con, data_type, sample_data,
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' confirm_uuids("56aa2ad5-007d-407c-a644-48aac1e9a8f0")
-#' confirm_uuids("horse")
+#' try(confirm_uuids("56aa2ad5-007d-407c-a644-48aac1e9a8f0"))
+#' try(confirm_uuids("horse"))
 #' @rdname confirm_uuids
 #' @export
 confirm_uuids <- function(uuids) {
@@ -800,10 +801,10 @@ confirm_uuids <- function(uuids) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' confirm_data_type("relative_abundance")
-#' confirm_data_type("relative_abundance", "tool", "humann")
-#' confirm_data_type(c("relative_abundance", "viral_clusters"))
-#' confirm_data_type("horse")
+#' try(confirm_data_type("relative_abundance"))
+#' try(confirm_data_type("relative_abundance", "tool", "humann"))
+#' try(confirm_data_type(c("relative_abundance", "viral_clusters")))
+#' try(confirm_data_type("horse"))
 #' @rdname confirm_data_type
 #' @export
 confirm_data_type <- function(data_type, filter_col = NULL,
@@ -869,10 +870,10 @@ confirm_data_type <- function(data_type, filter_col = NULL,
 #' l1 <- list(uuid = "56aa2ad5-007d-407c-a644-48aac1e9a8f0",
 #'            animals = c("frog", "horse"))
 #' l2 <- list(uuid = "blue")
-#' confirm_filter_values(l1)
-#' confirm_filter_values(l1, c("uuid", "animals", "shapes"))
-#' confirm_filter_values(l1, c("animals", "shapes"))
-#' confirm_filter_values(l2)
+#' try(confirm_filter_values(l1))
+#' try(confirm_filter_values(l1, c("uuid", "animals", "shapes")))
+#' try(confirm_filter_values(l1, c("animals", "shapes")))
+#' try(confirm_filter_values(l2))
 #' @rdname confirm_filter_values
 #' @export
 confirm_filter_values <- function(filter_values, available_features = NULL) {
@@ -900,12 +901,16 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
     }
 }
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param sample_data PARAM_DESCRIPTION
-#' @param feature_data PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @title Validate 'sample_data' and 'feature_data' arguments
+#' @description 'confirm_sample_feature_data' checks that the 'sample_data' and
+#' 'feature_data' arguments are of the correct format, contain key information,
+#' and at least one is not NULL.
+#' @param sample_data Table: sample data table to be validated
+#' @param feature_data Table: feature data table to be validated
+#' @return NULL (invisibly)
+#' @details This function is intended to be used within another function as
+#' input validation. If the input is valid, nothing will happen. If it is not,
+#' the function will throw a 'stop()' error.
 #' @examples
 #' sample_data <- data.frame(id = c(1, 2, 3),
 #'                           color = c("red", "blue", "yellow"))
@@ -913,12 +918,12 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
 #'                                       "Firmicutes"),
 #'                            class = c("Actinomycetia", "Coriobacteriia",
 #'                                      "Clostridia"))
-#' confirm_sample_feature_data(sample_data, feature_data)
+#' try(confirm_sample_feature_data(sample_data, feature_data))
 #' sample_data$uuid <- c("a1", "b2", "c3")
-#' confirm_sample_feature_data(sample_data, feature_data)
-#' confirm_sample_feature_data(sample_data, "features")
-#' confirm_sample_feature_data(NULL, feature_data)
-#' confirm_sample_feature_data(NULL, NULL)
+#' try(confirm_sample_feature_data(sample_data, feature_data))
+#' try(confirm_sample_feature_data(sample_data, "features"))
+#' try(confirm_sample_feature_data(NULL, feature_data))
+#' try(confirm_sample_feature_data(NULL, NULL))
 #' @rdname confirm_sample_feature_data
 #' @export
 confirm_sample_feature_data <- function(sample_data, feature_data) {
@@ -956,8 +961,8 @@ confirm_sample_feature_data <- function(sample_data, feature_data) {
 #' the function will throw a 'stop()' error.
 #' @examples
 #' con <- db_connect()
-#' confirm_duckdb_con(con)
-#' confirm_duckdb_con("horse")
+#' try(confirm_duckdb_con(con))
+#' try(confirm_duckdb_con("horse"))
 #' @rdname confirm_duckdb_con
 #' @export
 confirm_duckdb_con <- function(con) {
@@ -984,8 +989,8 @@ confirm_duckdb_con <- function(con) {
 #'                       "pathcoverage_unstratified_pathway.parquet"))
 #' con <- accessParquetData(local_files = fpaths,
 #'                          data_types = "pathcoverage_unstratified")
-#' view <- tbl(con, "pathcoverage_unstratified_uuid")
-#' confirm_duckdb_view(view)
+#' view <- dplyr::tbl(con, "pathcoverage_unstratified_uuid")
+#' try(confirm_duckdb_view(view))
 #' @rdname confirm_duckdb_view
 #' @export
 confirm_duckdb_view <- function(view) {
@@ -1005,9 +1010,9 @@ confirm_duckdb_view <- function(view) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' confirm_repo(NULL)
-#' confirm_repo("horse")
-#' confirm_repo("waldronlab/metagenomics_mac")
+#' try(confirm_repo(NULL))
+#' try(confirm_repo("horse"))
+#' try(confirm_repo("waldronlab/metagenomics_mac"))
 #' @rdname confirm_repo
 #' @export
 confirm_repo <- function(repo) {
@@ -1030,8 +1035,8 @@ confirm_repo <- function(repo) {
 #' input validation. If the input is valid, nothing will happen. If it is not,
 #' the function will throw a 'stop()' error.
 #' @examples
-#' confirm_ref("horse")
-#' confirm_ref("clade_name_ref")
+#' try(confirm_ref("horse"))
+#' try(confirm_ref("clade_name_ref"))
 #' @rdname confirm_ref
 #' @export
 confirm_ref <- function(ref) {
@@ -1094,7 +1099,8 @@ find_tse_cols <- function(colinfo) {
 #' con <- accessParquetData(local_files = fpaths,
 #'                          data_types = "pathcoverage_unstratified")
 #'
-#' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+#'                     dplyr::collect()
 #'
 #' atab <- build_tse_assays(assay_cols = "coverage",
 #'                          rnames_col = "pathway",
@@ -1111,18 +1117,20 @@ find_tse_cols <- function(colinfo) {
 #' @importFrom tidyselect all_of
 #' @importFrom tidyr pivot_wider
 #' @importFrom tibble column_to_rownames
+#' @importFrom dplyr select
 build_tse_assays <- function(assay_cols, rnames_col, cnames_col, parquet_table,
                             esamps = NULL) {
     alist <- lapply(assay_cols, function(acol) {
         ## Select columns relevant to assay tables and format
         pdata <- parquet_table %>%
-            select(tidyselect::all_of(c(rnames_col, acol, "uuid"))) %>%
+            dplyr::select(tidyselect::all_of(c(rnames_col, acol,
+                                                cnames_col))) %>%
             tidyr::pivot_wider(
                 names_from  = tidyselect::all_of(cnames_col),
                 values_from = tidyselect::all_of(acol),
                 values_fill = 0
             ) %>%
-            tibble::column_to_rownames({{rnames_col}}) %>%
+            tibble::column_to_rownames(var = rnames_col) %>%
             as.matrix()
 
         ## Add data from "empty samples" if provided
@@ -1160,7 +1168,8 @@ build_tse_assays <- function(assay_cols, rnames_col, cnames_col, parquet_table,
 #' con <- accessParquetData(local_files = fpaths,
 #'                          data_types = "pathcoverage_unstratified")
 #'
-#' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+#'                     dplyr::collect()
 #'
 #' edat <- data.frame(uuid = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
 #'                             "88a4d532-64fa-414c-b3d0-f02b291341c0"),
@@ -1169,7 +1178,7 @@ build_tse_assays <- function(assay_cols, rnames_col, cnames_col, parquet_table,
 #'
 #' cdat <- build_tse_coldata(cnames_col = "uuid",
 #'                           cdata_cols = "humann_header",
-#'                           parquet_table = parquet_table,
+#'                           parquet_table = parquet_tbl,
 #'                           esamps = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
 #'                                      "88a4d532-64fa-414c-b3d0-f02b291341c0"),
 #'                           empty_data = edat)
@@ -1181,20 +1190,21 @@ build_tse_assays <- function(assay_cols, rnames_col, cnames_col, parquet_table,
 #' @rdname build_tse_coldata
 #' @export
 #' @importFrom tidyselect any_of
-#' @importFrom dplyr distinct left_join join_by
+#' @importFrom dplyr distinct left_join join_by filter select
+#' @importFrom utils data
 build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
                                 esamps = NULL, empty_data = NULL) {
     ## Check if empty data was supplied and pull relevant columns if so
     if (!is.null(empty_data)) {
         etab <- empty_data %>%
-            filter(.data$uuid %in% esamps) %>%
-            select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
+            dplyr::filter(.data$uuid %in% esamps) %>%
+            dplyr::select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
             as.data.frame()
     }
 
     ## Select relevant info from main parquet table
     cdata <- parquet_table %>%
-        select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
+        dplyr::select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
         dplyr::distinct() %>%
         as.data.frame()
 
@@ -1204,12 +1214,12 @@ build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
     }
 
     ## Load sampleMetadata
-    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+    utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
          envir = environment())
 
     ## Add sample metadata
     cdata <- cdata %>%
-        dplyr::left_join(sampleMetadata, dplyr::join_by("uuid"))
+        dplyr::left_join(sampleMetadata, by = cnames_col)
     rownames(cdata) <- cdata[[cnames_col]]
 
     return(cdata)
@@ -1222,7 +1232,7 @@ build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
 #' @param parquet_table Table or data frame: data taken directly from a parquet
 #' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
 #' @param rnames_col Character string: column that supplies row names
-#' @param cdata_cols Character string: column(s) that indicate rowData
+#' @param rdata_cols Character string: column(s) that indicate rowData
 #' @return A rowData table compatible with the SummarizedExperiment format
 #' @examples
 #' fpaths <- c(file.path(system.file("extdata",
@@ -1235,9 +1245,10 @@ build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
 #' con <- accessParquetData(local_files = fpaths,
 #'                          data_types = "pathcoverage_unstratified")
 #'
-#' parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+#'                     dplyr::collect()
 #'
-#' rdat <- build_tse_rowdata(parquet_table = parquet_table,
+#' rdat <- build_tse_rowdata(parquet_table = parquet_tbl,
 #'                           rnames_col = "pathway",
 #'                           rdata_cols = c("pathway_uniref", "pathway_genus",
 #'                                          "pathway_species"))
@@ -1247,10 +1258,10 @@ build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
 #' @rdname build_tse_rowdata
 #' @export
 #' @importFrom tidyselect any_of
-#' @importFrom dplyr distinct
+#' @importFrom dplyr distinct select
 build_tse_rowdata <- function(parquet_table, rnames_col, rdata_cols) {
     rdata <- parquet_table %>%
-        select(tidyselect::any_of(c(rnames_col, rdata_cols))) %>%
+        dplyr::select(tidyselect::any_of(c(rnames_col, rdata_cols))) %>%
         dplyr::distinct() %>%
         as.data.frame()
     rownames(rdata) <- rdata[[rnames_col]]
@@ -1278,13 +1289,16 @@ build_tse_rowdata <- function(parquet_table, rnames_col, rdata_cols) {
 #' con <- accessParquetData(local_files = fpaths,
 #'                          data_types = "pathcoverage_unstratified")
 #'
-#' rdata <- build_tse_rowdata(parquet_table = parquet_table,
+#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+#'                     dplyr::collect()
+
+#' rdata <- build_tse_rowdata(parquet_table = parquet_tbl,
 #'                           rnames_col = "pathway",
 #'                           rdata_cols = c("pathway_uniref", "pathway_genus",
 #'                                          "pathway_species"))
 #' cdata <- build_tse_coldata(cnames_col = "uuid",
 #'                           cdata_cols = "humann_header",
-#'                           parquet_table = parquet_table)
+#'                           parquet_table = parquet_tbl)
 #' alist <- build_tse_assays(assay_cols = "coverage",
 #'                          rnames_col = "pathway",
 #'                          cnames_col = "uuid",
@@ -1427,7 +1441,6 @@ merge_assays <- function(merge_list) {
 #'  \code{\link[tibble]{rownames}}
 #'  \code{\link[dplyr]{mutate-joins}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}
-#'  \code{\link[S4Vectors]{S4VectorsOverview}}
 #' @rdname merge_rowdata
 #' @export
 #' @importFrom purrr map reduce
@@ -1468,8 +1481,8 @@ merge_rowdata <- function(merge_list, assay_list) {
 #' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
 #'                           data_types = "pathcoverage_unstratified")
-#'  lazy <- tbl(con, "pathcoverage_unstratified_pathway") |>
-#'              filter(grepl("UMP biosynthesis", pathway))
+#'  lazy <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+#'              dplyr::filter(grepl("UMP biosynthesis", pathway))
 #'
 #'  get_view_source(con, lazy)
 #' }
@@ -1565,6 +1578,16 @@ check_for_parquet <- function(repo_info, repo_name) {
 #' @param result_df Data frame: must have the column 'filename'
 #' @param verbose Boolean: should output be verbose, Default: FALSE
 #' @return Data frame
+#' @examples
+#' result_df <- data.frame(filename = c("clade_name_ref.parquet",
+#'                                "gene_family_ref.parquet",
+#'                                "genefamilies_cpm_gene_family_uniref.parquet"),
+#'                         url = c("https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/clade_name_ref.parquet",
+#'                           "https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/gene_family_ref.parquet",
+#'                           "https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/genefamilies_cpm_gene_family_uniref.parquet"
+#'                         ))
+#'
+#' def_df <- add_defs(result_df, verbose = FALSE)
 #' @seealso
 #'  \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{mutate-joins}}
 #'  \code{\link[utils]{read.table}}

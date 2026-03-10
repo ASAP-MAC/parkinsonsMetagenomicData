@@ -174,6 +174,8 @@ test_that("filter_values were applied", {
 })
 
 test_that("sampleMetadata was added", {
+    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+        envir = environment())
     meta_age <- sampleMetadata |>
         dplyr::filter(uuid %in% uuids) |>
         dplyr::pull(age) |>
@@ -185,6 +187,8 @@ test_that("sampleMetadata was added", {
 })
 
 ## returnSamples
+data("sampleMetadata", package = "parkinsonsMetagenomicData",
+     envir = environment())
 human_samples <- sampleMetadata |>
     dplyr::filter(control %in% c("Case", "Study Control") &
                   age >= 16 &

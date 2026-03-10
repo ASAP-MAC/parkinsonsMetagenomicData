@@ -60,9 +60,10 @@ uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
            "4985aa08-6138-4146-8ae3-952716575395",
            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
 
-working_view <- prepare_view(con,
-                             data_type = "pathcoverage_unstratified",
-                             filter_values = list(uuid = uuids),
-                             custom_view = custom_filter,
-                             include_empty_samples = FALSE)
+prep <- prepare_view(con,
+                     data_type = "pathcoverage_unstratified",
+                     filter_values = list(uuid = uuids),
+                     custom_view = custom_filter,
+                     include_empty_samples = FALSE)
+working_view <- prep$working_view
 }

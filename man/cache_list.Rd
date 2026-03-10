@@ -26,10 +26,6 @@ files are requested again through this function, they will not be
 re-downloaded unless explicitly specified, in order to reduce excessive
 downloads.
 }
-\examples{
-\dontrun{
-}
-}
 \seealso{
 \code{\link[stats]{setNames}}
 }

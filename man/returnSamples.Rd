@@ -63,21 +63,21 @@ connection.
 \examples{
 \donttest{
  if (!exists("sampleMetadata", envir = environment())) {
-     data("sampleMetadata", package = "parkinsonsMetagenomicData",
+     utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
      envir = environment())
  }
 
  table(sampleMetadata$control, useNA = "ifany")
  sample_data <- sampleMetadata \%>\%
-     filter(control \%in\% c("Case", "Study Control") &
-            age >= 16 &
-            is.na(sex) != TRUE)
+     dplyr::filter(control \%in\% c("Case", "Study Control") &
+                    age >= 16 &
+                    is.na(sex) != TRUE)
  sample_data_small <- sample_data[1:15,]
 
  clade_name_ref <- load_ref("clade_name_ref")
  feature_data_genus <- clade_name_ref \%>\%
-     filter(grepl("Faecalibacterium", clade_name_genus)) \%>\%
-     select(clade_name_genus)
+     dplyr::filter(grepl("Faecalibacterium", clade_name_genus)) \%>\%
+     dplyr::select(clade_name_genus)
 
  genus_ex <- returnSamples(data_type = "relative_abundance",
                            sample_data = sample_data_small,
@@ -86,7 +86,7 @@ connection.
 }
 
 if (!exists("sampleMetadata", envir = environment())) {
-    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+    utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
     envir = environment())
 }
 
@@ -98,8 +98,8 @@ uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
 
 sample_data <- sampleMetadata \%>\%
-    filter(uuid \%in\% uuids) \%>\%
-    select(where(~ !any(is.na(.x))))
+    dplyr::filter(uuid \%in\% uuids) \%>\%
+    dplyr::select(where(~ !any(is.na(.x))))
 
 fpaths <- c(file.path(system.file("extdata",
                                   package = "parkinsonsMetagenomicData"),

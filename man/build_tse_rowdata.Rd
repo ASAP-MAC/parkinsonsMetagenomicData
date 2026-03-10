@@ -12,7 +12,7 @@ file found in the repo of interest (see inst/extdata/parquet_repos.csv).}
 
 \item{rnames_col}{Character string: column that supplies row names}
 
-\item{cdata_cols}{Character string: column(s) that indicate rowData}
+\item{rdata_cols}{Character string: column(s) that indicate rowData}
 }
 \value{
 A rowData table compatible with the SummarizedExperiment format
@@ -33,9 +33,10 @@ fpaths <- c(file.path(system.file("extdata",
 con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
-parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
 
-rdat <- build_tse_rowdata(parquet_table = parquet_table,
+rdat <- build_tse_rowdata(parquet_table = parquet_tbl,
                           rnames_col = "pathway",
                           rdata_cols = c("pathway_uniref", "pathway_genus",
                                          "pathway_species"))

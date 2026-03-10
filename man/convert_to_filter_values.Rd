@@ -35,7 +35,7 @@ argument in a number of readParquet.R functions.
 }
 \examples{
 if (!exists("sampleMetadata", envir = environment())) {
-    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+    utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
     envir = environment())
 }
 
@@ -47,8 +47,8 @@ uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
 
 sample_data <- sampleMetadata \%>\%
-    filter(uuid \%in\% uuids) \%>\%
-    select(where(~ !any(is.na(.x))))
+    dplyr::filter(uuid \%in\% uuids) \%>\%
+    dplyr::select(where(~ !any(is.na(.x))))
 
 fpaths <- c(file.path(system.file("extdata",
                                   package = "parkinsonsMetagenomicData"),

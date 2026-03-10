@@ -30,6 +30,6 @@ fpaths <- c(file.path(system.file("extdata",
                       "pathcoverage_unstratified_pathway.parquet"))
 con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
-view <- tbl(con, "pathcoverage_unstratified_uuid")
-confirm_duckdb_view(view)
+view <- dplyr::tbl(con, "pathcoverage_unstratified_uuid")
+try(confirm_duckdb_view(view))
 }

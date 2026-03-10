@@ -18,6 +18,17 @@ Data frame
 'add_defs' uses biobakery_file_definitions.csv to assign
 definitions to each parquet file provided.
 }
+\examples{
+result_df <- data.frame(filename = c("clade_name_ref.parquet",
+                               "gene_family_ref.parquet",
+                               "genefamilies_cpm_gene_family_uniref.parquet"),
+                        url = c("https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/clade_name_ref.parquet",
+                          "https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/gene_family_ref.parquet",
+                          "https://huggingface.co/datasets/waldronlab/metagenomics_mac/resolve/main/genefamilies_cpm_gene_family_uniref.parquet"
+                        ))
+
+def_df <- add_defs(result_df, verbose = FALSE)
+}
 \seealso{
 \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{mutate-joins}}
 \code{\link[utils]{read.table}}

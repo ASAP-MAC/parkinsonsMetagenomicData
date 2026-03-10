@@ -14,9 +14,6 @@ Units/Normalization'
 'biobakery_files' reads in the table
 extdata/biobakery_file_definitions.csv.
 }
-\details{
-DETAILS
-}
 \examples{
 biobakery_files()
 }

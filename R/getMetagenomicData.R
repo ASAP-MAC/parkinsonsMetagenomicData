@@ -339,6 +339,7 @@ listMetagenomicData <- function() {
 #' @export
 #' @importFrom S4Vectors DataFrame
 #' @importFrom SummarizedExperiment colData
+#' @importFrom utils data
 add_metadata <- function(sample_ids, id_col = "uuid", experiment,
                         method = "append") {
     ## Check input
@@ -347,7 +348,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
                     "'experiment'."))
     }
     stopifnot(methods::is(experiment, "TreeSummarizedExperiment"))
-    data("sampleMetadata", package = "parkinsonsMetagenomicData",
+    utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
         envir = environment())
     meta <- sampleMetadata
     if (!id_col %in% colnames(meta)) {

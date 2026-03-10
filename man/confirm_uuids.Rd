@@ -22,6 +22,6 @@ input validation. If the input is valid, nothing will happen. If it is not,
 the function will throw a 'stop()' error.
 }
 \examples{
-confirm_uuids("56aa2ad5-007d-407c-a644-48aac1e9a8f0")
-confirm_uuids("horse")
+try(confirm_uuids("56aa2ad5-007d-407c-a644-48aac1e9a8f0"))
+try(confirm_uuids("horse"))
 }

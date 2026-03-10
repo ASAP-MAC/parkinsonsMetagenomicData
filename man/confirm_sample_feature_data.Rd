@@ -2,23 +2,27 @@
 % Please edit documentation in R/utils.R
 \name{confirm_sample_feature_data}
 \alias{confirm_sample_feature_data}
-\title{FUNCTION_TITLE}
+\title{Validate 'sample_data' and 'feature_data' arguments}
 \usage{
 confirm_sample_feature_data(sample_data, feature_data)
 }
 \arguments{
-\item{sample_data}{PARAM_DESCRIPTION}
+\item{sample_data}{Table: sample data table to be validated}
 
-\item{feature_data}{PARAM_DESCRIPTION}
+\item{feature_data}{Table: feature data table to be validated}
 }
 \value{
-OUTPUT_DESCRIPTION
+NULL (invisibly)
 }
 \description{
-FUNCTION_DESCRIPTION
+'confirm_sample_feature_data' checks that the 'sample_data' and
+'feature_data' arguments are of the correct format, contain key information,
+and at least one is not NULL.
 }
 \details{
-DETAILS
+This function is intended to be used within another function as
+input validation. If the input is valid, nothing will happen. If it is not,
+the function will throw a 'stop()' error.
 }
 \examples{
 sample_data <- data.frame(id = c(1, 2, 3),
@@ -27,10 +31,10 @@ feature_data <- data.frame(phylum = c("Actinobacteria", "Actinobacteria",
                                       "Firmicutes"),
                            class = c("Actinomycetia", "Coriobacteriia",
                                      "Clostridia"))
-confirm_sample_feature_data(sample_data, feature_data)
+try(confirm_sample_feature_data(sample_data, feature_data))
 sample_data$uuid <- c("a1", "b2", "c3")
-confirm_sample_feature_data(sample_data, feature_data)
-confirm_sample_feature_data(sample_data, "features")
-confirm_sample_feature_data(NULL, feature_data)
-confirm_sample_feature_data(NULL, NULL)
+try(confirm_sample_feature_data(sample_data, feature_data))
+try(confirm_sample_feature_data(sample_data, "features"))
+try(confirm_sample_feature_data(NULL, feature_data))
+try(confirm_sample_feature_data(NULL, NULL))
 }

@@ -45,7 +45,8 @@ fpaths <- c(file.path(system.file("extdata",
 con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
-parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
 
 edat <- data.frame(uuid = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
                             "88a4d532-64fa-414c-b3d0-f02b291341c0"),
@@ -54,7 +55,7 @@ edat <- data.frame(uuid = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
 
 cdat <- build_tse_coldata(cnames_col = "uuid",
                           cdata_cols = "humann_header",
-                          parquet_table = parquet_table,
+                          parquet_table = parquet_tbl,
                           esamps = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
                                      "88a4d532-64fa-414c-b3d0-f02b291341c0"),
                           empty_data = edat)

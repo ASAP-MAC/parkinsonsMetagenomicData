@@ -35,5 +35,4 @@ rowData <- merge_rowdata(sample_experiment_list, assay_list)
 \code{\link[tibble]{rownames}}
 \code{\link[dplyr]{mutate-joins}}
 \code{\link[S4Vectors]{DataFrame-class}}
-\code{\link[S4Vectors]{S4VectorsOverview}}
 }

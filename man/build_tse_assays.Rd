@@ -45,7 +45,8 @@ fpaths <- c(file.path(system.file("extdata",
 con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
-parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
 
 atab <- build_tse_assays(assay_cols = "coverage",
                          rnames_col = "pathway",

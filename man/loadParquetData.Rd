@@ -65,7 +65,7 @@ by data_type'.
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "pathcoverage_unstratified")
 
- custom_filter <- tbl(con, "pathcoverage_unstratified_pathway") |>
+ custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
                   filter(grepl("UMP biosynthesis", pathway))
 
  uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",

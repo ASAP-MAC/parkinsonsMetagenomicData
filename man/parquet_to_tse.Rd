@@ -36,7 +36,8 @@ attached as colData.
 \donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "pathcoverage_unstratified")
- parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+ parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
 
  se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
  se
@@ -52,7 +53,8 @@ fpaths <- c(file.path(system.file("extdata",
 con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
-parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
 
 se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
 se

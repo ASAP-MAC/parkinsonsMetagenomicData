@@ -22,6 +22,6 @@ input validation. If the input is valid, nothing will happen. If it is not,
 the function will throw a 'stop()' error.
 }
 \examples{
-confirm_ref("horse")
-confirm_ref("clade_name_ref")
+try(confirm_ref("horse"))
+try(confirm_ref("clade_name_ref"))
 }

@@ -95,17 +95,21 @@ con_gs <- accessParquetData(data_types = "genefamilies_stratified")
 # UniRef90_A0A1B1SA57 - present only in WildR mice
 
 # Pull study metadata
+if (!exists("sampleMetadata", envir = environment())) {
+    data("sampleMetadata", package = "parkinsonsMetagenomicData", envir = environment())
+}
+
 selected_samples <- sampleMetadata |>
     filter(study_name == "MazmanianS_DumitrescuDG") |>
     select(where(~ !any(is.na(.x))))
 
 # Do as much as possible to narrow down sample IDs prior to filtering
 wildr_ids <- selected_samples |>
-    filter(uncurated_donor_microbiome_type == "WildR") |>
+    filter(MazmanianS_DumitrescuDG_uncurated_donor_microbiome_type == "WildR") |>
     dplyr::pull(uuid)
 
 spf_ids <- selected_samples |>
-    filter(uncurated_donor_microbiome_type == "SPF") |>
+    filter(MazmanianS_DumitrescuDG_uncurated_donor_microbiome_type == "SPF") |>
     dplyr::pull(uuid)
 
 # Run the queries
