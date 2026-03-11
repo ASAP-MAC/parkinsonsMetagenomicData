@@ -43,7 +43,7 @@ the filter for you.
                  gene_family_uniref = c("UniRef90_R6K8T6",
                                        "UniRef90_B0PDE3"))
 
- filter_parquet_view(view = tbl(con, "genefamilies_stratified_uuid"),
+ filter_parquet_view(view = dplyr::tbl(con, "genefamilies_stratified_uuid"),
                 filter_values = fvalues)
 }
 
@@ -60,7 +60,7 @@ fvalues <- list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
                 pathway = c("PWY-6859: all-trans-farnesol biosynthesis",
                             "RUMP-PWY: formaldehyde oxidation I"))
 
-filter_parquet_view(view = tbl(con, "pathcoverage_unstratified_uuid"),
+filter_parquet_view(view = dplyr::tbl(con, "pathcoverage_unstratified_uuid"),
                filter_values = fvalues)
 }
 \seealso{

@@ -25,8 +25,8 @@ source URL.
 \donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "pathcoverage_unstratified")
- lazy <- tbl(con, "pathcoverage_unstratified_pathway") |>
-             filter(grepl("UMP biosynthesis", pathway))
+ lazy <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+             dplyr::filter(grepl("UMP biosynthesis", pathway))
 
  get_view_source(con, lazy)
 }

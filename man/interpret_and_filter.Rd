@@ -43,7 +43,7 @@ fpaths <- c(file.path(system.file("extdata",
                                   package = "parkinsonsMetagenomicData"),
                       "pathcoverage_unstratified_pathway.parquet"))
 
-con <- accessParquetData(local_files = fpath,
+con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
 fvalues <- list(uuid = c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",

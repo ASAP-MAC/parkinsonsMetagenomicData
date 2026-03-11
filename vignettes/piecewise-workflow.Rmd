@@ -9,8 +9,8 @@ vignette: >
 
 ```{r chunk_set, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>"
 )
 ```
 
@@ -45,9 +45,9 @@ views are now available.
 
 ```{r access_wrapper}
 con <- accessParquetData(dbdir = ":memory:",
-                         repo = "waldronlab/metagenomics_mac",
-                         local_files = NULL,
-                         data_types = "relative_abundance")
+                        repo = "waldronlab/metagenomics_mac",
+                        local_files = NULL,
+                        data_types = "relative_abundance")
 DBI::dbListTables(con)
 ```
 
@@ -56,12 +56,12 @@ need not be supplied:
 
 ```{r local_access, eval=FALSE}
 local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
-                 "/path/to/relative_abundance_uuid.parquet")
+                "/path/to/relative_abundance_uuid.parquet")
 
 con <- accessParquetData(dbdir = ":memory:",
-                         repo = NULL,
-                         local_files = local_files,
-                         data_types = NULL)
+                        repo = NULL,
+                        local_files = local_files,
+                        data_types = NULL)
 ```
 
 ## Selecting Samples
@@ -114,7 +114,7 @@ to produce the same result as our prior example.
 
 ```{r filter_vals}
 filter_values <- list(clade_name_species = unique(feature_table$clade_name_species),
-                      clade_name_terminal = unique(feature_table$clade_name_terminal))
+                    clade_name_terminal = unique(feature_table$clade_name_terminal))
 filter_values
 ```
 
@@ -147,11 +147,11 @@ before:
 
 ```{r query_load_wrapper}
 query_only <- loadParquetData(con = con,
-                              data_type = "relative_abundance",
-                              filter_values = filter_values,
-                              custom_view = NULL,
-                              include_empty_samples = TRUE,
-                              dry_run = TRUE)
+                                data_type = "relative_abundance",
+                                filter_values = filter_values,
+                                custom_view = NULL,
+                                include_empty_samples = TRUE,
+                                dry_run = TRUE)
 dplyr::show_query(query_only)
 ```
 
@@ -187,11 +187,11 @@ We then simply provide that custom view to `loadParquetData()`.
 
 ```{r load_custom}
 custom_experiment <- loadParquetData(con = con,
-                                     data_type = "relative_abundance",
-                                     filter_values = filter_values,
-                                     custom_view = custom_filter,
-                                     include_empty_samples = TRUE,
-                                     dry_run = FALSE)
+                                    data_type = "relative_abundance",
+                                    filter_values = filter_values,
+                                    custom_view = custom_filter,
+                                    include_empty_samples = TRUE,
+                                    dry_run = FALSE)
 custom_experiment
 ```
 

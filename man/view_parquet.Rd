@@ -30,8 +30,7 @@ specific file is specified via the httpfs-compatible URL or local file path.
 }
 \details{
 See
-\href{https://duckdb.org/docs/stable/core_extensions/httpfs/
-hugging_face.html}{DuckDB Docs}
+\href{https://duckdb.org/docs/stable/core_extensions/httpfs/hugging_face.html}{DuckDB Docs}
 for more information on httpfs-compatible URLs.
 }
 \examples{

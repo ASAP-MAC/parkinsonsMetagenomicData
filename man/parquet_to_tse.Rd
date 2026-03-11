@@ -36,7 +36,8 @@ attached as colData.
 \donttest{
  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
                           data_types = "pathcoverage_unstratified")
- parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+ parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
 
  se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
  se
@@ -49,20 +50,17 @@ fpaths <- c(file.path(system.file("extdata",
                                   package = "parkinsonsMetagenomicData"),
                       "pathcoverage_unstratified_pathway.parquet"))
 
-con <- accessParquetData(local_files = fpath,
+con <- accessParquetData(local_files = fpaths,
                          data_types = "pathcoverage_unstratified")
 
-parquet_tbl <- tbl(con, "pathcoverage_unstratified_uuid") |> collect()
+parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
+                    dplyr::collect()
 
 se <- parquet_to_tse(parquet_tbl, "pathcoverage_unstratified")
 se
 }
 \seealso{
-\code{\link[dplyr]{rowwise}}, \code{\link[dplyr]{mutate}}
-\code{\link[dplyr]{select}}
-\code{\link[tidyr]{pivot_wider}}
-\code{\link[tibble]{rownames}}
-\code{\link[S4Vectors]{DataFrame-class}}
+\code{\link[dplyr]{pull}}
 \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 }

@@ -35,8 +35,8 @@ the function will throw a 'stop()' error.
 l1 <- list(uuid = "56aa2ad5-007d-407c-a644-48aac1e9a8f0",
            animals = c("frog", "horse"))
 l2 <- list(uuid = "blue")
-confirm_filter_values(l1)
-confirm_filter_values(l1, c("uuid", "animals", "shapes"))
-confirm_filter_values(l1, c("animals", "shapes"))
-confirm_filter_values(l2)
+try(confirm_filter_values(l1))
+try(confirm_filter_values(l1, c("uuid", "animals", "shapes")))
+try(confirm_filter_values(l1, c("animals", "shapes")))
+try(confirm_filter_values(l2))
 }

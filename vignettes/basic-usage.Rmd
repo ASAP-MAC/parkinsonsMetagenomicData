@@ -9,8 +9,8 @@ vignette: >
 
 ```{r knitr_setup, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>"
 )
 ```
 
@@ -235,7 +235,7 @@ It would look something like this:
 
 ```{r local_return_samples, eval=FALSE}
 local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
-                 "/path/to/relative_abundance_uuid.parquet")
+                "/path/to/relative_abundance_uuid.parquet")
 
 experiment <- returnSamples(data_type = "relative_abundance",
                             sample_data = sample_table,
