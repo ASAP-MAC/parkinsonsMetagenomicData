@@ -131,8 +131,6 @@ all_ex <- loadParquetData(con_gs, "genefamilies_stratified",
 all_ex
 ```
 
----
-
 ```{r session_info}
 sessionInfo()
 ```
