@@ -23,4 +23,11 @@ get_hf_api() to find parquet files.
  repo_info <- get_hf_api("waldronlab/metagenomics_mac")
  check_for_parquet(repo_info, "waldronlab/metagenomics_mac")
 }
+
+sample_response <- list(siblings = data.frame(rfilename = c(
+                  "clade_name_ref.parquet",
+                  "gene_family_ref.parquet",
+                  "genefamilies_cpm_gene_family_uniref.parquet",
+                  "genefamilies_cpm_stratified_gene_family_uniref.parquet")))
+check_for_parquet(sample_response, "waldronlab/metagenomics_mac")
 }

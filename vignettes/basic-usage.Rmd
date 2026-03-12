@@ -262,6 +262,8 @@ query_only <- returnSamples(data_type = "relative_abundance",
 dplyr::show_query(query_only)
 ```
 
+---
+
 ```{r session_info}
 sessionInfo()
 ```

@@ -2,7 +2,8 @@
 % Please edit documentation in R/utils.R
 \name{get_view_source}
 \alias{get_view_source}
-\title{Retrieve the URL of the data source from a lazy DuckDB connection}
+\title{Retrieve the URL or filepath of the data source from a lazy DuckDB
+connection}
 \usage{
 get_view_source(con, lazy)
 }
@@ -14,12 +15,12 @@ connection contains the source view/table}
 source.}
 }
 \value{
-String: the URL of the data source used
+String: the URL or filepath of the data source used
 }
 \description{
 'get_view_source' takes a DuckDB connection object and a lazy
 table using one of the connection's views/tables as a source and returns the
-source URL.
+source URL or filepath.
 }
 \examples{
 \donttest{
@@ -30,6 +31,21 @@ source URL.
 
  get_view_source(con, lazy)
 }
+
+fpaths <- c(file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_uuid.parquet"),
+            file.path(system.file("extdata",
+                                  package = "parkinsonsMetagenomicData"),
+                      "pathcoverage_unstratified_pathway.parquet"))
+
+con <- accessParquetData(local_files = fpaths,
+                              data_types = "pathcoverage_unstratified")
+
+lazy <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+            dplyr::filter(grepl("UMP biosynthesis", pathway))
+
+get_view_source(con, lazy)
 }
 \seealso{
 \code{\link[stringr]{str_extract}}

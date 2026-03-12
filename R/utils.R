@@ -1468,15 +1468,16 @@ merge_rowdata <- function(merge_list, assay_list) {
     return(rowData)
 }
 
-#' @title Retrieve the URL of the data source from a lazy DuckDB connection
+#' @title Retrieve the URL or filepath of the data source from a lazy DuckDB
+#' connection
 #' @description 'get_view_source' takes a DuckDB connection object and a lazy
 #' table using one of the connection's views/tables as a source and returns the
-#' source URL.
+#' source URL or filepath.
 #' @param con DuckDB connection object of class 'duckdb_connection'. This
 #' connection contains the source view/table
 #' @param lazy Lazy table using one of the DuckDB connection's views/tables as a
 #' source.
-#' @return String: the URL of the data source used
+#' @return String: the URL or filepath of the data source used
 #' @examples
 #' \donttest{
 #'  con <- accessParquetData(repo = "waldronlab/metagenomics_mac_examples",
@@ -1486,6 +1487,21 @@ merge_rowdata <- function(merge_list, assay_list) {
 #'
 #'  get_view_source(con, lazy)
 #' }
+#'
+#' fpaths <- c(file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_uuid.parquet"),
+#'             file.path(system.file("extdata",
+#'                                   package = "parkinsonsMetagenomicData"),
+#'                       "pathcoverage_unstratified_pathway.parquet"))
+#'
+#' con <- accessParquetData(local_files = fpaths,
+#'                               data_types = "pathcoverage_unstratified")
+#'
+#' lazy <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
+#'             dplyr::filter(grepl("UMP biosynthesis", pathway))
+#'
+#' get_view_source(con, lazy)
 #' @seealso
 #'  \code{\link[stringr]{str_extract}}
 #'  \code{\link[dbplyr]{lazy_multi_join_query}}
@@ -1502,9 +1518,9 @@ get_view_source <- function(con, lazy) {
                                    paste0("SELECT sql FROM duckdb_views() ",
                                             "WHERE view_name = '",
                                             proj_name, "';"))[1,1]
-    proj_url <- stringr::str_extract(proj_source, "(?<=').+?(?=')")
+    proj_path <- stringr::str_match(proj_source, "['\"]([^'\"]+)['\"]")[,2]
 
-    return(proj_url)
+    return(proj_path)
 }
 
 #' @title Submit and parse a GET request to the Hugging Face API
@@ -1558,6 +1574,13 @@ get_hf_api <- function(repo_name) {
 #'  repo_info <- get_hf_api("waldronlab/metagenomics_mac")
 #'  check_for_parquet(repo_info, "waldronlab/metagenomics_mac")
 #' }
+#'
+#' sample_response <- list(siblings = data.frame(rfilename = c(
+#'                   "clade_name_ref.parquet",
+#'                   "gene_family_ref.parquet",
+#'                   "genefamilies_cpm_gene_family_uniref.parquet",
+#'                   "genefamilies_cpm_stratified_gene_family_uniref.parquet")))
+#' check_for_parquet(sample_response, "waldronlab/metagenomics_mac")
 #' @rdname check_for_parquet
 #' @export
 check_for_parquet <- function(repo_info, repo_name) {

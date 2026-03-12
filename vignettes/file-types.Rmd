@@ -10,12 +10,9 @@ vignette: >
 ```{r chunk_set, include = FALSE}
 knitr::opts_chunk$set(
     collapse = TRUE,
-    comment = "#>"
+    comment = "#>",
+    eval = FALSE
 )
-```
-
-```{r setup}
-library(parkinsonsMetagenomicData)
 ```
 
 # Available File Types
@@ -27,14 +24,19 @@ common use cases for each one.
 
 ## MetaPhlAn
 
+For additional information, see the
+[MetaPhlAn GitHub repo](https://github.com/biobakery/MetaPhlAn).
+
 ### Relative Abundance
 
 This is the primary output for taxonomic profiling, showing the relative
 abundance of each microbial taxon (from kingdom to species and strain level).
 The base MetaPhlAn call to obtain this file is:
 
-```{bash ex_relab_call, eval=FALSE}
-$ metaphlan metagenome.fastq --input_type fastq -o profiled_metagenome.txt
+```{bash ex_relab_call}
+$ metaphlan metagenome.fastq \
+        --input_type fastq \
+        -o profiled_metagenome.txt
 ```
 
 Here are 15 rows of this file for one sample. It contains a header with
@@ -74,11 +76,17 @@ This is the output file when performing Viral Sequence Clusters Analysis,
 showing the coverage of viral genomes. The base MetaPhlAn call to obtain this
 file is:
 
-```{bash ex_vc_call, eval=FALSE}
-$ metaphlan metagenome.fastq --input_type fastq \
-        --profile_vsc --vsc_out profiled_viruses.txt \
+```{bash ex_vc_call}
+$ metaphlan metagenome.fastq \
+        --input_type fastq \
+        --profile_vsc \
+        --vsc_out profiled_viruses.txt \
         -o profiled_metagenome.txt
 ```
+
+Here are 15 rows of this file for one sample. It contains a header with
+information on the database, exact `metaphlan` command, and number of reads
+processed as well as the standard MetaPhlAn header row and column names.
 
 ```{text ex_vc_out}
 #mpa_vJun23_CHOCOPhlAnSGB_202403
@@ -98,9 +106,399 @@ M10    VDB|0010-004B-0-0002|M10-c1012-c0-c11    17451    0.9919202337974902    2
 M311    VDB|0026-0044-0-0000|M311-c1716-c0-c21    2349    0.9838229033631333    15.050194720900043    12.0    kVSG    NC_029014_Parabacteroides_phage_YZ2015b    NC_0290141_Parabacteroides_phage_YZ2015b
 ```
 
+The columns contain the following information:
+
+* M-Group/Cluster: internal group/cluster ID
+* genomeName: name of the viral reference sequence as found in the database
+* len: length of the detected viral sequence
+* breadth_of_coverage: the proportion of the viral sequence detected
+* depth_of_coverage_mean: the average number of reads covering each base in the
+detected viral sequence
+* depth_of_coverage_median: the median number of reads covering each base in the
+detected viral sequence
+* M-Group-Type [k|u]: is the group/cluster known (kVSG) or unknown (uVSG)
+* First Genome in Cluster: for known groups/clusters, the representative genome
+* Other Genomes: additional genomes belonging to the same group/cluster
+
+### Marker Abundance
+
+This file shows the abundance of individual marker genes within the sample,
+expressed as normalized counts. The base MetaPhlAn call to obtain this file is:
+
+```{bash ex_marker_ab_call}
+$ metaphlan metagenome.fastq \
+        --input_type fastq \
+        -t marker_ab_table \
+        -o marker_abundance.tsv \
+```
+
+Here are 15 rows of this file for one sample. It contains a header with
+information on the database, exact `metaphlan` command, and number of reads
+processed as well as the standard MetaPhlAn header row.
+
+```{text ex_marker_ab_out}
+#mpa_vJun23_CHOCOPhlAnSGB_202403
+#/usr/local/bin/metaphlan --input_type bowtie2out --index latest --bowtie2db metaphlan -t marker_ab_table -o marker_abundance.tsv /dev/fd/63
+#69691760 reads processed
+#SampleID	Metaphlan_Analysis
+UniClust90_BKJPBOJE01863|1__3|SGB29321	16.295999720557855
+UniRef90_UPI0008F8481E|1__25|SGB29321	1.109008995129271
+UniRef90_UPI0008F83D37|1__23|SGB29321	0.6048099752847368
+UniRef90_UPI0008F879F5|1__23|SGB29321	0.3024049876423684
+UniRef90_UPI0008F8EE49|1__23|SGB29321	1.2096199505694736
+UniRef90_UPI0008F93A48|1__23|SGB29321	0.6048099752847368
+UniRef90_UPI0008F89F0E|1__22|SGB29321	1.26709639083112
+UniRef90_UPI0008F7EAE8|1__20|SGB29321	0.700078186137104
+UniRef90_UPI0008F87225|3__21|SGB29321	1.4777467416595347
+UniRef90_UPI0008F7E6FC|1__19|SGB29321	0.7388733708297673
+UniRef90_UPI0008F84591|1__18|SGB29321	0.7822205139186101
+```
+
+Note that this file does not have an additional header row like other
+MetPhlAn output file types. Due to this, the column names are not representative
+of their contents. The columns contain the following information:
+
+* SampleID: marker gene ID
+* Metaphlan_Analysis: normalized marker coverage
+
+### Marker Presence
+
+This file is a list of markers present in the sample. The base MetaPhlAn call to
+obtain this file is:
+
+```{bash ex_marker_pres_call}
+$ metaphlan metagenome.fastq \
+        --input_type fastq \
+        -t marker_pres_table \
+        -o marker_presence.tsv \
+```
+
+Here are 15 rows of this file for one sample. It contains a header with
+information on the database, exact `metaphlan` command, and number of reads
+processed as well as the standard MetaPhlAn header row.
+
+```{text ex_marker_pres_out}
+#mpa_vJun23_CHOCOPhlAnSGB_202403
+#/usr/local/bin/metaphlan --input_type bowtie2out --index latest --bowtie2db metaphlan -t marker_pres_table -o marker_presence.tsv /dev/fd/63
+#34387180 reads processed
+#SampleID	Metaphlan_Analysis
+UniClust90_GMEPEMOD00192|1__6|SGB72336	1
+UniClust90_HPNJJKHE00452|1__5|SGB72336	1
+UniClust90_HBOCPNFF01148|1__5|SGB72336	1
+UniRef90_A0A1I0IMR7|1__4|SGB4725	1
+UniRef90_A0A1I0IRU8|1__7|SGB4725	1
+UniRef90_A0A1I0AQT2|1__8|SGB4725	1
+UniRef90_A0A1I0IRQ4|1__7|SGB4725	1
+UniRef90_A0A3R6W3X6|1__6|SGB4725	1
+UniRef90_A0A1I0JT88|1__4|SGB4725	1
+UniRef90_A0A416TWF5|1__3|SGB4725	1
+UniRef90_A0A1I0JQR0|1__9|SGB4725	1
+```
+
+Note that this file does not have an additional header row like other
+MetPhlAn output file types. Due to this, the column names are not representative
+of their contents. The columns contain the following information:
+
+* SampleID: marker gene ID
+* Metaphlan_Analysis: marker presence
+
+### StrainPhlAn Markers
+
+This file contains extra information on all of the assembled marker genes found
+in a sample. They are used as input for future strain-level analysis. The base
+MetPhlAn/StrainPhlAn calls to obtain this file are:
+
+```{bash ex_strain_call}
+$ metaphlan metagenome.fastq \
+     --input_type fastq \
+     --samout metagenome.sam.bz2 \
+     -o profiled_metagenome.txt \
+
+$ sample2markers.py \
+     --input metagenome.sam.bz2 \
+     --output_dir consensus_markers
+```
+
+Here are the first 15 rows of this file for one sample. It is in JSON format,
+and contains the name of the database used to detect these markers.
+
+```{text ex_strain_out}
+{
+  "database_name": "mpa_vJun23_CHOCOPhlAnSGB_202403",
+  "consensus_markers": [
+    {
+      "marker": "UniRef90_A0A1I0JLZ1|1__3|SGB4725",
+      "breath": 80.66666666666667,
+      "avg_depth": 2.4962962962962965,
+      "sequence": "--------------------------------------------------------------------GCTCAATGT-AATGAGATTATTGTGGCCAACGATCCGGTTTTAAAGGACGCCCTGCGCATCAGCCTGATGAAGATGACCGCCCCCCATGGCTGCAAGGTGAGGATCATTTCGGTGGCGGAGGCCGTCGGGTATCTGAACAGCCCTGAGGCAGAAAAGCGCAGGAT*CTGCTGTTGGTGGAGGGA-CCGCGGACGCGCTGCAGGTGGTGGAGGGGGTGAAGGGGATCACCCACTTGAACGCCGGGCTGATGAAAACCGGCGAGGGGAG*AAAATGGTCA**CCGACCCTGGC*TTTGCACCTGAGGATTTCGACAATTTTAAGAAAATCCTGGACCGGGGCGTGAG*GTGGAGTCCTATGTGACGCCCGATG-----------"
+    },
+    {
+      "marker": "UniRef90_A0A416CGK3|6__9|SGB4993",
+      "breath": 85.81818181818181,
+      "avg_depth": 3.3181818181818183,
+      "sequence": "--------------------------------------ATTCCATGATGAAGCATCCCCGTCCGACCCGTGCAGAGGCAACCGACGTTGCAAACGCTATCTACGATGGCACAACCGGTATCATGCTTTCCGGTGAGACAGCAAACGGCGATTACCCGCTGGAAGCTGTTCAGACCATGGTTCGTATCGCAGAGCGCGCAGAAAAGGATATCGACTATGTAGGCCGTCTGCAGAAGACTGGTGCAAGACTTCCTCAGGAGCAGGATACAACCACTTCTATCTGCCACGCAACCTGCACCGTTGCTACTGACCTGAATGCAGCAGCAATCATCCCGGTATCCATGTCTGGCTTTACTTCCGGCATGGTAGCACGTTTCAAACC*AACTGCCCGATCATCGCATGCACAACCAGCCGTCTGGTATGGCGTCAGATGAACCTGCAGTGGGGCGTAACTCCTCTGCTGATCGCAGAAGAGAACACTGCAGAGGATCTGTTCCGTGAAGCAGTTAAG---------------------------------------"
+    },
+```
+
+The consensus marker details included are:
+
+* marker: marker gene ID
+* breath (breadth): proportion of the sequence covered
+* avg_depth: average sequencing depth
+* sequence: reconstructed consensus strain sequence
+
 ## HUMAnN
 
+For additional information, see the
+[HUMAnN GitHub repo](https://github.com/biobakery/humann).
 
-```{r session_info}
+### Genefamilies
+
+This is a primary output for microbial functional profiling. It shows the
+abundance of each gene family that is present in the microbial community. This
+file type can be stratified or unstratified, meaning the abundance values are
+subdivided or not based on the contributions of individual species. The
+abundance values are reported as reads per kilobase (RPK), counts per million
+(CPM), or relative abundance. The base HUMAnN calls to obtain these files are:
+
+```{base ex_genefam_call}
+# Base call; outputs values in RPK
+$ humann \
+        --input metagenome.fastq \
+        --output output_dir
+
+# Normalize to use CPM and relative abundance
+$ humann_renorm_table \
+        --input output_dir/out_genefamilies.tsv \
+        --output output_dir/out_genefamilies_cpm.tsv \
+        --units cpm
+
+$ humann_renorm_table \
+        --input output_dir/out_genefamilies.tsv \
+        --output output_dir/out_genefamilies_relab.tsv \
+        --units relab
+
+# Split each table into one stratified table and one unstratified table
+$ humann_split_stratified_table \
+        --input output_dir/out_genefamilies.tsv \
+        --output output_dir
+
+$ humann_split_stratified_table \
+        --input output_dir/out_genefamilies.tsv \
+        --output output_dir
+
+$ humann_split_stratified_table \
+        --input output_dir/out_genefamilies.tsv \
+        --output output_dir
+```
+
+Here are 15 example rows of the unstratified, unnormalized file for one sample.
+It includes a basic HUMAnN header, which does not necessarily match the output
+values. In this file the values reported are in fact in RPK, but files using CPM
+or relative abundance will have the same header string.
+
+```{text ex_genefam_unstrat_out}
+# Gene Family	out_Abundance-RPKs
+UNMAPPED	5154490.0000000000
+UniRef90_A7AJP9	98090.8507772456
+UniRef90_A0A174IWH6	61063.9749303064
+UniRef90_A0A174PA28	51628.0623537519
+UniRef90_A0A174Y3E0	43419.4009509238
+UniRef90_R6HUL4	33652.7156806290
+UniRef90_R5A5Y7	33591.5704773620
+UniRef90_C4ZFG5	28701.2591291458
+UniRef90_A7AJP8	28465.5157850624
+UniRef90_A0A0T7A674	26531.0122765832
+UniRef90_B0MYG3	26439.0665756726
+UniRef90_V6DNH8	22177.9046993531
+UniRef90_V8M0W9	21826.6862201161
+UniRef90_A7V7B8	18829.5080249549
+```
+
+The columns contain the following information:
+
+* Gene Family: The code of the detected gene family
+* out_Abundance-RPKs: The abundance of the detected gene family in the total
+microbial community, reported in RPK (reads per kilobase)
+
+### Pathway Abundance
+
+This file details the microbial pathways present in the community. This file
+type can be stratified or unstratified, meaning the abundance values are
+subdivided or not based on the contributions of individual species. The
+abundance values are reported as reads per kilobase (RPK), counts per million
+(CPM), or relative abundance. The base HUMAnN calls to obtain these files are:
+
+```{base ex_pathab_call}
+# Base call; outputs values in RPK
+$ humann \
+        --input metagenome.fastq \
+        --output output_dir
+
+# Normalize to use CPM and relative abundance
+$ humann_renorm_table \
+        --input output_dir/out_pathabundance.tsv \
+        --output output_dir/out_pathabundance_cpm.tsv \
+        --units cpm
+
+$ humann_renorm_table \
+        --input output_dir/out_pathabundance.tsv \
+        --output output_dir/out_pathabundance_relab.tsv \
+        --units relab
+
+# Split each table into one stratified table and one unstratified table
+$ humann_split_stratified_table \
+        --input output_dir/out_pathabundance.tsv \
+        --output output_dir
+
+$ humann_split_stratified_table \
+        --input output_dir/out_pathabundance.tsv \
+        --output output_dir
+
+$ humann_split_stratified_table \
+        --input output_dir/out_pathabundance.tsv \
+        --output output_dir
+```
+
+Here are 15 example rows of the unstratified, unnormalized file for one sample.
+It includes a basic HUMAnN header. The header will again stay the same
+regardless of actual output value type (RPK, CPM, or relative abundance).
+
+```{text ex_pathab_unstrat_out}
+# Pathway	out_Abundance
+UNMAPPED	1963761.2729906905
+UNINTEGRATED	3026993.4709948450
+TRNA-CHARGING-PWY: tRNA charging	2697.9004105228
+PWY-1042: glycolysis IV	2360.2965535212
+PWY-6609: adenine and adenosine salvage III	2328.2392201336
+PWY-7221: guanosine ribonucleotides de novo biosynthesis	2292.9280094236
+PWY-6122: 5-aminoimidazole ribonucleotide biosynthesis II	2211.0246687537
+PWY-6277: superpathway of 5-aminoimidazole ribonucleotide biosynthesis	2211.0246687537
+PWY-5686: UMP biosynthesis I	2209.5938625315
+PWY-7790: UMP biosynthesis II	2209.5938625315
+PWY-7791: UMP biosynthesis III	2209.5938625315
+PWY-5097: L-lysine biosynthesis VI	2174.1918575462
+VALSYN-PWY: L-valine biosynthesis	2163.8066309442
+PWY-6121: 5-aminoimidazole ribonucleotide biosynthesis I	2145.5730194284
+```
+
+The columns contain the following information:
+
+* Pathway: The detected microbial pathway
+* out_Abundance: The abundance of the detected microbial pathway within the
+total microbial community, reported in RPK (reads per kilobase)
+
+### Pathway Coverage
+
+This file reports the proportion of genes within each microbial pathway that
+were detected. A value of 1.0 means all genes in the pathway were found. This
+file type can be stratified or unstratified, meaning the coverage values are
+subdivided or not based on the contributions of individual species. The base
+HUMAnN calls to obtain these files are:
+
+```{base ex_pathcov_call}
+# Base call
+$ humann \
+        --input metagenome.fastq \
+        --output output_dir
+
+# Split each table into one stratified table and one unstratified table
+$ humann_split_stratified_table \
+        --input output_dir/out_pathcoverage.tsv \
+        --output output_dir
+```
+
+Here are 15 example rows of the unstratified file for one sample. It includes a
+basic HUMAnN header.
+
+```{text ex_pathcov_unstrat_out}
+# Pathway	out_Coverage
+UNMAPPED	1.0000000000
+UNINTEGRATED	1.0000000000
+PWY-5686: UMP biosynthesis I	1.0000000000
+PWY-7790: UMP biosynthesis II	1.0000000000
+PWY-7791: UMP biosynthesis III	1.0000000000
+TRNA-CHARGING-PWY: tRNA charging	1.0000000000
+DTDPRHAMSYN-PWY: dTDP-&beta;-L-rhamnose biosynthesis	1.0000000000
+PWY-3841: folate transformations II (plants)	1.0000000000
+PWY-6609: adenine and adenosine salvage III	1.0000000000
+PWY-1042: glycolysis IV	1.0000000000
+VALSYN-PWY: L-valine biosynthesis	1.0000000000
+PEPTIDOGLYCANSYN-PWY: peptidoglycan biosynthesis I (meso-diaminopimelate containing)	1.0000000000
+PWY-6700: queuosine biosynthesis I (de novo)	1.0000000000
+ANAGLYCOLYSIS-PWY: glycolysis III (from glucose)	0.9017787803
+```
+
+The columns contain the following information:
+
+* Pathway: The detected microbial pathway
+* out_Coverage: The coverage of the detected microbial pathway within the
+total microbial community, reported as a proportion
+
+## Quality Control
+
+### FastQC Metrics
+
+For additional information, see the
+[FastQC webpage](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/).
+
+This file is simply the basic FastQC output text file. The call to obtain this
+file is:
+
+```{bash ex_fastqc_call}
+$ fastqc seqfile
+```
+
+Here are the first 20 lines of the file for one sample. These show the Basic
+Statistics module as well as the beginning of the Per Base Sequence Quality
+module. Other standard modules can be found later in the file.
+
+```{text ex_fastqc_out}
+##FastQC	0.12.1
+>>Basic Statistics	pass
+#Measure	Value
+Filename	out_sample.fastq
+File type	Conventional base calls
+Encoding	Sanger / Illumina 1.9
+Total Sequences	50000
+Total Bases	7.3 Mbp
+Sequences flagged as poor quality	0
+Sequence length	35-151
+%GC	47
+>>END_MODULE
+>>Per base sequence quality	pass
+#Base	Mean	Median	Lower Quartile	Upper Quartile	10th Percentile	90th Percentile
+1	38.7797	40.0	40.0	40.0	40.0	40.0
+2	38.10926	40.0	40.0	40.0	40.0	40.0
+3	38.37914	40.0	40.0	40.0	40.0	40.0
+4	38.20572	40.0	40.0	40.0	40.0	40.0
+5	38.36706	40.0	40.0	40.0	40.0	40.0
+6	38.77062	40.0	40.0	40.0	40.0	40.0
+```
+
+### KneadData Log
+
+For additional information, see the
+[KneadData GitHub repo](https://github.com/biobakery/kneaddata).
+
+This file is the log file obtained when running KneadData. The base call to
+obtain this file is:
+
+```{bash ex_kneaddata_call}
+$ kneaddata --unpaired seq.fastq \
+    --reference-db $DATABASE \
+    --output kneaddata_output
+```
+
+Here is one line from the log file. It is rather cluttered, but you can see the
+information on input, surviving, and dropped reads that can be parsed from it.
+
+```{text ex_kneaddata_out}
+05/25/2025 02:03:00 AM - kneaddata.utilities - DEBUG: b"TrimmomaticSE: Started with arguments:\n -threads 16 -phred33 /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/42/c00f840ea0a591c0c503b9b7889435/kneaddata_output/reformatted_identifiers3h38b_gw_decompressed_wi8x6cd8_out /shares/CIBIO-Storage/CM/scratch/users/kaelyn.long/cmd_nf/work/42/c00f840ea0a591c0c503b9b7889435/kneaddata_output/out_kneaddata.trimmed.fastq MINLEN:60 ILLUMINACLIP:/usr/local/lib/python3.9/site-packages/kneaddata/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:4:20 MINLEN:74\nUsing PrefixPair: 'AGATGTGTATAAGAGACAG' and 'AGATGTGTATAAGAGACAG'\nUsing Long Clipping Sequence: 'GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAG'\nUsing Long Clipping Sequence: 'TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG'\nUsing Long Clipping Sequence: 'CTGTCTCTTATACACATCTCCGAGCCCACGAGAC'\nUsing Long Clipping Sequence: 'CTGTCTCTTATACACATCTGACGCTGCCGACGA'\nILLUMINACLIP: Using 1 prefix pairs, 4 forward/reverse sequences, 0 forward only sequences, 0 reverse only sequences\nInput Reads: 103418334 Surviving: 96226892 (93.05%) Dropped: 7191442 (6.95%)\nTrimmomaticSE: Completed successfully\n"
+```
+
+---
+
+```{r sessionInfo, eval=TRUE}
 sessionInfo()
 ```

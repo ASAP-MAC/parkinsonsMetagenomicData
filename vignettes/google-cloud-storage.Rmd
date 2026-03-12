@@ -10,7 +10,8 @@ vignette: >
 ```{r chunk_set, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
@@ -21,10 +22,10 @@ suppressPackageStartupMessages({
     library(dplyr)
     library(DT)
 })
-
-# If rendering, replace the below with the path to your own service account key
-googleCloudStorageR::gcs_auth("../../curatedmetagenomicdata-232f4a306d1d.json")
 ```
+
+Note: The following code chunks are not automatically evaluated due to the
+authentication requirement.
 
 ## Google Bucket Setup
 
@@ -169,6 +170,8 @@ rel_abs_with_metadata <- add_metadata(sample_ids = colnames(merged_rel_abs),
 rel_abs_with_metadata
 ```
 
-```{r session_info}
+---
+
+```{r session_info, eval=TRUE}
 sessionInfo()
 ```

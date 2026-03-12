@@ -221,7 +221,7 @@ loadMetagenomicData <- function(cache_table) {
         stop(paste0("Multiple 'data_type' values detected. Please provide a ",
                 "table where all rows have the same value for 'data_type'."))
     }
-    confirm_data_type(data_type)
+    confirm_data_type(data_type, "subdir", "humann|metaphlan_lists")
 
     ## Load data as TreeSummarizedExperiment objects
     se_list <- vector("list", nrow(cache_table))
