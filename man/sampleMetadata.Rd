@@ -13,6 +13,10 @@ internal package data
 \usage{
 sampleMetadata
 }
+\value{
+A data.frame containing curated and uncurated metadata for all
+samples included in parkinsonsMetagenomicData
+}
 \description{
 Manually curated sample metadata for all samples in
 parkinsonsMetagenomicData.

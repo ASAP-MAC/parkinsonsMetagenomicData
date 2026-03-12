@@ -17,7 +17,7 @@ parkinsonsMetagenomicData file cache or creates it if it does not exist.
 pMD_get_cache()
 }
 \seealso{
-\code{\link[tools]{userdir}}
+\code{\link[tools]{R_user_dir}}
 \code{\link[BiocFileCache]{BiocFileCache-class}},
 \code{\link[BiocFileCache]{BiocFileCache}}
 }

@@ -1,30 +1,23 @@
 Package: parkinsonsMetagenomicData
 Title: Suite of Functions to Retrieve Parkinson's Metagenomics Data from the Google Cloud Bucket and Hugging Face
 Version: 0.99.0
+Description: Provides functions to retrieve raw tabular data from Google Cloud
+    Bucket or Hugging Face, starting from a pre-built sample metadata file.
+    Data types include output from FastQC, KneadData, MetaPhlAn (including
+    StrainPhlAn), and HUMAnN. Outputs a TreeSummarizedExperiment object as the
+    final result.
 Authors@R: c(
-    person(
-        "Kaelyn", "Long",
+    person(given = "Kaelyn", family = "Long", role = "aut",
         email = "krlong586@gmail.com",
-        role = "aut",
-        comment = c(ORCID = "0009-0008-3476-0231")
-    ),
-    person(
-        "Levi", "Waldron",
+        comment = c(ORCID = "0009-0008-3476-0231")),
+    person(given = "Levi", family = "Waldron", role = c("ctb", "cre"),
         email = "Levi.Waldron@sph.cuny.edu",
-        role = c("ctb", "cre"),
-        comment = c(ORCID = "0000-0003-2725-0694")
-    ),
-    person(
-        "Giacomo", "Antonello",
-        email = "",
-        role = "ctb",
-        comment = c(ORCID = "0000-0001-7842-0898")
-    ),
-    person(
-        "The Michael J. Fox Foundation",
-        role = "fnd"
-    ))
-Description: Provides functions to retrieve raw tabular data from Google Cloud Bucket or Hugging Face, starting from a pre-built sample metadata file. Outputs a TreeSummarizedExperiment object as the final result.
+        comment = c(ORCID = "0000-0003-2725-0694")),
+    person(given = "Giacomo", family = "Antonello", role = "ctb",
+        email = "Giacomo.Antonello@sph.cuny.edu",
+        comment = c(ORCID = "0000-0001-7842-0898")),
+    person(given = "The Michael J. Fox Foundation", role = "fnd")
+    )
 License: Artistic-2.0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -62,6 +55,12 @@ Suggests:
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: false
-URL: https://asap-mac.github.io/parkinsonsMetagenomicData/
-biocViews: Metagenomics
+URL:
+    https://asap-mac.github.io/parkinsonsMetagenomicData/,
+    https://github.com/ASAP-MAC/parkinsonsMetagenomicData
 BugReports: https://github.com/ASAP-MAC/parkinsonsMetagenomicData/issues
+biocViews:
+    MicrobiomeData,
+    ReproducibleResearch,
+    Homo_sapiens_Data,
+    Mus_musculus_Data
