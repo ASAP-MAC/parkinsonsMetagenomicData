@@ -54,7 +54,7 @@ DBI::dbListTables(con)
 Supplying local files would look much as expected, and the "data_types" argument
 need not be supplied:
 
-```{r local_access, eval=FALSE}
+```{r local_access, eval=interactive()}
 local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
                 "/path/to/relative_abundance_uuid.parquet")
 
