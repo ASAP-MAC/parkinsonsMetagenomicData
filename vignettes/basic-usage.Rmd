@@ -110,14 +110,14 @@ we will simply provide "relative_abundance" as our chosen data type. If you
 are downloading the files locally to avoid rate limits, you would download all
 of the files associated with your chosen data type.
 
-```{r demo_repo_info, eval=FALSE}
+```{r demo_repo_info, eval=interactive()}
 get_repo_info()
 ```
 ```{r show_repo_info, echo=FALSE}
 get_repo_info() |>
     datatable(extensions = "Responsive")
 ```
-```{r demo_parquet_urls, eval=FALSE}
+```{r demo_parquet_urls, eval=interactive()}
 get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac")
 ```
 ```{r show_parquet_urls, echo=FALSE}
@@ -159,7 +159,7 @@ you can call `parquet_colinfo()` with your data type and see which columns will
 be included. Here, we can see that "clade_name_ref" is associated with
 "relative_abundance".
 
-```{r demo_ref_info, eval=FALSE}
+```{r demo_ref_info, eval=interactive()}
 get_ref_info()
 ```
 ```{r show_ref_info, echo=FALSE}
@@ -169,7 +169,7 @@ get_ref_info() |>
 
 And here we can see exactly which columns are in "clade_name_ref".
 
-```{r demo_colinfo, eval=FALSE}
+```{r demo_colinfo, eval=interactive()}
 parquet_colinfo("relative_abundance")
 ```
 ```{r show_colinfo, echo=FALSE}
@@ -233,7 +233,7 @@ the files associated with the data type you are interested in and supply their
 paths to the "local_files" argument in lieu of specifying the "repo" argument.
 It would look something like this:
 
-```{r local_return_samples, eval=FALSE}
+```{r local_return_samples, eval=interactive()}
 local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
                 "/path/to/relative_abundance_uuid.parquet")
 

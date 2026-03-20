@@ -36,7 +36,7 @@ through this function, they will not be re-downloaded unless explicitly
 specified, in order to reduce excessive downloads.
 }
 \examples{
-\dontrun{
+\donttest{
  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
                       data_type = "pathabundance_unstratified",
                       redownload = "ask")

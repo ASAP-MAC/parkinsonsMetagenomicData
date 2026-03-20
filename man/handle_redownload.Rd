@@ -24,7 +24,7 @@ String: resource id of the cached object
 alone a file in a BiocFileCache cache object.
 }
 \examples{
-\dontrun{
+\donttest{
  bfc <- pMD_get_cache()
  locator <- get_bucket_locators(
                   uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",

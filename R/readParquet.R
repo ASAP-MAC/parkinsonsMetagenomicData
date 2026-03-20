@@ -77,11 +77,11 @@ view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
 
     # httpfs_url/file_path
     if (!is.null(httpfs_url) & !is.null(file_path)) {
-        stop(paste0("Values for both 'httpfs_url' and 'file_path' have been ",
-                    "provided. Please choose only one."))
+           stop("Values for both 'httpfs_url' and 'file_path' have been ",
+               "provided. Please choose only one.")
     } else if (is.null(httpfs_url) & is.null(file_path)) {
-        stop(paste0("No value was provided for either 'httpfs_url' or ",
-                    "'file_path'. Please provide one."))
+           stop("No value was provided for either 'httpfs_url' or ",
+               "'file_path'. Please provide one.")
     }
 
     ## Create view_name from URL if not provided
@@ -523,7 +523,7 @@ parquet_to_tse <- function(parquet_table, data_type,
 #' @details Files stored remotely and locally cannot be combined in the same
 #' connection.
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'  prepared_db <- accessParquetData()
 #'  DBI::dbListTables(prepared_db)
 #' }
@@ -556,8 +556,8 @@ accessParquetData <- function(dbdir = ":memory:",
     for (dt in data_types) confirm_data_type(dt)
 
     if (!is.null(local_files) && !is.null(repo)) {
-        stop(paste0("Please provide a value for either 'repo' or 'local_files'",
-        ", but not both."))
+        stop("Please provide a value for either 'repo' or 'local_files'",
+             ", but not both.")
     }
 
     ## Connect to database
@@ -675,11 +675,11 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     if (!is.null(filter_values)) { confirm_filter_values(filter_values) }
     if (!is.null(custom_view)) { confirm_duckdb_view(custom_view) }
     if (!methods::is(include_empty_samples, "logical")) {
-        stop(paste0("Invalid value of 'include_empty_samples'. Please provide ",
-                    "TRUE or FALSE."))
+        stop("Invalid value of 'include_empty_samples'. Please provide ",
+             "TRUE or FALSE.")
     } else if (include_empty_samples && !"uuid" %in% names(filter_values)) {
-        message(paste0("'include_empty_samples' is TRUE but 'filter_values' ",
-                        "does not contain a UUID argument."))
+        message("'include_empty_samples' is TRUE but 'filter_values' ",
+                "does not contain a UUID argument.")
     }
 
     ## Apply any requested filtering, incorporating custom view if provided
@@ -694,11 +694,11 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 
     if (nrow(collected_view) == 0) {
         if (!is.null(prep$sample_headers)) {
-            message(paste0("0 rows returned but empty samples exist. ",
-                "TreeSummarizedExperiment will include colData as applicable."))
+            message("0 rows returned but empty samples exist. ",
+                    "TreeSummarizedExperiment will include colData as applicable.")
         } else {
-            message(paste0("0 rows returned and any empty samples are not ",
-                           "kept. TreeSummarizedExperiment is empty."))
+            message("0 rows returned and any empty samples are not ",
+                    "kept. TreeSummarizedExperiment is empty.")
             return(TreeSummarizedExperiment::TreeSummarizedExperiment())
         }
     }
@@ -1045,8 +1045,8 @@ load_ref <- function(ref, repo = NULL, file_path = NULL) {
     ## Check input
     # repo/file_path
     if (!is.null(repo) & !is.null(file_path)) {
-        stop(paste0("Values for both 'repo' and 'file_path' have been ",
-                    "provided. Please choose only one."))
+        stop("Values for both 'repo' and 'file_path' have been ",
+             "provided. Please choose only one.")
     }
 
     # ref

@@ -45,9 +45,9 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
         ex <- parse_viral_list(sample_id, file_path)
     } else {
         ## Notify if output file is not able to be parsed by this function
-        stop(paste0("data_type '", data_type, "' is not 'relative_abundance' ",
-                    "or 'viral_clusters'. Please enter one of these values or ",
-                    "use a different parsing function."))
+        stop("data_type '", data_type, "' is not 'relative_abundance' ",
+             "or 'viral_clusters'. Please enter one of these values or ",
+             "use a different parsing function.")
     }
 
     return(ex)

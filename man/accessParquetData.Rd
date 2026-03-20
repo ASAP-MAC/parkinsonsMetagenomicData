@@ -44,7 +44,7 @@ Files stored remotely and locally cannot be combined in the same
 connection.
 }
 \examples{
-\dontrun{
+\donttest{
  prepared_db <- accessParquetData()
  DBI::dbListTables(prepared_db)
 }
