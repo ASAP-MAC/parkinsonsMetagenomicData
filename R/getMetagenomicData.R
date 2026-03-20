@@ -47,8 +47,7 @@ get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
 #' are the paths to the cached files
 #' @examples
 #' \donttest{
-#'  locator <- paste0("results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/",
-#'                    "metaphlan_lists/metaphlan_bugs_list.tsv.gz")
+#'  locator <- "results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/metaphlan_lists/metaphlan_bugs_list.tsv.gz"
 #'  cache_gcb(locator = locator,
 #'            redownload = "ask")
 #' }
