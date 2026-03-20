@@ -16,7 +16,7 @@ last updated
 'gs://metagenomics-mac' Google Cloud Bucket that are available for download.
 }
 \examples{
-\dontrun{
+\donttest{
  listMetagenomicData()
 }
 }

@@ -25,7 +25,7 @@ the presence of a Google Bucket object, downloads or updates the file as
 needed, and returns the path of the cached file.
 }
 \examples{
-\dontrun{
+\donttest{
  locator <- paste0("results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/",
                    "metaphlan_lists/metaphlan_bugs_list.tsv.gz")
  cache_gcb(locator = locator,

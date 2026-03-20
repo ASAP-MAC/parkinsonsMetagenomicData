@@ -29,7 +29,7 @@ types, have parsing functions for automatically loading into
 TreeSummarizedExperiment objects.
 }
 \examples{
-\dontrun{
+\donttest{
  uuid <- "004c5d07-ec87-40fe-9a72-6b23d6ec584e"
  cache_table <- cacheMetagenomicData(uuid = uuid,
                                      data_type = "relative_abundance")

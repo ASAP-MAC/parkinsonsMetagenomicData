@@ -46,7 +46,7 @@ get_bucket_locators <- function(uuids, data_type = "relative_abundance") {
 #' @return Named vector of strings: Names are the rids of cached files, values
 #' are the paths to the cached files
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'  locator <- paste0("results/cMDv4/004c5d07-ec87-40fe-9a72-6b23d6ec584e/",
 #'                    "metaphlan_lists/metaphlan_bugs_list.tsv.gz")
 #'  cache_gcb(locator = locator,
@@ -65,8 +65,8 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)
     if (!p_redown %in% allowed_redown) {
-        stop(paste0("'", redownload, "' is not an allowed value for ",
-                    "'redownload'. Please enter 'yes', 'no', or 'ask'"))
+        stop("'", redownload, "' is not an allowed value for ",
+             "'redownload'. Please enter 'yes', 'no', or 'ask'")
     }
 
     ## Get cache
@@ -118,7 +118,7 @@ cache_gcb <- function(locator, redownload = "no", custom_cache = NULL) {
 #' @return A tibble with information on the cached files, including UUID, data
 #' type, Google Cloud Bucket object name, local cache ID, and cached file path
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'  cacheMetagenomicData(uuid = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
 #'                       data_type = "pathabundance_unstratified",
 #'                       redownload = "ask")
@@ -141,8 +141,8 @@ cacheMetagenomicData <- function(uuids,
     allowed_redown <- c("y", "n", "a")
     p_redown <- substr(tolower(redownload), 1, 1)
     if (!p_redown %in% allowed_redown) {
-        stop(paste0("'", redownload, "' is not an allowed value for ",
-                    "'redownload'. Please enter 'yes', 'no', or 'ask'"))
+        stop("'", redownload, "' is not an allowed value for ",
+             "'redownload'. Please enter 'yes', 'no', or 'ask'")
     }
     if (!is.null(custom_cache)) {
         stopifnot(methods::is(custom_cache, "BiocFileCache"))
@@ -196,7 +196,7 @@ cacheMetagenomicData <- function(uuids,
 #' types, have parsing functions for automatically loading into
 #' TreeSummarizedExperiment objects.
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'  uuid <- "004c5d07-ec87-40fe-9a72-6b23d6ec584e"
 #'  cache_table <- cacheMetagenomicData(uuid = uuid,
 #'                                      data_type = "relative_abundance")
@@ -218,8 +218,8 @@ loadMetagenomicData <- function(cache_table) {
     ## Check that all data_type values are the same and valid
     data_type <- unique(cache_table$data_type)
     if (length(data_type) > 1) {
-        stop(paste0("Multiple 'data_type' values detected. Please provide a ",
-                "table where all rows have the same value for 'data_type'."))
+        stop("Multiple 'data_type' values detected. Please provide a ",
+             "table where all rows have the same value for 'data_type'.")
     }
     confirm_data_type(data_type, "subdir", "humann|metaphlan_lists")
 
@@ -260,7 +260,7 @@ loadMetagenomicData <- function(cache_table) {
 #' type, Google Cloud Bucket object name, object size, and time the object was
 #' last updated
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'  listMetagenomicData()
 #' }
 #' @seealso
@@ -344,8 +344,8 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
                         method = "append") {
     ## Check input
     if (length(sample_ids) != ncol(experiment)) {
-        stop(paste0("'sample_ids' has a different number of samples than ",
-                    "'experiment'."))
+        stop("'sample_ids' has a different number of samples than ",
+             "'experiment'.")
     }
     stopifnot(methods::is(experiment, "TreeSummarizedExperiment"))
     utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
@@ -354,13 +354,13 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
     if (!id_col %in% colnames(meta)) {
         stop("'", id_col, "' is not a column in sampleMetadata.")
     } else if (length(unique(meta[[id_col]])) != nrow(meta)) {
-        stop(paste0("'", id_col, "' is not unique for every sample and ",
-                    "therefore cannot be used to retrieve metadata."))
+        stop("'", id_col, "' is not unique for every sample and ",
+             "therefore cannot be used to retrieve metadata.")
     }
     valid_methods <- c("append", "overwrite", "ignore")
     if (!method %in% valid_methods) {
-        stop(paste0("'", method, "' is not a valid value for 'method'. Please ",
-                    "enter 'append', 'overwrite', or 'ignore'."))
+        stop("'", method, "' is not a valid value for 'method'. Please ",
+             "enter 'append', 'overwrite', or 'ignore'.")
     }
 
     ## Get metadata rows based on sample ID
@@ -374,8 +374,8 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
     not_duplicated <- setdiff(colnames(meta), duplicated)
     if (length(duplicated) != 0) {
         dup_message <- paste(duplicated, collapse = ", ")
-        message(paste0("Duplicate metadata columns found, will be processed ",
-                        "according to method '", method, "':"))
+        message("Duplicate metadata columns found, will be processed ",
+            "according to method '", method, "':")
         message(dup_message)
     }
     if (method == "append") {
@@ -439,8 +439,8 @@ mergeExperiments <- function(merge_list) {
 
     for (i in seq_along(merge_list)) {
         if (!methods::is(merge_list[[i]], "TreeSummarizedExperiment")) {
-            stop(paste0("The list item at index = ", i, " is not a ",
-                        "TreeSummarizedExperiment object."))
+            stop("The list item at index = ", i, " is not a ",
+                 "TreeSummarizedExperiment object.")
         }
     }
 

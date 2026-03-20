@@ -28,7 +28,7 @@ pMD_get_cache <- function() {
 #' @param locator String: name of a Google Bucket object
 #' @return String: resource id of the cached object
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'  bfc <- pMD_get_cache()
 #'  locator <- get_bucket_locators(
 #'                   uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
@@ -73,7 +73,7 @@ cache_new <- function(bfc, locator) {
 #' re-download a file that is already present in the cache
 #' @return String: resource id of the cached object
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'  bfc <- pMD_get_cache()
 #'  locator <- get_bucket_locators(
 #'                   uuids = "004c5d07-ec87-40fe-9a72-6b23d6ec584e",
@@ -99,12 +99,12 @@ handle_redownload <- function(bfc, locator, rid, p_redown) {
         doit <- switch(response, y = TRUE, n = FALSE, NA)
     } else if (p_redown == "y") {
         doit <- TRUE
-        message(paste0("Resource with rname = '", locator,
-                       "' found in cache, redownloading."))
+        message("Resource with rname = '", locator,
+                "' found in cache, redownloading.")
     } else if (p_redown == "n") {
         doit <- FALSE
-        message(paste0("Resource with rname = '", locator, "' found in ",
-                       "cache, proceeding with most recent version."))
+        message("Resource with rname = '", locator, "' found in ",
+                "cache, proceeding with most recent version.")
     }
 
     if (doit) {
@@ -202,9 +202,9 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop(paste0("'", filter_col, "' is not a column of ",
-                    "output_files.csv. Please choose one of the following: ",
-                    print_colnames))
+            stop("'", filter_col, "' is not a column of ",
+                 "output_files.csv. Please choose one of the following: ",
+                 print_colnames)
         }
 
         ftable <- ftable %>%
@@ -525,11 +525,11 @@ collect_and_notify <- function(con, data_type, working_view) {
                 filter_string = paste0("^", data_type, "$"))$general_data_type
     hf_ind <- get_view_source(con, working_view) |> startsWith("hf")
     if (current_gen == "genefamilies" && hf_ind) {
-        message(paste0("'", data_type, "' is a large data type, and collecting",
-        " the query can take a while. To avoid going through the Hugging Face ",
-        "API, download the source file ", get_view_source(con, working_view),
-        " and provide it to accessParquetData() in the 'local files' ",
-        "argument."))
+        message("'", data_type, "' is a large data type, and collecting",
+                " the query can take a while. To avoid going through the Hugging Face ",
+                "API, download the source file ", get_view_source(con, working_view),
+                " and provide it to accessParquetData() in the 'local files' ",
+                "argument.")
     }
 
     collected_view <- working_view |>
@@ -615,9 +615,9 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop("'", filter_col, paste0("' is not a column of ",
-                    "output_files.csv. Please choose one of the following: "),
-                    print_colnames)
+            stop("'", filter_col, "' is not a column of ",
+                 "output_files.csv. Please choose one of the following: ",
+                 print_colnames)
         }
 
         ftable <- ftable %>%
@@ -816,9 +816,9 @@ confirm_data_type <- function(data_type, filter_col = NULL,
     if (!is.null(filter_col) & !is.null(filter_string)) {
         if (!filter_col %in% colnames(ftable)) {
             print_colnames <- paste(colnames(ftable), collapse = ", ")
-            stop("'", filter_col, paste0("' is not a column of ",
-                "output_files.csv. Please choose one of the following: "),
-                print_colnames)
+            stop("'", filter_col, "' is not a column of ",
+                 "output_files.csv. Please choose one of the following: ",
+                 print_colnames)
         }
 
         filter_ind <- TRUE
@@ -837,14 +837,14 @@ confirm_data_type <- function(data_type, filter_col = NULL,
     if (filter_ind) {
         if (!data_type %in% filtered_types) {
             print_filtered <- paste(filtered_types, collapse = "\n")
-            stop("'", data_type, paste0("' is not an allowed value for this ",
-                "function. Please enter one of the following values:\n"),
-                print_filtered)
+            stop("'", data_type, "' is not an allowed value for this ",
+                 "function. Please enter one of the following values:\n",
+                 print_filtered)
         }
     } else {
         if (!data_type %in% all_types) {
-            stop("'", data_type, paste0("' is not an allowed value for ",
-            "'data_type'. Please enter a value found in output_file_types()."))
+            stop("'", data_type, "' is not an allowed value for ",
+                 "'data_type'. Please enter a value found in output_file_types().")
         }
     }
 }
@@ -893,9 +893,9 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
         for (n in names(filter_values)) {
             if (!n %in% available_features) {
                 af_message <- paste(available_features, collapse = ", ")
-                stop("'", n, paste0("' is not an available feature. All list ",
-                    "elements should be named one of the following:\n"),
-                    af_message)
+                stop("'", n, "' is not an available feature. All list ",
+                     "elements should be named one of the following:\n",
+                     af_message)
             }
         }
     }
@@ -932,8 +932,8 @@ confirm_sample_feature_data <- function(sample_data, feature_data) {
         if (!is.data.frame(sample_data)) {
             stop("'sample_data' should be a data.frame.")
         } else if (!"uuid" %in% colnames(sample_data)) {
-            message(paste0("'sample_data' does not have a 'uuid' column, all ",
-                           "samples will be returned."))
+            message("'sample_data' does not have a 'uuid' column, all ",
+                    "samples will be returned.")
         }
     }
 
@@ -946,8 +946,8 @@ confirm_sample_feature_data <- function(sample_data, feature_data) {
 
     ## Warn if neither sample_data nor feature_data is provided
     if (is.null(sample_data) & is.null(feature_data)) {
-        message(paste0("No 'sample_data' or 'feature_data' provided, all data ",
-                       "will be returned."))
+        message("No 'sample_data' or 'feature_data' provided, all data ",
+            "will be returned.")
     }
 }
 
@@ -996,8 +996,8 @@ confirm_duckdb_con <- function(con) {
 confirm_duckdb_view <- function(view) {
     ## Check that object class is valid
     if (!methods::is(view, "tbl_duckdb_connection")) {
-        stop(paste0("Please provide a valid object of the class ",
-                    "'tbl_duckdb_connection'."))
+        stop("Please provide a valid object of the class ",
+             "'tbl_duckdb_connection'.")
     }
 }
 
@@ -1021,8 +1021,8 @@ confirm_repo <- function(repo) {
 
     if (!is.null(repo) && !repo %in% ri$repo_name) {
         ri_message <- paste(ri$repo_name, collapse = ", ")
-        stop(paste0("Please provide one of the following valid repo names or ",
-                    "NULL to select the default ("), d, "):\n", ri_message)
+        stop("Please provide one of the following valid repo names or ",
+             "NULL to select the default (", d, "):\n", ri_message)
     }
 }
 
@@ -1044,8 +1044,8 @@ confirm_ref <- function(ref) {
 
     if (!ref %in% ri$ref_file) {
         ri_message <- paste(ri$ref_file, collapse = ", ")
-        stop(paste0("Please provide one of the following valid reference file ",
-                    "names:\n"), ri_message)
+        stop("Please provide one of the following valid reference file ",
+             "names:\n", ri_message)
     }
 }
 
@@ -1393,8 +1393,8 @@ merge_assays <- function(merge_list) {
         unique()
 
     if (length(assay_names) != 1) {
-        stop(paste0("'merge_list' contains multiple assay types, please ",
-                    "provide a list where all assays match in type and order."))
+        stop("'merge_list' contains multiple assay types, please ",
+             "provide a list where all assays match in type and order.")
     }
 
     ## Merge assays
