@@ -60,5 +60,4 @@ URL:
 BugReports: https://github.com/ASAP-MAC/parkinsonsMetagenomicData/issues
 biocViews:
     MicrobiomeData,
-    Homo_sapiens_Data,
-    PackageTypeData
+    Homo_sapiens_Data
