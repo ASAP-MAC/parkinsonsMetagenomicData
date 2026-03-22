@@ -1,0 +1,126 @@
+---
+title: "First 15 Minutes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{First 15 Minutes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r knitr_setup, include=FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r general_setup, include=FALSE}
+library(parkinsonsMetagenomicData)
+library(TreeSummarizedExperiment)
+library(dplyr)
+```
+
+# First 15 Minutes
+
+This vignette is a fast path to retrieving microbiome data as a
+`TreeSummarizedExperiment`.
+
+## Vignette guide
+
+| Vignette | Audience | Typical time | Use when |
+|---|---|---:|---|
+| `First 15 Minutes` | New users, biology-first workflows | 10-15 min | You want your first successful data retrieval quickly |
+| `Full Workflow` | Intermediate/advanced users | 30-45 min | You want full control over sample, feature, and query setup |
+| `Piecewise Workflow` | Advanced users | 30-60 min | You need direct control of `accessParquetData()` and `loadParquetData()` |
+| `Common Issues` | Any user troubleshooting | 10-20 min | You hit rate limits, large-query issues, or performance bottlenecks |
+
+## What you'll do
+
+1. Pick samples from `sampleMetadata`.
+2. Pick features from a reference table.
+3. Retrieve data with `returnSamples()`.
+
+## What you'll get
+
+`returnSamples()` returns a `TreeSummarizedExperiment`:
+
+- assay data (microbial measurements)
+- sample metadata in `colData`
+- feature metadata in `rowData`
+
+## Quick start
+
+To select a subset of available samples, start from the sample table:
+```{r} 
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
+dim(sampleMetadata)
+sampleMetadata[1:5, 1:10]
+```
+
+As an example, fetch MetaPhlAn4 relative abundance data for all 
+Faecalibacterium species across all samples in the ZhangM_2023 study, 
+directly from remote storage:
+
+```{r quick_start, eval=interactive()}
+# In any subset of samples there will be many rows of all NA,
+# so the select function below is usually wanted.
+sample_table <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !all(is.na(.x))))
+
+# All terminal taxa from the Faecalibacterium genus.
+feature_table <- load_ref("clade_name_ref") |>
+    filter(grepl("Faecalibacterium", clade_name_genus)) |>
+    filter(!is.na(clade_name_species)) |>
+    filter(!is.na(clade_name_terminal))
+
+tse <- returnSamples(
+    data_type = "relative_abundance",
+    sample_data = sample_table,
+    feature_data = feature_table,
+    repo = "waldronlab/metagenomics_mac",
+    include_empty_samples = TRUE,
+    dry_run = FALSE
+)
+
+tse
+```
+
+This just retrieved all Faecalibacterium species across all samples in the ZhangM_2023 study, 
+downloading from a remote repo. You can select samples by phenotype instead of study, and select 
+other types of features like metabolic functional modules inferred by HUMAnN. You can select a few
+features across many samples, or many features across a few samples. If you want many features 
+across many samples, you will need to download the data and query locally, which is covered in 
+the `Piecewise Workflow` vignette.
+
+
+## Inspect the result
+
+```{r inspect_result, eval=interactive()}
+assayNames(tse)
+head(colData(tse)) # Rownames are sample unique identifiers (UUIDs)
+head(rowData(tse)) #rownames are taxonomic lineages or functional modules
+```
+
+## If this fails
+
+Important `?returnSamples` sections:
+- `HTTP 429`, slow remote reads, or very large queries: download then use local parquet files with `local_files`.
+- To inspect SQL before executing: set `dry_run = TRUE` and run `dplyr::show_query()`.
+
+## Next step
+
+- See `Full Workflow` for detailed configuration and discovery tooling.
+- See `Piecewise Workflow` for manual control over connection and loading steps.
+- See `Common Issues` for troubleshooting patterns and large-file strategy.
+
+## Reference
+
+- Metadata curation: https://github.com/ASAP-MAC/parkinsonsManualCuration
+- Nextflow pipeline for processing metagenomic data: https://github.com/ASAP-MAC/metagenomicsNextflowMAC
+- Datasets found in the literature and efforts to obtain them: https://github.com/ASAP-MAC/parkinsons_data_search
+
+
+```{r session_info}
+sessionInfo()
+```

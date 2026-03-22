@@ -22,6 +22,11 @@ library(DBI)
 
 # Piecewise Workflow
 
+Use this vignette when you need finer control than the `First 15 Minutes`
+or `Full Workflow` paths provide. If your goal is a quick first retrieval,
+start with `First 15 Minutes`. If you want a complete guided wrapper-based
+workflow, use `Full Workflow`.
+
 In the piecewise workflow, we use the functions `accessParquetData` and
 `loadParquetData` separately to have a little more control over our data. First,
 `accessParquetData` sets up a DuckDB connection to the parquet files that are
