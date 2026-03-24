@@ -2,7 +2,7 @@
 title: "Full Workflow"
 output: rmarkdown::html_vignette
 vignette: >
-    %\VignetteIndexEntry{Full Workflow}
+  %\VignetteIndexEntry{Full Workflow}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
