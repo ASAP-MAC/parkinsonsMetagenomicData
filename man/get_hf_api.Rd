@@ -22,6 +22,6 @@ Hugging Face API for a particular repo.
 }
 }
 \seealso{
-\code{\link[httr]{GET}}, \code{\link[httr]{status_code}}
-\code{\link[jsonlite]{toJSON, fromJSON}}
+\code{\link[httr2]{request}}, \code{\link[httr2]{req_perform}},
+\code{\link[httr2]{resp_status}}, \code{\link[httr2]{resp_body_json}}
 }

@@ -30,10 +30,9 @@ Imports:
     stringr,
     purrr,
     tidyselect,
-    httr,
+    httr2,
     arrow,
     duckdb,
-    jsonlite,
     googleCloudStorageR,
     BiocFileCache,
     TreeSummarizedExperiment,
@@ -53,7 +52,7 @@ Suggests:
     DT
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-LazyData: false
+LazyData: true
 URL:
     https://asap-mac.github.io/parkinsonsMetagenomicData/,
     https://github.com/ASAP-MAC/parkinsonsMetagenomicData
