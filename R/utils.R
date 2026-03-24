@@ -1533,32 +1533,32 @@ get_view_source <- function(con, lazy) {
 #'  get_hf_api("waldronlab/metagenomics_mac")
 #' }
 #' @seealso
-#'  \code{\link[httr]{GET}}, \code{\link[httr]{status_code}}
-#'  \code{\link[jsonlite]{toJSON, fromJSON}}
+#'  \code{\link[httr2]{request}}, \code{\link[httr2]{req_perform}},
+#'  \code{\link[httr2]{resp_status}}, \code{\link[httr2]{resp_body_json}}
 #' @rdname get_hf_api
 #' @export
-#' @importFrom httr GET status_code
-#' @importFrom jsonlite fromJSON
+#' @importFrom httr2 request req_perform resp_status resp_body_json
 get_hf_api <- function(repo_name) {
     # --- Step 1: Construct API URL and get repo info ---
     repo_api_url <- paste0("https://huggingface.co/api/datasets/", repo_name)
 
-    # Make the GET request
-    response <- httr::GET(repo_api_url)
+    # Build and perform request
+    response <- httr2::request(repo_api_url) |>
+        httr2::req_perform()
 
-    # Check the status code before parsing
-    if (httr::status_code(response) != 200) {
+    # Check status code (maintaining current error message format)
+    if (httr2::resp_status(response) != 200) {
         stop(
             "Failed to get repo info from Hugging Face API for '", repo_name,
             "'.\n",
-            "Status code: ", httr::status_code(response), ".\n",
+            "Status code: ", httr2::resp_status(response), ".\n",
             "Please check if the repository name is correct and public. ",
             "The server may also be rate-limiting your IP."
         )
     }
 
-    # Parse the JSON response content
-    repo_info <- jsonlite::fromJSON(rawToChar(response$content))
+    # Parse JSON response directly (httr2 handles conversion internally)
+    repo_info <- httr2::resp_body_json(response, simplifyVector = TRUE)
 
     return(repo_info)
 }

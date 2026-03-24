@@ -51,8 +51,7 @@ This vignette is a fast path to retrieving microbiome data as a
 ## Quick start
 
 To select a subset of available samples, start from the sample table:
-```{r} 
-data("sampleMetadata", package = "parkinsonsMetagenomicData")
+```{r}
 dim(sampleMetadata)
 sampleMetadata[1:5, 1:10]
 ```

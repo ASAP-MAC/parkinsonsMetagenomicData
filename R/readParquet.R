@@ -960,8 +960,6 @@ get_cdata_only <- function(con, data_type, uuids) {
 #'  head(file_info)
 #' }
 #' @export
-#' @importFrom httr GET status_code content
-#' @importFrom jsonlite fromJSON
 #' @importFrom dplyr left_join mutate
 #' @importFrom utils read.csv
 get_hf_parquet_urls <- function(repo_name = NULL, verbose = FALSE) {

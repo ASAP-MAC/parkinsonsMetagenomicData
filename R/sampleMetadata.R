@@ -3,9 +3,9 @@
 #' Manually curated sample metadata for all samples in
 #' parkinsonsMetagenomicData.
 #'
-#' @format A data frame with curated and uncurated columns
-#' @return A data.frame containing curated and uncurated metadata for all
+#' @docType data
+#' @format A data.frame containing curated and uncurated metadata for all
 #' samples included in parkinsonsMetagenomicData
 #' @source internal package data
-#' @name sampleMetadata
+#' @keywords datasets
 "sampleMetadata"

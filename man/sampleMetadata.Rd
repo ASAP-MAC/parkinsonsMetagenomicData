@@ -5,17 +5,14 @@
 \alias{sampleMetadata}
 \title{Manually Curated Sample Metadata}
 \format{
-A data frame with curated and uncurated columns
+A data.frame containing curated and uncurated metadata for all
+samples included in parkinsonsMetagenomicData
 }
 \source{
 internal package data
 }
 \usage{
 sampleMetadata
-}
-\value{
-A data.frame containing curated and uncurated metadata for all
-samples included in parkinsonsMetagenomicData
 }
 \description{
 Manually curated sample metadata for all samples in
