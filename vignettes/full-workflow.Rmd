@@ -136,6 +136,7 @@ table is not provided when calling `returnSamples()`, data for all samples will
 simply be returned.
 
 ```{r pick_metadata}
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
 sample_table <- sampleMetadata |>
     filter(study_name == "ZhangM_2023") |>
     select(where(~ !any(is.na(.x))))

@@ -52,7 +52,7 @@ Suggests:
     DT
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-LazyData: true
+LazyData: false
 URL:
     https://asap-mac.github.io/parkinsonsMetagenomicData/,
     https://github.com/ASAP-MAC/parkinsonsMetagenomicData

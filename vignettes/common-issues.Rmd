@@ -48,6 +48,9 @@ Alternatively, we can download these large files. This will completely eliminate
 the rate limits since we are no longer accessing them remotely.
 
 ```{r local_return_samples, eval=interactive()}
+# Load sampleMetadata
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
+
 # Load sample info
 sample_table <- sampleMetadata |>
     filter(study_name == "ZhangM_2023") |>
@@ -90,6 +93,7 @@ con_gs <- accessParquetData(data_types = "genefamilies_stratified")
 # UniRef90_A0A1B1SA57 - present only in WildR mice
 
 # Pull study metadata
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
 selected_samples <- sampleMetadata |>
     filter(study_name == "MazmanianS_DumitrescuDG") |>
     select(where(~ !any(is.na(.x))))
