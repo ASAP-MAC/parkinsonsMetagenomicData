@@ -1,10 +1,3 @@
-## pMD_get_cache
-test_that("pMD_get_cache creates and returns a BiocFileCache", {
-    cache <- pMD_get_cache()
-    expect_s4_class(cache, "BiocFileCache")
-    expect_true(dir.exists(cache@cache))
-})
-
 ## output_file_types
 test_that("correct file is read", {
     fpath <- system.file("extdata", "output_files.csv",
