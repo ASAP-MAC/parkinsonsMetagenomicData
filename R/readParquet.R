@@ -615,7 +615,7 @@ accessParquetData <- function(dbdir = ":memory:",
 #'                           data_types = "pathcoverage_unstratified")
 #'
 #'  custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
-#'                   filter(grepl("UMP biosynthesis", pathway))
+#'                   dplyr::filter(grepl("UMP biosynthesis", pathway))
 #'
 #'  uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
 #'             "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
@@ -756,15 +756,15 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'  }
 #'
 #'  table(sampleMetadata$control, useNA = "ifany")
-#'  sample_data <- sampleMetadata %>%
+#'  sample_data <- sampleMetadata |>
 #'      dplyr::filter(control %in% c("Case", "Study Control") &
 #'                     age >= 16 &
 #'                     is.na(sex) != TRUE)
 #'  sample_data_small <- sample_data[1:15,]
 #'
 #'  clade_name_ref <- load_ref("clade_name_ref")
-#'  feature_data_genus <- clade_name_ref %>%
-#'      dplyr::filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+#'  feature_data_genus <- clade_name_ref |>
+#'      dplyr::filter(grepl("Faecalibacterium", clade_name_genus)) |>
 #'      dplyr::select(clade_name_genus)
 #'
 #'  genus_ex <- returnSamples(data_type = "relative_abundance",
@@ -785,8 +785,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'            "4985aa08-6138-4146-8ae3-952716575395",
 #'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
 #'
-#' sample_data <- sampleMetadata %>%
-#'     dplyr::filter(uuid %in% uuids) %>%
+#' sample_data <- sampleMetadata |>
+#'     dplyr::filter(uuid %in% uuids) |>
 #'     dplyr::select(where(~ !any(is.na(.x))))
 #'
 #' fpaths <- c(file.path(system.file("extdata",
@@ -801,9 +801,9 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'                      "pathway_ref.parquet")
 #'
 #' pathway_ref <- load_ref("pathway_ref", file_path = refpath)
-#' feature_data_genus <- pathway_ref %>%
-#'     dplyr::filter(grepl("Faecalibacterium", pathway_genus)) %>%
-#'     dplyr::select(pathway_uniref) %>%
+#' feature_data_genus <- pathway_ref |>
+#'     dplyr::filter(grepl("Faecalibacterium", pathway_genus)) |>
+#'     dplyr::select(pathway_uniref) |>
 #'     dplyr::rename(pathway = pathway_uniref)
 #'
 #' genus_ex <- returnSamples(data_type = "pathcoverage_unstratified",
