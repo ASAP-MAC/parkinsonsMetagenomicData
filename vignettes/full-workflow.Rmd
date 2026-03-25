@@ -33,17 +33,6 @@ samples per file, are available in the Hugging Face repo
 [metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
 These are publicly accessible, and are able to be easily read using DuckDB.
 
-## Parquet Creation
-
-To create the individual parquet files, one needs credentials to access the
-`gs://metagenomics-mac` Google Bucket. Instructions on obtaining these can be
-found in the
-[Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html). These
-credentials are then substituted into the scripts found in the repo
-[parquet_generation](https://github.com/ASAP-MAC/parquet_generation). These
-scripts perform a number of transformations that increase searchability before
-storing the combined data for each data type in parquet files.
-
 ## DuckDB in R
 
 DuckDB is very easy to use in R through the `duckdb` R package. The `DBI` and
@@ -190,7 +179,9 @@ get_ref_info() |>
     datatable()
 ```
 
-And here we can see exactly which columns are in "clade_name_ref".
+### Understanding Reference Table Structure
+
+To see exactly which columns are available in the reference table and understand how you can filter your features, use `parquet_colinfo()`. This shows all columns in both the data files and their associated reference table:
 
 ```{r demo_colinfo, eval=interactive()}
 parquet_colinfo("relative_abundance")
@@ -200,8 +191,13 @@ parquet_colinfo("relative_abundance") |>
     datatable(extensions = "Responsive")
 ```
 
-Once we have found the correct reference file, we can filter it to only contain
-features we are interested in. Here, we are interested in values for all
+This information is useful for:
+
+- **Filtering features**: Identify which columns you can use to filter your feature table (e.g., `clade_name_genus`, `clade_name_species`, `clade_name_terminal`)
+- **Understanding data structure**: See what metadata is available for each feature
+- **Verifying your reference**: Confirm you're using the correct reference table for your data type
+
+Once we have found the correct reference file and understand its structure, we can filter it to only contain features we are interested in. Here, we are interested in values for all
 bacteria in the genus "Faecalibacterium". We load the reference file with
 `load_ref()`, and use a basic `grepl()` filtering method.
 
@@ -254,6 +250,8 @@ If you are finding that this function is failing due to rate limiting (HTTP 429
 error), hanging, or simply taking longer than you would like, you can download
 the files associated with the data type you are interested in and supply their
 paths to the "local_files" argument in lieu of specifying the "repo" argument.
+Recall that you can use `get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac")`
+to find URLs to download full files.
 
 Here's a working example using the small example parquet files included in the package:
 
@@ -507,7 +505,7 @@ tse_genes
 ```
 
 **Large Query Considerations**: Gene family stratified data (`genefamilies_stratified`) can be very large. For large queries, consider:
-1. Download parquet files locally using `local_files` argument
+1. Download parquet files locally and use them via the `local_files` argument
 2. Use very selective filters (specific gene families + specific samples)
 3. Query in batches
 4. See the `Common Issues` vignette for more strategies
