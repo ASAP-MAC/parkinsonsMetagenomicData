@@ -15,7 +15,7 @@
 #'  \code{\link[DBI]{dbConnect}}, \code{\link[DBI]{dbExecute}}
 #'  \code{\link[duckdb]{duckdb}}
 #' @rdname db_connect
-#' @export
+#' @noRd
 #' @importFrom DBI dbConnect dbExecute
 #' @importFrom duckdb duckdb
 db_connect <- function(dbdir = ":memory:") {
@@ -67,7 +67,7 @@ db_connect <- function(dbdir = ":memory:") {
 #' @seealso
 #'  \code{\link[DBI]{dbExecute}}
 #' @rdname view_parquet
-#' @export
+#' @noRd
 #' @importFrom DBI dbExecute
 view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
                         view_name = NULL) {
@@ -132,7 +132,7 @@ view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
 #'  DBI::dbListTables(con)
 #' }
 #' @rdname retrieve_views
-#' @export
+#' @noRd
 retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     ## Check input
     # con, repo, data_types
@@ -200,7 +200,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' retrieve_local_views(con, fpath)
 #' DBI::dbListTables(con)
 #' @rdname retrieve_local_views
-#' @export
+#' @noRd
 retrieve_local_views <- function(con, local_files) {
     ## Check input
     # con
@@ -278,7 +278,7 @@ retrieve_local_views <- function(con, local_files) {
 #'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{setops}}
 #'  \code{\link[rlang]{sym}}
 #' @rdname filter_parquet_view
-#' @export
+#' @noRd
 #' @importFrom dplyr filter union_all collapse
 #' @importFrom rlang sym
 filter_parquet_view <- function(view, filter_values) {
@@ -366,7 +366,7 @@ filter_parquet_view <- function(view, filter_values) {
 #' @seealso
 #'  \code{\link[dplyr]{tbl}}
 #' @rdname interpret_and_filter
-#' @export
+#' @noRd
 #' @importFrom dplyr tbl
 interpret_and_filter <- function(con, data_type, filter_values) {
     ## Check input
@@ -454,7 +454,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parquet_to_tse
-#' @export
+#' @noRd
 #' @importFrom dplyr pull
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 parquet_to_tse <- function(parquet_table, data_type,
@@ -615,7 +615,7 @@ accessParquetData <- function(dbdir = ":memory:",
 #'                           data_types = "pathcoverage_unstratified")
 #'
 #'  custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
-#'                   filter(grepl("UMP biosynthesis", pathway))
+#'                   dplyr::filter(grepl("UMP biosynthesis", pathway))
 #'
 #'  uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
 #'             "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
@@ -756,15 +756,15 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'  }
 #'
 #'  table(sampleMetadata$control, useNA = "ifany")
-#'  sample_data <- sampleMetadata %>%
+#'  sample_data <- sampleMetadata |>
 #'      dplyr::filter(control %in% c("Case", "Study Control") &
 #'                     age >= 16 &
 #'                     is.na(sex) != TRUE)
 #'  sample_data_small <- sample_data[1:15,]
 #'
 #'  clade_name_ref <- load_ref("clade_name_ref")
-#'  feature_data_genus <- clade_name_ref %>%
-#'      dplyr::filter(grepl("Faecalibacterium", clade_name_genus)) %>%
+#'  feature_data_genus <- clade_name_ref |>
+#'      dplyr::filter(grepl("Faecalibacterium", clade_name_genus)) |>
 #'      dplyr::select(clade_name_genus)
 #'
 #'  genus_ex <- returnSamples(data_type = "relative_abundance",
@@ -785,8 +785,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'            "4985aa08-6138-4146-8ae3-952716575395",
 #'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
 #'
-#' sample_data <- sampleMetadata %>%
-#'     dplyr::filter(uuid %in% uuids) %>%
+#' sample_data <- sampleMetadata |>
+#'     dplyr::filter(uuid %in% uuids) |>
 #'     dplyr::select(where(~ !any(is.na(.x))))
 #'
 #' fpaths <- c(file.path(system.file("extdata",
@@ -801,9 +801,9 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #'                      "pathway_ref.parquet")
 #'
 #' pathway_ref <- load_ref("pathway_ref", file_path = refpath)
-#' feature_data_genus <- pathway_ref %>%
-#'     dplyr::filter(grepl("Faecalibacterium", pathway_genus)) %>%
-#'     dplyr::select(pathway_uniref) %>%
+#' feature_data_genus <- pathway_ref |>
+#'     dplyr::filter(grepl("Faecalibacterium", pathway_genus)) |>
+#'     dplyr::select(pathway_uniref) |>
 #'     dplyr::rename(pathway = pathway_uniref)
 #'
 #' genus_ex <- returnSamples(data_type = "pathcoverage_unstratified",
@@ -909,7 +909,7 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
 #'  \code{\link[dplyr]{compute}}
 #'  \code{\link[rlang]{sym}}
 #' @rdname get_cdata_only
-#' @export
+#' @noRd
 #' @importFrom dplyr select filter distinct collect tbl
 #' @importFrom rlang sym
 #' @importFrom tidyselect all_of

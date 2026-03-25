@@ -4,6 +4,7 @@
 #' parkinsonsMetagenomicData.
 #'
 #' @docType data
+#' @usage data(sampleMetadata)
 #' @format A data.frame containing curated and uncurated metadata for all
 #' samples included in parkinsonsMetagenomicData
 #' @source internal package data

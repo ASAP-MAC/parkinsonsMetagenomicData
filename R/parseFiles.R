@@ -30,7 +30,7 @@
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_metaphlan_list
-#' @export
+#' @noRd
 #' @importFrom readr read_tsv
 #' @importFrom S4Vectors DataFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
@@ -79,7 +79,7 @@ parse_metaphlan_list <- function(sample_id, file_path, data_type) {
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_metaphlan_list
-#' @export
+#' @noRd
 #' @importFrom readr read_tsv
 #' @importFrom S4Vectors DataFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
@@ -160,7 +160,7 @@ parse_relab_list <- function(sample_id, file_path) {
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_metaphlan_list
-#' @export
+#' @noRd
 #' @importFrom readr read_tsv
 #' @importFrom S4Vectors DataFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
@@ -239,7 +239,7 @@ parse_viral_list <- function(sample_id, file_path) {
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parse_humann
-#' @export
+#' @noRd
 #' @importFrom readr read_tsv
 #' @importFrom S4Vectors make_zero_col_DFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
@@ -302,7 +302,7 @@ parse_humann <- function(sample_id, file_path, data_type) {
 #'                    "sample_fastqc_data.txt")
 #' parse_fastqc_stats(fpath)
 #' @rdname parse_fastqc_stats
-#' @export
+#' @noRd
 parse_fastqc_stats <- function(file_path) {
     ## Read in file
     file_lines <- readLines(file_path)
@@ -337,7 +337,7 @@ parse_fastqc_stats <- function(file_path) {
 #'                    "sample_out_kneaddata_log.txt")
 #' parse_kneaddata_stats(fpath)
 #' @rdname parse_kneaddata_stats
-#' @export
+#' @noRd
 parse_kneaddata_stats <- function(file_path) {
     ## Read in file
     file_lines <- readLines(file_path)
