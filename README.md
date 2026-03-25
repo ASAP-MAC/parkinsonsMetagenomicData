@@ -1,13 +1,27 @@
 parkinsonsMetagenomicData
 ================
 
+<!-- badges: start -->
+[![R CMD Check + BiocCheck](https://github.com/ASAP-MAC/parkinsonsMetagenomicData/actions/workflows/pr_check.yml/badge.svg)](https://github.com/ASAP-MAC/parkinsonsMetagenomicData/actions/workflows/pr_check.yml)
+[![Codecov test coverage](https://codecov.io/gh/ASAP-MAC/parkinsonsMetagenomicData/branch/devel/graph/badge.svg)](https://app.codecov.io/gh/ASAP-MAC/parkinsonsMetagenomicData?branch=devel)
+<!-- badges: end -->
+
 # Package Overview
 
-This package is dedicated to retrieving, storing, and handling specific output
-files produced with the [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
-pipeline. For additional utility functions surrounding the analysis of the data
-in these files, including the handling of taxonomy and statistical tests, go to
-[biobakeryUtils](https://github.com/g-antonello/biobakeryUtils/tree/main)
+This package provides access to uniformly processed gut microbiome data from Parkinson's Disease studies. The gut-brain axis has emerged as an important factor in Parkinson's Disease, with multiple studies identifying differences in the gut microbiome composition between individuals with Parkinson's and healthy controls.
+
+**What data is available?**
+
+This package provides comprehensive microbiome profiling data from fecal samples, including:
+
+- **Microbial composition**: Which bacteria, viruses, and other microorganisms are present and their relative abundances
+- **Bacterial strain identification**: Fine-resolution tracking of specific bacterial strains
+- **Functional profiles**: What genes and metabolic pathways are encoded by the gut microbiome
+- **Quality metrics**: Technical information about sequencing depth and data quality
+
+All data have been uniformly processed through the [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow) pipeline using standardized bioinformatics tools (MetaPhlAn, StrainPhlAn, HUMAnN, FastQC, KneadData) to ensure consistency across studies.
+
+For additional analysis utilities including taxonomic handling and statistical tests, see [biobakeryUtils](https://github.com/g-antonello/biobakeryUtils/tree/main).
 
 ## Available Data
 
@@ -20,8 +34,8 @@ repository. The majority of the studies listed in the table
 are available for retrieval with this package.
 
 To browse the available data, load the `sampleMetadata` object included in this
-package. Additionally, calling `biobakery_files()` will provide a list of the
-different output file types that are available for each sample.
+package. To see which data types are available in the remote repositories, use
+`get_repo_info()` and `get_hf_parquet_urls()`. See the vignettes for examples.
 
 ### Sample Metadata
 
@@ -53,41 +67,28 @@ prefixed by "uncurated_". Curated features include the following at this time:
  - NCBI_accession
  - uuid
 
-### Output File Types
+### Data Types
 
- - MetaPhlAn
-   - viral_clusters
-   - relative_abundance
-   - marker_abundance
-   - marker_presence
- - StrainPhlAn
-   - strainphlan_markers
- - HUMAnN
-   - genefamilies
-   - genefamilies_cpm
-   - genefamilies_relab
-   - genefamilies_stratified
-   - genefamilies_unstratified
-   - genefamilies_cpm_stratified
-   - genefamilies_relab_stratified
-   - genefamilies_cpm_unstratified
-   - genefamilies_relab_unstratified
-   - pathabundance
-   - pathabundance_cpm
-   - pathabundance_relab
-   - pathabundance_stratified
-   - pathabundance_unstratified
-   - pathabundance_cpm_stratified
-   - pathabundance_relab_stratified
-   - pathabundance_cpm_unstratified
-   - pathabundance_relab_unstratified
-   - pathcoverage_unstratified
-   - pathcoverage_stratified
-   - pathcoverage
- - FastQC
-    - fastqc
- - KneadData
-   - kneaddata_log
+Data are organized into several categories based on biological content:
+
+**Taxonomic Composition** (MetaPhlAn outputs)
+- `relative_abundance`: Relative abundance of bacterial, archaeal, viral, and eukaryotic species
+- `viral_clusters`: Viral community composition
+- `marker_abundance`, `marker_presence`: Species-specific genetic markers for taxonomic identification
+
+**Strain-Level Profiling** (StrainPhlAn outputs)
+- `strainphlan_markers`: Strain-specific genetic markers for tracking bacterial variants
+
+**Functional Profiling** (HUMAnN outputs)
+- `genefamilies_*`: Abundance of gene families (groups of related genes)
+- `pathabundance_*`: Abundance of metabolic pathways (e.g., carbohydrate metabolism, amino acid synthesis)
+- `pathcoverage_*`: Coverage/completeness of metabolic pathways
+
+*Normalization options:* Raw counts, relative abundance (relab), or copies per million (cpm); some data are stratified by contributing species, others are community totals (unstratified).
+
+**Quality Control**
+- `fastqc`: Sequencing quality metrics (read quality, GC content, adapter contamination)
+- `kneaddata_log`: Pre-processing statistics (human DNA removal, quality filtering)
 
 ## Data Hosting
 
