@@ -9,7 +9,7 @@
 #'  \code{\link[BiocFileCache]{BiocFileCache-class}},
 #'  \code{\link[BiocFileCache]{BiocFileCache}}
 #' @rdname pMD_get_cache
-#' @export
+#' @noRd
 #' @importFrom tools R_user_dir
 #' @importFrom BiocFileCache BiocFileCache
 pMD_get_cache <- function() {
@@ -39,7 +39,7 @@ pMD_get_cache <- function() {
 #'  \code{\link[BiocFileCache]{BiocFileCache-class}}
 #'  \code{\link[googleCloudStorageR]{gcs_get_object}}
 #' @rdname cache_new
-#' @export
+#' @noRd
 #' @importFrom BiocFileCache bfcnew bfcremove
 #' @importFrom googleCloudStorageR gcs_get_object
 cache_new <- function(bfc, locator) {
@@ -85,7 +85,7 @@ cache_new <- function(bfc, locator) {
 #'  \code{\link[BiocFileCache]{BiocFileCache-class}}
 #'  \code{\link[googleCloudStorageR]{gcs_get_object}}
 #' @rdname handle_redownload
-#' @export
+#' @noRd
 #' @importFrom BiocFileCache bfcrpath
 #' @importFrom googleCloudStorageR gcs_get_object
 handle_redownload <- function(bfc, locator, rid, p_redown) {
@@ -132,7 +132,7 @@ handle_redownload <- function(bfc, locator, rid, p_redown) {
 #' @seealso
 #'  \code{\link[stats]{setNames}}
 #' @rdname cache_list
-#' @export
+#' @noRd
 #' @importFrom stats setNames
 cache_list <- function(locators, p_redown, custom_cache) {
     cache_paths <- vector("list", length(locators))
@@ -188,7 +188,7 @@ cache_list <- function(locators, p_redown, custom_cache) {
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname output_file_types
-#' @export
+#' @noRd
 #' @importFrom readr read_csv
 #' @importFrom dplyr filter
 output_file_types <- function(filter_col = NULL, filter_string = NULL) {
@@ -225,7 +225,7 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname biobakery_files
-#' @export
+#' @noRd
 #' @importFrom readr read_csv
 biobakery_files <- function() {
     ## Read file
@@ -290,7 +290,7 @@ parquet_colinfo <- function(data_type) {
 #' @seealso
 #'  \code{\link[stringr]{str_extract}}
 #' @rdname detect_data_type
-#' @export
+#' @noRd
 #' @importFrom stringr str_extract
 detect_data_type <- function(string) {
     ## Retrieve and sort all possible types
@@ -346,7 +346,7 @@ detect_data_type <- function(string) {
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}
 #' @rdname pick_projection
-#' @export
+#' @noRd
 #' @importFrom DBI dbListTables
 pick_projection <- function(con, data_type, feature_name = "uuid") {
     ## Check input
@@ -438,7 +438,7 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
 #'                      include_empty_samples = FALSE)
 #' working_view <- prep$working_view
 #' @rdname prepare_view
-#' @export
+#' @noRd
 #' @importFrom dplyr tbl
 prepare_view <- function(con, data_type, filter_values, custom_view,
                          include_empty_samples) {
@@ -518,7 +518,7 @@ prepare_view <- function(con, data_type, filter_values, custom_view,
 #'                                      data_type = "pathcoverage_unstratified",
 #'                                      prep$working_view)
 #' @rdname collect_and_notify
-#' @export
+#' @noRd
 #' @importFrom dplyr collect
 collect_and_notify <- function(con, data_type, working_view) {
     current_gen <- output_file_types(filter_col = "data_type",
@@ -571,7 +571,7 @@ get_repo_info <- function() {
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
 #' @rdname data_dict
-#' @export
+#' @noRd
 #' @importFrom readr read_csv
 data_dict <- function() {
     ## Load in data dictionary table
@@ -639,7 +639,7 @@ get_ref_info <- function(filter_col = NULL, filter_string = NULL) {
 #' file <- paste0("https://huggingface.co/datasets/waldronlab/",
 #'                "metagenomics_mac/resolve/main/relative_abundance.parquet")
 #' file_to_hf(file)
-#' @export
+#' @noRd
 file_to_hf <- function(url) {
     hf_url <- url |>
         gsub(pattern = "https://huggingface.co/", replacement = "hf://") |>
@@ -658,7 +658,7 @@ file_to_hf <- function(url) {
 #' @seealso
 #'  \code{\link[stringr]{str_split}}
 #' @rdname get_exts
-#' @export
+#' @noRd
 #' @importFrom stringr str_split_fixed
 get_exts <- function(file_path) {
     bname <- basename(file_path)
@@ -728,7 +728,7 @@ get_exts <- function(file_path) {
 #' @seealso
 #'  \code{\link[DBI]{dbListTables}}
 #' @rdname convert_to_filter_values
-#' @export
+#' @noRd
 #' @importFrom DBI dbListTables
 convert_to_filter_values <- function(con, data_type, sample_data,
                                     feature_data) {
@@ -769,7 +769,7 @@ convert_to_filter_values <- function(con, data_type, sample_data,
 #' try(confirm_uuids("56aa2ad5-007d-407c-a644-48aac1e9a8f0"))
 #' try(confirm_uuids("horse"))
 #' @rdname confirm_uuids
-#' @export
+#' @noRd
 confirm_uuids <- function(uuids) {
     results <- c()
     for (x in uuids) {
@@ -806,7 +806,7 @@ confirm_uuids <- function(uuids) {
 #' try(confirm_data_type(c("relative_abundance", "viral_clusters")))
 #' try(confirm_data_type("horse"))
 #' @rdname confirm_data_type
-#' @export
+#' @noRd
 confirm_data_type <- function(data_type, filter_col = NULL,
                                 filter_string = NULL) {
     ## Get allowed types
@@ -875,7 +875,7 @@ confirm_data_type <- function(data_type, filter_col = NULL,
 #' try(confirm_filter_values(l1, c("animals", "shapes")))
 #' try(confirm_filter_values(l2))
 #' @rdname confirm_filter_values
-#' @export
+#' @noRd
 confirm_filter_values <- function(filter_values, available_features = NULL) {
     ## Check that object is a named list or NULL
     if (!is.null(filter_values) &
@@ -925,7 +925,7 @@ confirm_filter_values <- function(filter_values, available_features = NULL) {
 #' try(confirm_sample_feature_data(NULL, feature_data))
 #' try(confirm_sample_feature_data(NULL, NULL))
 #' @rdname confirm_sample_feature_data
-#' @export
+#' @noRd
 confirm_sample_feature_data <- function(sample_data, feature_data) {
     ## Check that sample_data is a data frame that contains a 'uuid' column
     if (!is.null(sample_data)) {
@@ -964,7 +964,7 @@ confirm_sample_feature_data <- function(sample_data, feature_data) {
 #' try(confirm_duckdb_con(con))
 #' try(confirm_duckdb_con("horse"))
 #' @rdname confirm_duckdb_con
-#' @export
+#' @noRd
 confirm_duckdb_con <- function(con) {
     ## Check that object class is valid
     if (!methods::is(con, "duckdb_connection")) {
@@ -992,7 +992,7 @@ confirm_duckdb_con <- function(con) {
 #' view <- dplyr::tbl(con, "pathcoverage_unstratified_uuid")
 #' try(confirm_duckdb_view(view))
 #' @rdname confirm_duckdb_view
-#' @export
+#' @noRd
 confirm_duckdb_view <- function(view) {
     ## Check that object class is valid
     if (!methods::is(view, "tbl_duckdb_connection")) {
@@ -1014,7 +1014,7 @@ confirm_duckdb_view <- function(view) {
 #' try(confirm_repo("horse"))
 #' try(confirm_repo("waldronlab/metagenomics_mac"))
 #' @rdname confirm_repo
-#' @export
+#' @noRd
 confirm_repo <- function(repo) {
     ri <- get_repo_info()
     d <- ri$repo_name[ri$default == "Y"]
@@ -1038,7 +1038,7 @@ confirm_repo <- function(repo) {
 #' try(confirm_ref("horse"))
 #' try(confirm_ref("clade_name_ref"))
 #' @rdname confirm_ref
-#' @export
+#' @noRd
 confirm_ref <- function(ref) {
     ri <- get_ref_info()
 
@@ -1058,7 +1058,7 @@ confirm_ref <- function(ref) {
 #' @examples
 #' find_tse_cols(parquet_colinfo("pathcoverage_unstratified"))
 #' @rdname find_tse_cols
-#' @export
+#' @noRd
 find_tse_cols <- function(colinfo) {
     ## Get columns for each se_role value
     cnames_col <- colinfo$col_name[colinfo$se_role == "cname"]
@@ -1113,7 +1113,7 @@ find_tse_cols <- function(colinfo) {
 #'  \code{\link[tidyr]{pivot_wider}}
 #'  \code{\link[tibble]{rownames}}
 #' @rdname build_tse_assays
-#' @export
+#' @noRd
 #' @importFrom tidyselect all_of
 #' @importFrom tidyr pivot_wider
 #' @importFrom tibble column_to_rownames
@@ -1188,7 +1188,7 @@ build_tse_assays <- function(assay_cols, rnames_col, cnames_col, parquet_table,
 #'  \code{\link[dplyr]{mutate-joins}}
 #'  \code{\link[dplyr]{join_by}}
 #' @rdname build_tse_coldata
-#' @export
+#' @noRd
 #' @importFrom tidyselect any_of
 #' @importFrom dplyr distinct left_join join_by filter select
 #' @importFrom utils data
@@ -1256,7 +1256,7 @@ build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
 #'  \code{\link[tidyselect]{all_of}}
 #'  \code{\link[dplyr]{distinct}}
 #' @rdname build_tse_rowdata
-#' @export
+#' @noRd
 #' @importFrom tidyselect any_of
 #' @importFrom dplyr distinct select
 build_tse_rowdata <- function(parquet_table, rnames_col, rdata_cols) {
@@ -1306,7 +1306,7 @@ build_tse_rowdata <- function(parquet_table, rnames_col, rdata_cols) {
 #'
 #' ordered <- order_tse_elements(rdata, cdata, alist)
 #' @rdname order_tse_elements
-#' @export
+#' @noRd
 order_tse_elements <- function(rdata, cdata, alist) {
     ## Get rows that exist in both rowData/colData and assays
     rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
@@ -1338,7 +1338,7 @@ order_tse_elements <- function(rdata, cdata, alist) {
 #'
 #' standardize_ordering(vec, delim = "|")
 #' @rdname standardize_ordering
-#' @export
+#' @noRd
 #' @importFrom stringr str_split str_escape
 standardize_ordering <- function(vec, delim) {
     vec <- lapply(vec, function(x) {
@@ -1378,7 +1378,7 @@ standardize_ordering <- function(vec, delim) {
 #'  \code{\link[tidyr]{replace_na}}
 #'  \code{\link[S4Vectors]{SimpleList-class}}
 #' @rdname merge_assays
-#' @export
+#' @noRd
 #' @importFrom SummarizedExperiment assayNames assay
 #' @importFrom purrr map reduce
 #' @importFrom tibble rownames_to_column column_to_rownames
@@ -1442,7 +1442,7 @@ merge_assays <- function(merge_list) {
 #'  \code{\link[dplyr]{mutate-joins}}
 #'  \code{\link[S4Vectors]{DataFrame-class}}
 #' @rdname merge_rowdata
-#' @export
+#' @noRd
 #' @importFrom purrr map reduce
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom tibble rownames_to_column column_to_rownames
@@ -1507,7 +1507,7 @@ merge_rowdata <- function(merge_list, assay_list) {
 #'  \code{\link[dbplyr]{lazy_multi_join_query}}
 #'  \code{\link[DBI]{dbGetQuery}}
 #' @rdname get_view_source
-#' @export
+#' @noRd
 #' @importFrom stringr str_extract
 #' @importFrom dbplyr sql_render
 #' @importFrom DBI dbGetQuery
@@ -1536,7 +1536,7 @@ get_view_source <- function(con, lazy) {
 #'  \code{\link[httr2]{request}}, \code{\link[httr2]{req_perform}},
 #'  \code{\link[httr2]{resp_status}}, \code{\link[httr2]{resp_body_json}}
 #' @rdname get_hf_api
-#' @export
+#' @noRd
 #' @importFrom httr2 request req_perform resp_status resp_body_json
 get_hf_api <- function(repo_name) {
     # --- Step 1: Construct API URL and get repo info ---
@@ -1582,7 +1582,7 @@ get_hf_api <- function(repo_name) {
 #'                   "genefamilies_cpm_stratified_gene_family_uniref.parquet")))
 #' check_for_parquet(sample_response, "waldronlab/metagenomics_mac")
 #' @rdname check_for_parquet
-#' @export
+#' @noRd
 check_for_parquet <- function(repo_info, repo_name) {
     # --- Step 2: Filter for Parquet files ---
     if (is.null(repo_info$siblings) || is.null(repo_info$siblings$rfilename)) {
@@ -1615,7 +1615,7 @@ check_for_parquet <- function(repo_info, repo_name) {
 #'  \code{\link[dplyr]{mutate}}, \code{\link[dplyr]{mutate-joins}}
 #'  \code{\link[utils]{read.table}}
 #' @rdname add_defs
-#' @export
+#' @noRd
 #' @importFrom dplyr mutate left_join
 #' @importFrom utils read.csv
 add_defs <- function(result_df, verbose) {

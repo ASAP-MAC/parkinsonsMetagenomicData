@@ -335,7 +335,7 @@ listMetagenomicData <- function() {
 #'  \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #' @rdname add_metadata
-#' @export
+#' @noRd
 #' @importFrom S4Vectors DataFrame
 #' @importFrom SummarizedExperiment colData
 #' @importFrom utils data
@@ -421,7 +421,7 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
 #'  \code{\link[S4Vectors]{DataFrame-class}}
 #'  \code{\link[magrittr]{extract}}
 #' @rdname mergeExperiments
-#' @export
+#' @noRd
 #' @importFrom SummarizedExperiment assayNames assay rowData colData
 #' @importFrom purrr map reduce
 #' @importFrom tibble rownames_to_column column_to_rownames

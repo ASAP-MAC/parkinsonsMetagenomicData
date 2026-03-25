@@ -15,7 +15,7 @@
 #'  \code{\link[DBI]{dbConnect}}, \code{\link[DBI]{dbExecute}}
 #'  \code{\link[duckdb]{duckdb}}
 #' @rdname db_connect
-#' @export
+#' @noRd
 #' @importFrom DBI dbConnect dbExecute
 #' @importFrom duckdb duckdb
 db_connect <- function(dbdir = ":memory:") {
@@ -67,7 +67,7 @@ db_connect <- function(dbdir = ":memory:") {
 #' @seealso
 #'  \code{\link[DBI]{dbExecute}}
 #' @rdname view_parquet
-#' @export
+#' @noRd
 #' @importFrom DBI dbExecute
 view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
                         view_name = NULL) {
@@ -132,7 +132,7 @@ view_parquet <- function(con, httpfs_url = NULL, file_path  = NULL,
 #'  DBI::dbListTables(con)
 #' }
 #' @rdname retrieve_views
-#' @export
+#' @noRd
 retrieve_views <- function(con, repo = NULL, data_types = NULL) {
     ## Check input
     # con, repo, data_types
@@ -200,7 +200,7 @@ retrieve_views <- function(con, repo = NULL, data_types = NULL) {
 #' retrieve_local_views(con, fpath)
 #' DBI::dbListTables(con)
 #' @rdname retrieve_local_views
-#' @export
+#' @noRd
 retrieve_local_views <- function(con, local_files) {
     ## Check input
     # con
@@ -278,7 +278,7 @@ retrieve_local_views <- function(con, local_files) {
 #'  \code{\link[dplyr]{filter}}, \code{\link[dplyr]{setops}}
 #'  \code{\link[rlang]{sym}}
 #' @rdname filter_parquet_view
-#' @export
+#' @noRd
 #' @importFrom dplyr filter union_all collapse
 #' @importFrom rlang sym
 filter_parquet_view <- function(view, filter_values) {
@@ -366,7 +366,7 @@ filter_parquet_view <- function(view, filter_values) {
 #' @seealso
 #'  \code{\link[dplyr]{tbl}}
 #' @rdname interpret_and_filter
-#' @export
+#' @noRd
 #' @importFrom dplyr tbl
 interpret_and_filter <- function(con, data_type, filter_values) {
     ## Check input
@@ -454,7 +454,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
 #'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
 #' @rdname parquet_to_tse
-#' @export
+#' @noRd
 #' @importFrom dplyr pull
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 parquet_to_tse <- function(parquet_table, data_type,
@@ -909,7 +909,7 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
 #'  \code{\link[dplyr]{compute}}
 #'  \code{\link[rlang]{sym}}
 #' @rdname get_cdata_only
-#' @export
+#' @noRd
 #' @importFrom dplyr select filter distinct collect tbl
 #' @importFrom rlang sym
 #' @importFrom tidyselect all_of
