@@ -51,7 +51,8 @@ This vignette is a fast path to retrieving microbiome data as a
 
 ## Quick start
 
-To select a subset of available samples, start from the sample table:
+You can view metadata about all samples in `sampleMetaData`. Later in example 1, you'll see how to filter rows 
+of this table to choose which samples you want to download data for. 
 ```{r load_sample_metadata}
 data("sampleMetadata", package = "parkinsonsMetagenomicData")
 dim(sampleMetadata)
@@ -62,7 +63,7 @@ sampleMetadata[1:5, 1:10]
 
 Before retrieving data, you can explore what data types are available. Each data type represents different measurements or processing levels from various bioinformatics tools:
 
-```{r explore_data_types, eval=interactive()}
+```{r explore_data_types}
 available_data <- get_hf_parquet_urls()
 ```
 
@@ -86,7 +87,7 @@ Use the search boxes above each column to filter by data type, tool, or keywords
 
 Fetch MetaPhlAn4 relative abundance data for all Faecalibacterium species across all samples in the ZhangM_2023 study, directly from remote storage:
 
-```{r quick_start, eval=interactive()}
+```{r quick_start}
 # In any subset of samples there will be many rows of all NA,
 # so the select function below is usually wanted.
 sample_table <- sampleMetadata |>
@@ -118,14 +119,23 @@ downloading from a remote repo.
 
 You can also retrieve functional data like metabolic pathways. First, discover which reference tables are available:
 
-```{r discover_refs, eval=interactive()}
+```{r discover_refs}
 # See what reference tables are available
-get_ref_info()
+ref_info <- get_ref_info()
+```
+
+```{r show_ref_info, echo=FALSE}
+get_ref_info() |>
+    datatable(
+        options = list(pageLength = 10),
+        filter = 'top',
+        caption = "Available reference tables for feature discovery"
+    )
 ```
 
 Now load the pathway reference and browse for pathways of interest:
 
-```{r browse_pathways, eval=interactive()}
+```{r browse_pathways}
 # Load the pathway reference
 pathway_ref <- load_ref("pathway_ref")
 
@@ -139,13 +149,11 @@ butyrate_pathways <- pathway_ref |>
 butyrate_pathways
 ```
 
-Now fetch the abundance of a specific butyrate biosynthesis pathway across all samples:
+Now fetch the abundance of a specific butyrate biosynthesis pathway across all `r nrow(sampleMetadata)`
+samples in parkinsonsMetagenomicData:
 
-```{r pathway_example, eval=interactive()}
+```{r pathway_example}
 # Use all samples (no filtering by study)
-sample_table_all <- sampleMetadata |>
-    select(where(~ !all(is.na(.x))))
-
 # Select the acetyl-CoA fermentation to butanoate pathway
 feature_table_pathway <- pathway_ref |>
     filter(pathway == "PWY-5676: acetyl-CoA fermentation to butanoate II") |>
@@ -153,7 +161,7 @@ feature_table_pathway <- pathway_ref |>
 
 tse_pathway <- returnSamples(
     data_type = "pathabundance_unstratified",
-    sample_data = sample_table_all,
+    sample_data = sampleMetadata,
     feature_data = feature_table_pathway,
     repo = "waldronlab/metagenomics_mac",
     include_empty_samples = TRUE,
@@ -182,8 +190,9 @@ head(rowData(tse_pathway)) # Rownames are pathway IDs
 
 ## If this fails
 
-Important `?returnSamples` sections:
-- `HTTP 429`, slow remote reads, or very large queries: download then use local parquet files with `local_files`.
+If you `?returnSamples` fails:
+
+- `HTTP 429`, slow internet access, or queries that will return a lot of data: download then use local parquet files with `local_files`.
 - To inspect SQL before executing: set `dry_run = TRUE` and run `dplyr::show_query()`.
 
 ## Next step
