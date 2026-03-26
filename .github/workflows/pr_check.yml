@@ -6,6 +6,12 @@ on:
     paths:
       - 'DESCRIPTION'
       - '**.yml'
+      - 'README.md'
+      - 'vignettes/**'
+      - '_pkgdown.yml'
+      - 'pkgdown/**'
+      - 'R/**'
+      - 'man/**'
     branches:
       - devel
       - RELEASE_3_23
@@ -115,7 +121,7 @@ jobs:
            PATH=$PATH:$HOME/bin/ Rscript -e 'pkgdown::build_site()'
 
       - name: Upload pkgdown artifact
-        if: github.ref == format('refs/heads/{0}', env.BIOC_RELEASE)
+        if: ${{ github.ref == format('refs/heads/{0}', env.BIOC_RELEASE) && github.event_name != 'pull_request' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs
