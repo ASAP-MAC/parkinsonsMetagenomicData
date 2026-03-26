@@ -109,6 +109,18 @@ for each sample and output type, and can be accessed with the functions and
 workflows detailed in the
 [Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html).
 
+### Parquet Creation
+
+To create the individual parquet files, one needs credentials to access the
+`gs://metagenomics-mac` Google Bucket. Instructions on obtaining these can be
+found in the
+[Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html). These
+credentials are then substituted into the scripts found in the repo
+[parquet_generation](https://github.com/ASAP-MAC/parquet_generation). These
+scripts perform a number of transformations that increase searchability before
+storing the combined data for each data type in parquet files.
+
+
 ### Hugging Face
 
 While Google Cloud Storage is a good place to access the data as soon as they

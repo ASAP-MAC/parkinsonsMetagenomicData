@@ -33,17 +33,6 @@ samples per file, are available in the Hugging Face repo
 [metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
 These are publicly accessible, and are able to be easily read using DuckDB.
 
-## Parquet Creation
-
-To create the individual parquet files, one needs credentials to access the
-`gs://metagenomics-mac` Google Bucket. Instructions on obtaining these can be
-found in the
-[Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html). These
-credentials are then substituted into the scripts found in the repo
-[parquet_generation](https://github.com/ASAP-MAC/parquet_generation). These
-scripts perform a number of transformations that increase searchability before
-storing the combined data for each data type in parquet files.
-
 ## DuckDB in R
 
 DuckDB is very easy to use in R through the `duckdb` R package. The `DBI` and
@@ -126,6 +115,33 @@ get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac") |>
     datatable(extensions = "Responsive")
 ```
 
+### Exploring Data Types
+
+For easier browsing, we can view just the unique data types with their descriptions:
+
+```{r explore_data_types, eval=interactive()}
+available_data <- get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac")
+```
+
+```{r show_data_types, echo=FALSE}
+get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac") |>
+    suppressMessages() |>
+    select(data_type, tool, description, units_normalization) |>
+    distinct() |>
+    datatable(
+        options = list(pageLength = 10),
+        filter = 'top',
+        caption = "Available data types with descriptions",
+        extensions = "Responsive"
+    )
+```
+
+Use the search boxes to filter by keywords. For example:
+- Search "pathway" to find pathway abundance and coverage data
+- Search "stratified" to find species-level breakdowns
+- Search "viral" to find viral cluster data
+- Search "genefamilies" to find gene family data
+
 ## Sample Table
 
 We can then examine the available samples and optionally select a subset to
@@ -133,7 +149,7 @@ query. This is done by browsing the `sampleMetadata` object. Here is an example
 of how a set of data might be selected for a meta-analysis with some sampling
 parameters. Alternatively, this step can be left off altogether. If the sample
 table is not provided when calling `returnSamples()`, data for all samples will
-simply be returned.
+be returned.
 
 ```{r pick_metadata}
 data("sampleMetadata", package = "parkinsonsMetagenomicData")
@@ -150,7 +166,7 @@ datatable(sample_table, extensions = "Responsive")
 For the feature table, we first have to find the reference file that goes with
 the data type we are interested in. To do this, call `get_ref_info()`. Search
 the 'general_data_type' column for your data type and identify the reference
-file of interest. For a more granular view of what exactly will be in each file,
+file of interest. For a more granular view of what is in each file,
 you can call `parquet_colinfo()` with your data type and see which columns will
 be included. Here, we can see that "clade_name_ref" is associated with
 "relative_abundance".
@@ -160,10 +176,12 @@ get_ref_info()
 ```
 ```{r show_ref_info, echo=FALSE}
 get_ref_info() |>
-    datatable(extensions = "Responsive")
+    datatable()
 ```
 
-And here we can see exactly which columns are in "clade_name_ref".
+### Understanding Reference Table Structure
+
+To see exactly which columns are available in the reference table and understand how you can filter your features, use `parquet_colinfo()`. This shows all columns in both the data files and their associated reference table:
 
 ```{r demo_colinfo, eval=interactive()}
 parquet_colinfo("relative_abundance")
@@ -173,9 +191,14 @@ parquet_colinfo("relative_abundance") |>
     datatable(extensions = "Responsive")
 ```
 
-Once we have found the correct reference file, we can filter it to only contain
-features we are interested in. Here, we are interested in values for all
-bacteria in the genus "Faecalibacterium". We load the reference file with
+This information is useful for:
+
+- **Filtering features**: Identify which columns you can use to filter your feature table (e.g., `clade_name_genus`, `clade_name_species`, `clade_name_terminal`)
+- **Understanding data structure**: See what metadata is available for each feature
+- **Verifying your reference**: Confirm you're using the correct reference table for your data type
+
+Once we have found the correct reference file and understand its structure, we can filter it to only contain features we are interested in. Here, we are interested in values for all
+taxonomic nodes in the genus "Faecalibacterium". We load the reference file with
 `load_ref()`, and use a basic `grepl()` filtering method.
 
 ```{r filter_feature_table}
@@ -227,20 +250,54 @@ If you are finding that this function is failing due to rate limiting (HTTP 429
 error), hanging, or simply taking longer than you would like, you can download
 the files associated with the data type you are interested in and supply their
 paths to the "local_files" argument in lieu of specifying the "repo" argument.
-It would look something like this:
+Recall that you can use `get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac")`
+to find URLs to download full files.
 
-```{r local_return_samples, eval=interactive()}
-local_files <- c("/path/to/relative_abundance_clade_name_species.parquet",
-                "/path/to/relative_abundance_uuid.parquet")
+Here's a working example using the small example parquet files included in the package:
 
-experiment <- returnSamples(data_type = "relative_abundance",
-                            sample_data = sample_table,
-                            feature_data = feature_table,
-                            repo = NULL,
-                            local_files = local_files,
-                            include_empty_samples = TRUE,
-                            dry_run = FALSE)
+```{r local_return_samples}
+# Locate the example parquet files included in the package
+local_files <- c(
+    file.path(system.file("extdata", package = "parkinsonsMetagenomicData"),
+              "pathcoverage_unstratified_pathway.parquet"),
+    file.path(system.file("extdata", package = "parkinsonsMetagenomicData"),
+              "pathcoverage_unstratified_uuid.parquet")
+)
+
+# Load the pathway reference for pathcoverage data
+pathway_ref_local <- load_ref("pathway_ref",
+                               file_path = file.path(system.file("extdata",
+                                                     package = "parkinsonsMetagenomicData"),
+                                                     "pathway_ref.parquet"))
+
+# Select a few pathways
+feature_table_local <- pathway_ref_local |>
+    head(5) |>
+    select(pathway)
+
+# The example files contain data for 10 samples
+# For this example, we can query all samples by omitting sample_data,
+# or specify a subset using UUIDs
+sample_uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
+                  "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
+                  "fb7e8210-002a-4554-b265-873c4003e25f")
+sample_table_local <- data.frame(uuid = sample_uuids)
+
+# Query the local files
+experiment_local <- returnSamples(
+    data_type = "pathcoverage_unstratified",
+    sample_data = sample_table_local,
+    feature_data = feature_table_local,
+    repo = NULL,
+    local_files = local_files,
+    include_empty_samples = TRUE,
+    dry_run = FALSE
+)
+
+experiment_local
 ```
+
+This demonstrates the complete local file workflow using the small example files included with the package. The example files contain 10 samples and can be queried just like full-sized parquet files. For larger datasets, you would download the full parquet files from Hugging Face and provide their paths in the same way.
 
 Finally, you can check exactly which query is being called on the raw parquet
 data by passing "TRUE" to the "dry_run" argument. This returns a
@@ -257,6 +314,214 @@ query_only <- returnSamples(data_type = "relative_abundance",
                             dry_run = TRUE)
 dplyr::show_query(query_only)
 ```
+
+# Additional Data Type Examples
+
+The following examples demonstrate retrieving different types of metagenomic data beyond taxonomic relative abundance. Each showcases unique features of the package and different bioinformatics tools.
+
+## Example 2: Pathway Abundance (Stratified vs Unstratified)
+
+HUMAnN pathway data comes in two forms:
+- **Unstratified**: Total pathway abundance across all contributing organisms
+- **Stratified**: Pathway abundance broken down by individual species
+
+This example shows how to retrieve unstratified pathway abundance for butyrate biosynthesis pathways, which are relevant to gut-brain health in Parkinson's Disease.
+
+### Discover Reference Tables
+
+```{r pathway_ref_info, eval=interactive()}
+get_ref_info()
+```
+
+```{r show_pathway_ref_info, echo=FALSE}
+get_ref_info() |>
+    filter(grepl("pathway", ref_file, ignore.case = TRUE)) |>
+    datatable(extensions = "Responsive",
+              caption = "Pathway reference tables")
+```
+
+### Browse Available Pathways
+
+```{r browse_pathways}
+pathway_ref <- load_ref("pathway_ref")
+
+# Search for butyrate-related pathways
+butyrate_pathways <- pathway_ref |>
+    filter(grepl("butanoate|butyrat", pathway, ignore.case = TRUE)) |>
+    filter(!grepl("\\|", pathway)) |>  # Exclude stratified versions (contains "|")
+    select(pathway) |>
+    distinct()
+```
+
+```{r show_butyrate_pathways, echo=FALSE}
+butyrate_pathways |>
+    datatable(extensions = "Responsive",
+              caption = "Butyrate-related pathways (unstratified)")
+```
+
+### Retrieve Unstratified Pathway Data
+
+```{r pathway_unstratified_example}
+# Select a single pathway
+feature_table_pathway <- pathway_ref |>
+    filter(pathway == "PWY-5676: acetyl-CoA fermentation to butanoate II") |>
+    select(pathway)
+
+# Use samples from a single study
+sample_table_pathway <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    select(where(~ !any(is.na(.x))))
+
+# Retrieve unstratified pathway abundance
+tse_pathway <- returnSamples(
+    data_type = "pathabundance_unstratified",
+    sample_data = sample_table_pathway,
+    feature_data = feature_table_pathway,
+    repo = "waldronlab/metagenomics_mac",
+    include_empty_samples = TRUE,
+    dry_run = FALSE
+)
+
+tse_pathway
+```
+
+### Understanding Stratified Data
+
+If you wanted to see WHICH bacterial species contribute to this pathway's abundance, you would use `data_type = "pathabundance_stratified"` instead. Stratified pathways have the format `PATHWAY|SPECIES`, for example:
+
+```
+PWY-5676: acetyl-CoA fermentation to butanoate II|g__Faecalibacterium.s__Faecalibacterium_prausnitzii
+```
+
+```{r pathway_stratified_example, eval=interactive()}
+# Example: Get stratified version (species-level contributions)
+# Note: This may return more rows as each pathway-species pair is a feature
+feature_table_stratified <- pathway_ref |>
+    filter(grepl("^PWY-5676:", pathway)) |>
+    filter(grepl("Faecalibacterium", pathway)) |>  # Just Faecalibacterium contributions
+    select(pathway)
+
+tse_pathway_stratified <- returnSamples(
+    data_type = "pathabundance_stratified",
+    sample_data = sample_table_pathway,
+    feature_data = feature_table_stratified,
+    repo = "waldronlab/metagenomics_mac",
+    include_empty_samples = TRUE,
+    dry_run = FALSE
+)
+```
+
+## Example 3: Viral Clusters
+
+MetaPhlAn can identify viral sequences in metagenomic samples. This example retrieves viral cluster data.
+
+### Discover Viral Reference
+
+```{r viral_ref_info}
+genome_name_ref <- load_ref("genome_name_ref")
+
+# Browse available viral genomes
+viral_genomes <- genome_name_ref |>
+    select(genome_name) |>
+    distinct() |>
+    head(20)  # Show first 20 for brevity
+```
+
+```{r show_viral_genomes, echo=FALSE}
+viral_genomes |>
+    datatable(extensions = "Responsive",
+              caption = "Example viral genome references (first 20)")
+```
+
+### Retrieve Viral Cluster Data
+
+```{r viral_example}
+# Select a few viral genomes to query
+feature_table_viral <- genome_name_ref |>
+    head(5) |>  # Select first 5 viral genomes
+    select(genome_name)
+
+# Use the same sample set
+tse_viral <- returnSamples(
+    data_type = "viral_clusters",
+    sample_data = sample_table,
+    feature_data = feature_table_viral,
+    repo = "waldronlab/metagenomics_mac",
+    include_empty_samples = TRUE,
+    dry_run = FALSE
+)
+
+tse_viral
+```
+
+## Example 4: Gene Family Abundance
+
+HUMAnN quantifies gene families (groups of homologous genes) using the UniRef database. This example shows gene family abundance data.
+
+**Note**: Gene family queries can be large. For demonstration, we'll query a small number of gene families.
+
+### Discover Gene Family Reference
+
+```{r gene_ref_info}
+gene_family_ref <- load_ref("gene_family_ref")
+
+# Browse the structure
+gene_family_ref |>
+    select(gene_family) |>
+    head(20)
+```
+
+```{r show_gene_families, echo=FALSE}
+gene_family_ref |>
+    head(20) |>
+    datatable(extensions = "Responsive",
+              caption = "Example gene families (first 20)")
+```
+
+### Retrieve Gene Family Data
+
+```{r gene_family_example}
+# Select specific gene families (using a small set for performance)
+feature_table_genes <- gene_family_ref |>
+    head(10) |>  # Select first 10 gene families
+    select(gene_family)
+
+# Use fewer samples for gene family queries (they can be large)
+sample_table_small <- sampleMetadata |>
+    filter(study_name == "ZhangM_2023") |>
+    head(5) |>  # Use only 5 samples
+    select(where(~ !any(is.na(.x))))
+
+tse_genes <- returnSamples(
+    data_type = "genefamilies_unstratified",
+    sample_data = sample_table_small,
+    feature_data = feature_table_genes,
+    repo = "waldronlab/metagenomics_mac",
+    include_empty_samples = TRUE,
+    dry_run = FALSE
+)
+
+tse_genes
+```
+
+**Large Query Considerations**: Gene family stratified data (`genefamilies_stratified`) can be very large. For large queries, consider:
+1. Download parquet files locally and use them via the `local_files` argument
+2. Use very selective filters (specific gene families + specific samples)
+3. Query in batches
+4. See the `Working with Large Parquet Files` vignette for more strategies
+
+# Comparing Data Types
+
+Here's a summary of what we retrieved in these examples:
+
+| Example | Data Type | Tool | Features | What It Measures |
+|---------|-----------|------|----------|------------------|
+| 1 | relative_abundance | MetaPhlAn | Bacterial taxa | Which bacteria are present and their relative abundance |
+| 2 | pathabundance_unstratified | HUMAnN | Metabolic pathways | Total abundance of metabolic pathways |
+| 3 | viral_clusters | MetaPhlAn | Viral genomes | Presence/abundance of viral sequences |
+| 4 | genefamilies_unstratified | HUMAnN | Gene families | Abundance of functional gene groups |
+
+All return `TreeSummarizedExperiment` objects with the same structure, making it easy to apply consistent analysis workflows across different data types.
 
 ```{r session_info}
 sessionInfo()
