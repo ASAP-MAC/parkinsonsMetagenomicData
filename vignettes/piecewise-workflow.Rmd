@@ -18,28 +18,73 @@ knitr::opts_chunk$set(
 library(parkinsonsMetagenomicData)
 library(dplyr)
 library(DBI)
+library(DT)
 ```
 
 # Piecewise Workflow
 
-Use this vignette when you need finer control than the `First 15 Minutes`
-or `Full Workflow` paths provide. If your goal is a quick first retrieval,
-start with `First 15 Minutes`. If you want a complete guided wrapper-based
-workflow, use `Full Workflow`.
+## When to Use This Approach
 
-In the piecewise workflow, we use the functions `accessParquetData` and
-`loadParquetData` separately to have a little more control over our data. First,
-`accessParquetData` sets up a DuckDB connection to the parquet files that are
-either stored locally or hosted in a remote repo (in this case, Hugging Face).
-`loadParquetData` then takes an argument for data type as well as any filters
-and loads the requested data into R as a Tree Summarized Experiment. We can even
-use `dplyr` functions to customize the SQL query.
+The "piecewise" name refers to splitting data retrieval into separate steps
+(accessParquetData → custom dplyr operations → loadParquetData) rather than
+using the single-step returnSamples() wrapper.
+
+Use a piecewise workflow when you need:
+
+1. **Direct SQL control**: Write custom dplyr queries on the DuckDB connection before loading data
+2. **Multiple queries from one connection**: Query different data types efficiently and without reconnecting, such as to determine association between a species and a pathway
+3. **Complex filtering**: Apply advanced dplyr operations beyond simple column matching
+4. **Memory-efficient workflows**: Preview data size with `dplyr::show_query()` before loading
+5. **Debugging queries**: Inspect the SQL generated at each step
+
+If you just want to retrieve data quickly, use `First 15 Minutes` or `Full Workflow` instead. Those vignettes use the wrapper function `returnSamples()` which handles the connection and loading steps for you.
+
+## How It Works
+
+The piecewise workflow splits data retrieval into two steps:
+
+1. **`accessParquetData()`** - Creates a DuckDB connection and sets up VIEW objects for parquet files (remote or local)
+2. **`loadParquetData()`** - Queries those views with your filters and loads data as a TreeSummarizedExperiment
+
+Between these steps, you can use `dplyr` to inspect, modify, and optimize queries before executing them.
+
+## Discovering Available Data
+
+Before selecting files, explore what data types and reference tables are available:
+
+```{r discover_data_types}
+available_data <- get_hf_parquet_urls(repo_name = "waldronlab/metagenomics_mac")
+```
+
+```{r show_data_types, echo=FALSE}
+available_data |>
+    select(data_type, tool, description) |>
+    distinct() |>
+    datatable(
+        options = list(pageLength = 10),
+        filter = 'top',
+        caption = "Available data types",
+        extensions = "Responsive"
+    )
+```
+
+```{r discover_ref_tables}
+ref_info <- get_ref_info()
+```
+
+```{r show_ref_tables, echo=FALSE}
+ref_info |>
+    datatable(
+        options = list(pageLength = 10),
+        filter = 'top',
+        caption = "Available reference tables",
+        extensions = "Responsive"
+    )
+```
 
 ## File Selection
 
-We can use the same resources of `get_repo_info()` and `get_hf_parquet_urls()`
-to determine our files of interest and `data_type` value. As before, we can
-download any files and alternatively supply them as local files.
+Now that we know what's available, we can select our files of interest. The `data_type` value corresponds to the parquet files we want to access.
 
 We then run `accessParquetData`, which creates the DuckDB connection and sets
 up DuckDB "VIEW" objects for each available file, whether remotely hosted or
@@ -84,7 +129,8 @@ sample_table <- sampleMetadata |>
     select(where(~ !any(is.na(.x))))
 ```
 ```{r re_show_metadata, echo=FALSE}
-sample_table
+sample_table |>
+    datatable(extensions = "Responsive")
 ```
 
 ```{r pull_uuids}
@@ -107,7 +153,8 @@ feature_table <- clade_name_ref %>%
     filter(!is.na(clade_name_terminal))
 ```
 ```{r show_new_new_feature_table, echo=FALSE}
-feature_table
+feature_table |>
+    datatable(extensions = "Responsive")
 ```
 
 We would set up the filters like so. These two columns are the minimum required
@@ -116,13 +163,12 @@ to produce the same result as our prior example.
 ```{r filter_vals}
 filter_values <- list(clade_name_species = unique(feature_table$clade_name_species),
                     clade_name_terminal = unique(feature_table$clade_name_terminal))
-filter_values
 ```
 
-Here is also where we supply our UUIDs.
+Here is also where we supply our UUIDs to specify samples.
 
 ```{r filter_vals_with_uuid}
-filter_values <- c(list(uuid = selected_uuids), filter_values)
+filter_values[["uuid"]] <- selected_uuids
 filter_values
 ```
 
@@ -156,35 +202,69 @@ query_only <- loadParquetData(con = con,
 dplyr::show_query(query_only)
 ```
 
-## Optional View Customization
+## Example 2: Pathway Abundance
 
-Additionally, it is possible to use `dplyr` to preview the data view of interest
-and perform more advanced functions on the data prior to using `loadParquetData`
-or the `collect()` function to load it into R. Here we use the `tbl()` function
-to access the data view of choice, and pipe it into a `filter()` call to select
-only rows that have a value in the "additional_species" column. We can then save
-these calls to a variable prior to loading them into R, and supply this to
-`loadParquetData` either instead of or alongside our other standard filtering
-arguments.
+The piecewise workflow works identically for functional data types. Here's an example with pathway abundance:
 
-```{r custom_view}
-custom_filter <- tbl(con, "relative_abundance_uuid") %>%
-    filter(!is.na(additional_species))
+```{r pathway_example}
+# Connect to pathway data
+con_pathways <- accessParquetData(dbdir = ":memory:",
+                                   repo = "waldronlab/metagenomics_mac",
+                                   data_types = "pathabundance_unstratified")
+
+DBI::dbListTables(con_pathways)
+
+# Load pathway reference
+pathway_ref <- load_ref("pathway_ref")
+
+# Filter for butyrate biosynthesis pathways
+butyrate_pathways <- pathway_ref |>
+    filter(grepl("butanoate|butyrat", pathway, ignore.case = TRUE)) |>
+    filter(!grepl("\\|", pathway)) |>  # Exclude stratified versions
+    select(pathway)
+
+# Set up filter values (same samples as before)
+pathway_filter_values <- list(
+    uuid = selected_uuids,
+    pathway = butyrate_pathways$pathway
+)
+
+# Load pathway data
+pathway_experiment <- loadParquetData(
+    con = con_pathways,
+    data_type = "pathabundance_unstratified",
+    filter_values = pathway_filter_values,
+    include_empty_samples = TRUE,
+    dry_run = FALSE
+)
+
+pathway_experiment
 ```
 
-We can see a preview of the data by calling the saved view:
+This demonstrates the flexibility of the piecewise approach: you can create multiple connections to different data types and query them with the same workflow.
 
-```{r view_custom_view}
+## Custom View: Advanced dplyr Operations
+
+The real power of the piecewise workflow is using `dplyr` to manipulate DuckDB views before loading data. You can access any view with `tbl()` and apply dplyr operations.
+
+### Example 1: Filter on Additional Columns
+
+```{r custom_view}
+# Access the view and add custom filtering
+custom_filter <- tbl(con, "relative_abundance_uuid") %>%
+    filter(!is.na(additional_species))
+
+# Preview the data (lazy query, not executed yet)
 custom_filter
 ```
 
-Or show the query prior to running:
+View the generated SQL:
 
 ```{r query_custom_view}
 dplyr::show_query(custom_filter)
 ```
 
-We then simply provide that custom view to `loadParquetData()`.
+Load the data with the custom view:
 
 ```{r load_custom}
 custom_experiment <- loadParquetData(con = con,
@@ -195,6 +275,79 @@ custom_experiment <- loadParquetData(con = con,
                                     dry_run = FALSE)
 custom_experiment
 ```
+
+### Example 2: Aggregate Before Loading
+
+You can perform aggregations in DuckDB before bringing data into R. This is memory-efficient for large datasets:
+
+```{r custom_aggregation, eval=interactive()}
+# Calculate summary statistics for Akkermansia muciniphila across all samples
+# First check what Akkermansia species are available
+akk_species <- load_ref("clade_name_ref") %>%
+    filter(grepl("Akkermansia", clade_name_genus)) %>%
+    pull(clade_name_species) %>%
+    unique()
+
+akk_species  # Should show "Akkermansia_muciniphila" if available
+
+# Aggregate abundance data in DuckDB before loading into R
+aggregated_view <- tbl(con, "relative_abundance_uuid") %>%
+    filter(clade_name_species == "Akkermansia_muciniphila") %>%
+    group_by(clade_name_species) %>%
+    summarize(
+        mean_abundance = mean(relative_abundance, na.rm = TRUE),
+        median_abundance = median(relative_abundance, na.rm = TRUE),
+        max_abundance = max(relative_abundance, na.rm = TRUE),
+        n_samples_detected = sum(relative_abundance > 0, na.rm = TRUE),
+        .groups = "drop"
+    )
+
+# Show the SQL that will be executed
+show_query(aggregated_view)
+
+# Execute and collect the aggregated result (small, just summary stats)
+aggregated_data <- collect(aggregated_view)
+aggregated_data
+```
+
+This aggregation happens in DuckDB before loading into R, making it much more memory-efficient than loading all individual sample abundances first and then aggregating in R.
+
+### Example 3: Combine Data from Multiple Connections
+
+You can query different data types separately and combine them in R. This example pairs taxonomic and pathway data:
+
+```{r custom_join}
+# Get species present in our samples (aggregate to species level)
+# Aggregating here avoids duplicate rows from subspecies/strains
+taxa_data <- tbl(con, "relative_abundance_uuid") %>%
+    filter(uuid %in% selected_uuids) %>%
+    filter(clade_name_species %in% !!unique(feature_table$clade_name_species)) %>%
+    group_by(uuid, clade_name_species) %>%
+    summarize(relative_abundance = sum(relative_abundance, na.rm = TRUE), .groups = "drop") %>%
+    collect()
+
+# Get butyrate pathway data for same samples
+pathway_data <- tbl(con_pathways, "pathabundance_unstratified_uuid") %>%
+    filter(uuid %in% selected_uuids) %>%
+    filter(grepl("butanoate|butyrat", pathway, ignore.case = TRUE)) %>%
+    filter(!grepl("\\|", pathway)) %>%  # Exclude stratified
+    group_by(uuid) %>%
+    summarize(total_butyrate_pathways = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
+    collect()
+
+# Join in R on uuid (sample ID)
+joined_data <- taxa_data %>%
+    inner_join(pathway_data, by = "uuid") %>%
+    arrange(desc(relative_abundance))
+
+```
+
+```{r showjoined_data, echo=FALSE}
+joined_data |>
+    datatable(extensions = "Responsive")
+```
+
+This demonstrates querying different data types separately (aggregating in DuckDB before loading) then combining in R. The joined data pairs each sample's Faecalibacterium abundance with its total butyrate pathway abundance, enabling correlation analysis to test hypotheses like: "Do samples with higher Faecalibacterium also have higher butyrate biosynthesis capacity?"
 
 ```{r session_info}
 sessionInfo()

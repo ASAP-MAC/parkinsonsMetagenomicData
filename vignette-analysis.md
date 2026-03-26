@@ -161,65 +161,57 @@ Each example includes:
 
 ## Piecewise Workflow (`piecewise-workflow.Rmd`)
 
+### Implementation Status: ✅ ENHANCED
+
+**Changes Made**:
+1. **Strengthened motivation section**: Added clear "When to Use This Approach" with 5 specific use cases
+2. **Added "How It Works" section**: Explained the two-step process (accessParquetData + loadParquetData)
+3. **Added discovery workflow**: Shows get_hf_parquet_urls() and get_ref_info() with DT datatables
+4. **Added DT datatables**: Replaced plain tibble output with searchable DT datatables for consistency
+5. **Added pathway example**: Complete Example 2 showing pathabundance_unstratified workflow
+6. **Expanded custom view section**: Added three advanced examples:
+   - Example 1: Filter on additional columns
+   - Example 2: Aggregate before loading (memory-efficient)
+   - Example 3: Join multiple views
+
+**Result**: Vignette now clearly demonstrates its unique value - direct SQL control, multiple connections, and advanced dplyr operations on DuckDB views.
+
 ### Current Structure
-1. Introduction (when to use this)
-2. File Selection
-3. accessParquetData()
-4. Selecting Samples
-5. Selecting Features (as named lists)
-6. loadParquetData()
-7. Optional View Customization
+1. When to Use This Approach (5 clear use cases)
+2. How It Works (explanation of two-step process)
+3. Discovering Available Data (with DT datatables)
+4. File Selection
+5. accessParquetData()
+6. Selecting Samples (with DT datatable)
+7. Selecting Features (with DT datatable)
+8. loadParquetData()
+9. Example 2: Pathway Abundance (functional data example)
+10. Custom View: Advanced dplyr Operations (3 examples)
 
 ### Strengths
-- ✅ Clear explanation of when to use this approach
-- ✅ Good demonstration of accessParquetData() + loadParquetData() pattern
-- ✅ Excellent custom view section with dplyr manipulation
-- ✅ Shows the lower-level API clearly
+- ✅ Clear explanation of when to use this approach with specific use cases
+- ✅ Discovery workflow with DT datatables consistent with other vignettes
+- ✅ Demonstrates both taxonomic and functional data types
+- ✅ Expanded custom view section showing real power of piecewise approach
+- ✅ Shows aggregation and joining patterns
+- ✅ All output uses DT datatables for consistency
 
-### Issues
+### Issues - ALL FIXED
 
-#### 1. No Discovery Workflow (Critical)
-**Problem**: Says "We can use the same resources of `get_repo_info()` and `get_hf_parquet_urls()`" but doesn't actually SHOW calling them.
+#### 1. No Discovery Workflow (Critical) - ✅ FIXED
+**Solution Implemented**: Added complete discovery section with get_hf_parquet_urls() and get_ref_info(), both displayed in searchable DT datatables.
 
-**Current**: References these functions but expects users to know from other vignettes.
+#### 2. Inconsistent Output Display - ✅ FIXED
+**Solution Implemented**: Replaced plain tibble output with DT datatables at all display points (sample_table, feature_table).
 
-**Should have**: Actual calls with output/tables showing what's available.
+#### 3. Only Taxonomic Example - ✅ FIXED
+**Solution Implemented**: Added complete Example 2 with pathway abundance data, demonstrating the workflow applies to functional data types.
 
-#### 2. Inconsistent Output Display
-**Problem**: Some code chunks use `echo=FALSE` to show output, others use explicit print.
+#### 4. Weak Motivation Section - ✅ FIXED
+**Solution Implemented**: Added "When to Use This Approach" section with 5 specific use cases and "How It Works" explanation of the two-step process.
 
-**Lines 86-88**: Uses `echo=FALSE` with just `sample_table`
-**Lines 109-111**: Uses `echo=FALSE` with just `feature_table`
-
-**Issue**: No DT datatables like other vignettes, just plain tibble output.
-
-**Recommendation**: Use DT datatables for consistency with other vignettes.
-
-#### 3. Only Taxonomic Example
-**Problem**: Same Faecalibacterium example used everywhere.
-
-**Impact**: Users working with pathways, gene families, etc. won't see relevant examples.
-
-**Recommendation**: Add a second example with functional data to show the pattern applies broadly.
-
-#### 4. Weak Motivation Section
-**Problem**: Lines 25-28 say "when you need finer control" but don't clearly articulate WHAT control you get.
-
-**Should explain:**
-- When would you need accessParquetData vs returnSamples?
-- What can you do with the connection object that you can't do with returnSamples?
-- Performance implications
-- Memory management considerations
-
-#### 5. Custom View Section Underutilized
-**Problem**: The custom view section (lines 159-197) is the MOST VALUABLE part showing true "piecewise" power, but it's buried at the end and given minimal explanation.
-
-**Should expand:**
-- Multiple custom view examples
-- Joining views
-- Aggregations before loading
-- Complex dplyr chains
-- When this is better than returnSamples filtering
+#### 5. Custom View Section Underutilized - ✅ FIXED
+**Solution Implemented**: Expanded to three examples showing filter operations, aggregations, and joins. Demonstrates memory-efficient patterns and complex dplyr chains.
 
 ### Recommendations for Piecewise Workflow
 
