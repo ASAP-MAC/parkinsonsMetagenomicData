@@ -241,14 +241,34 @@ Each example includes:
 
 ---
 
-## Common Issues (`common-issues.Rmd`)
+## Working with Large Parquet Files (`working-with-large-parquet-files.Rmd`)
+
+### Implementation Status: ✅ ENHANCED
+
+**Changes Made**:
+1. **Renamed file**: Changed from `common-issues.Rmd` to `working-with-large-parquet-files.Rmd` to better reflect focused content
+2. **Retitled**: Changed from "Common Issues" to "Working with Large Parquet Files"
+3. **Enhanced sorted column explanation**: Added clear explanation of why sorted columns matter for query performance
+4. **Two-stage filtering strategy**: Documented the pattern of filtering on sorted columns remotely, then non-sorted columns locally
+5. **Improved examples**: Added detailed comments explaining the strategy in the genefamilies_stratified example
+6. **Removed redundant content**: Removed pseudocode local file example (Full Workflow has working example)
+7. **Added "When to Download Locally" section**: Clear guidance on when local files are better than remote queries
+8. **Updated cross-references**: Updated references in first-15-minutes and full-workflow vignettes to use new name
+
+**Result**: Vignette now clearly focuses on its unique value - explaining sorted column strategy for large file queries and providing practical genefamilies_stratified examples.
 
 ### Current Structure
-1. Large File Considerations
-   - Rate limits (HTTP 429)
-   - Result size
-   - Local file strategy
-2. Example large queries with genefamilies_stratified
+1. Understanding Parquet File Sorting
+   - Explanation of sorted columns
+   - Why this matters for performance
+2. The Sorted Column Strategy
+   - Two-stage filtering approach
+   - Alternative: download files locally
+3. Practical Example: Querying genefamilies_stratified
+   - Resource considerations
+   - Mouse microbiome gene family example with detailed comments
+   - Key takeaways
+4. When to Download Locally
 
 ### Strengths
 - ✅ Addresses a real pain point (rate limits with large files)

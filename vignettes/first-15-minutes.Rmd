@@ -32,7 +32,7 @@ This vignette is a fast path to retrieving microbiome data as a
 | `First 15 Minutes` | New users, biology-first workflows | 10-15 min | You want your first successful data retrieval quickly |
 | `Full Workflow` | Intermediate/advanced users | 30-45 min | You want full control over sample, feature, and query setup |
 | `Piecewise Workflow` | Advanced users | 30-60 min | You need direct control of `accessParquetData()` and `loadParquetData()` |
-| `Common Issues` | Any user troubleshooting | 10-20 min | You hit rate limits, large-query issues, or performance bottlenecks |
+| `Working with Large Parquet Files` | Users working with large data types | 10-20 min | You need to query genefamilies_stratified or other large files efficiently |
 
 ## What you'll do
 
@@ -199,7 +199,7 @@ If you `?returnSamples` fails:
 
 - See `Full Workflow` for detailed configuration and discovery tooling.
 - See `Piecewise Workflow` for manual control over connection and loading steps.
-- See `Common Issues` for troubleshooting patterns and large-file strategy.
+- See `Working with Large Parquet Files` for strategies on querying large data types like genefamilies_stratified.
 
 ## Reference
 

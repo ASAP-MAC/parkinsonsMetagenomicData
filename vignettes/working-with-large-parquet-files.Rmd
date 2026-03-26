@@ -1,0 +1,146 @@
+---
+title: "Working with Large Parquet Files"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Working with Large Parquet Files}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r chunk_set, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r general_setup, include=FALSE}
+library(parkinsonsMetagenomicData)
+library(dplyr)
+library(DBI)
+library(DT)
+```
+
+# Working with Large Parquet Files
+
+This vignette focuses on strategies for working with the largest data types in the package, particularly `genefamilies_stratified` and similar large files. While these files work the same way as smaller data types, they require careful query strategies to avoid rate limiting and performance issues.
+
+## Understanding Parquet File Sorting
+
+Each data type has parquet files sorted by specific columns. This sorting is crucial for query performance when accessing remote files.
+
+For example, `genefamilies_stratified` has two parquet files:
+- `genefamilies_stratified_uuid.parquet` - sorted by `uuid` column
+- `genefamilies_stratified_gene_family_uniref.parquet` - sorted by `gene_family_uniref` column
+
+**Key principle**: When querying remote parquet files, always filter on sorted columns first to minimize data transfer and avoid rate limiting.
+
+## The Sorted Column Strategy
+
+### Why This Matters
+
+When you filter on a **sorted column**, DuckDB can efficiently skip large portions of the file without reading them. When you filter on a **non-sorted column**, DuckDB must scan the entire file remotely, which:
+
+1. Takes much longer
+2. Transfers more data
+3. Can trigger Hugging Face rate limits (HTTP 429 errors)
+4. May cause the query to hang or fail
+
+### Two-Stage Filtering Approach
+
+For large files, use this two-stage strategy:
+
+**Stage 1: Remote filtering on sorted columns**
+- Filter by sorted columns (e.g., `uuid`, `gene_family_uniref`) when querying the remote parquet files
+- This creates a smaller TreeSummarizedExperiment with only relevant data
+
+**Stage 2: Local filtering on non-sorted columns**
+- Once data is in R, apply additional filters on non-sorted columns (e.g., `gene_family_species`)
+- Use standard R/dplyr operations on the TreeSummarizedExperiment object
+
+### Alternative: Download Files Locally
+
+For repeated queries or very large extractions, download the parquet files locally. This completely eliminates rate limits and allows filtering on any column. See the `Full Workflow` vignette for a working example of local file usage with `system.file()` and the inst/extdata example files.
+
+## Practical Example: Querying genefamilies_stratified
+
+The examples below demonstrate the sorted column strategy with `genefamilies_stratified`, one of the largest data types. These queries use `accessParquetData()` and `loadParquetData()` for fine-grained control.
+
+### Resource Considerations
+
+Large file operations may require:
+- Adequate disk space if using a persistent DuckDB database file (specify with `dbdir` parameter)
+- Sufficient RAM for in-memory operations (default `:memory:`)
+- For very large extractions, consider running in a high-memory environment or cloud instance
+
+### Example Scenario: Mouse Microbiome Gene Families
+
+This example retrieves specific gene families from a mouse study, demonstrating the sorted column strategy:
+
+```{r demo_large_queries}
+# Establish connection to genefamilies_stratified remote files
+con_gs <- accessParquetData(data_types = "genefamilies_stratified")
+
+# Target: Gene families specific to different mouse groups
+# - UniRef90_T4BVE4: present only in SPF mice
+# - UniRef90_A0A1B1SA57: present only in WildR mice
+
+# Load study metadata
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
+selected_samples <- sampleMetadata |>
+    filter(study_name == "MazmanianS_DumitrescuDG") |>
+    select(where(~ !any(is.na(.x))))
+
+# STRATEGY: Pre-filter sample IDs using metadata before querying parquet files
+# This minimizes the data transfer from remote files
+
+wildr_ids <- selected_samples |>
+    filter(MazmanianS_DumitrescuDG_uncurated_donor_microbiome_type == "WildR") |>
+    pull(uuid)
+
+spf_ids <- selected_samples |>
+    filter(MazmanianS_DumitrescuDG_uncurated_donor_microbiome_type == "SPF") |>
+    pull(uuid)
+
+# Query 1: SPF-specific gene family with subset of samples
+# Filters on SORTED columns: gene_family_uniref and uuid
+spf_ex <- loadParquetData(con_gs, "genefamilies_stratified",
+        filter_values = list(gene_family_uniref = "UniRef90_T4BVE4",
+                            uuid = spf_ids))
+spf_ex
+
+# Query 2: WildR-specific gene family with subset of samples
+wildr_ex <- loadParquetData(con_gs, "genefamilies_stratified",
+    filter_values = list(gene_family_uniref = "UniRef90_A0A1B1SA57",
+                        uuid = wildr_ids))
+wildr_ex
+
+# Query 3: Multiple gene families across all samples in study
+# This works but transfers more data (all samples vs. filtered subset)
+all_ex <- loadParquetData(con_gs, "genefamilies_stratified",
+                filter_values = list(gene_family_uniref = c("UniRef90_T4BVE4",
+                                                        "UniRef90_A0A1B1SA57"),
+                                    uuid = selected_samples$uuid))
+all_ex
+```
+
+### Key Takeaways
+
+1. **Always filter on sorted columns** when querying remote large files
+2. **Pre-filter sample IDs** using metadata before querying parquet files
+3. **Balance specificity vs. breadth**: More specific queries (fewer samples/features) are faster
+4. For filtering on non-sorted columns (e.g., `gene_family_species`), retrieve data first, then filter the TreeSummarizedExperiment in R
+
+## When to Download Locally
+
+Consider downloading parquet files if:
+- You need to query the same large files repeatedly
+- You need to filter on non-sorted columns extensively
+- You're working in an environment with fast local disk but slow/unreliable internet
+- You're hitting rate limits despite using sorted column strategies
+
+See the `Full Workflow` vignette for local file examples.
+
+```{r session_info}
+sessionInfo()
+```

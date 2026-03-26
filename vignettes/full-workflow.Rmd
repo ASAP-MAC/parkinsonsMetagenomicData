@@ -198,7 +198,7 @@ This information is useful for:
 - **Verifying your reference**: Confirm you're using the correct reference table for your data type
 
 Once we have found the correct reference file and understand its structure, we can filter it to only contain features we are interested in. Here, we are interested in values for all
-bacteria in the genus "Faecalibacterium". We load the reference file with
+taxonomic nodes in the genus "Faecalibacterium". We load the reference file with
 `load_ref()`, and use a basic `grepl()` filtering method.
 
 ```{r filter_feature_table}
@@ -508,7 +508,7 @@ tse_genes
 1. Download parquet files locally and use them via the `local_files` argument
 2. Use very selective filters (specific gene families + specific samples)
 3. Query in batches
-4. See the `Common Issues` vignette for more strategies
+4. See the `Working with Large Parquet Files` vignette for more strategies
 
 # Comparing Data Types
 
