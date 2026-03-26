@@ -71,8 +71,8 @@ connection.
  sample_data <- sampleMetadata |>
      dplyr::filter(control \%in\% c("Case", "Study Control") &
                     age >= 16 &
-                    is.na(sex) != TRUE)
- sample_data_small <- sample_data[1:15,]
+                    !is.na(sex))
+ sample_data_small <- sample_data[seq(15),]
 
  clade_name_ref <- load_ref("clade_name_ref")
  feature_data_genus <- clade_name_ref |>
