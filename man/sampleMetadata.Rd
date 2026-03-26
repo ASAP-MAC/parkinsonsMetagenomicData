@@ -12,7 +12,7 @@ samples included in parkinsonsMetagenomicData
 internal package data
 }
 \usage{
-sampleMetadata
+data(sampleMetadata)
 }
 \description{
 Manually curated sample metadata for all samples in

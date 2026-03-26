@@ -1,0 +1,473 @@
+---
+title: "Data Codebook"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Data Codebook}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r knitr_setup, include=FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r general_setup, include=FALSE, message=FALSE}
+library(parkinsonsMetagenomicData)
+library(dplyr)
+library(knitr)
+```
+
+# Data Codebook
+
+This vignette documents all variables and data structures in the `parkinsonsMetagenomicData` package, including sample metadata fields, microbiome data types, and column definitions for parquet files.
+
+## Overview
+
+The package provides three main data components:
+
+1. **Sample Metadata** (`sampleMetadata`) - Clinical and demographic information for each sample
+2. **Microbiome Data** - Multiple data types from MetaPhlAn, HUMAnN, and QC tools
+3. **Reference Files** - Lookup tables for taxonomic names, gene families, and pathways
+
+## Sample Metadata
+
+The `sampleMetadata` data frame contains curated metadata for all samples. Both curated and uncurated features are included, with uncurated features prefixed by "uncurated_".
+
+### Loading Sample Metadata
+
+```{r load_metadata}
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
+dim(sampleMetadata)
+```
+
+### Core Metadata Fields
+
+#### Identifiers
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `curation_id` | character | Dataset x subject identifier (format: `study_name:subject_id`) |
+| `study_name` | character | Dataset name |
+| `subject_id` | character | Subject identifier within study |
+| `sample_id` | character | Unique sample identifier |
+| `uuid` | character | Universal unique identifier for the sample |
+| `BioProject` | character | SRA BioProject accession (format: PRJ[DEN][BA][0-9]+) |
+| `BioSample` | character | SRA BioSample accession (format: SAM[DNEA]+?[0-9]+) |
+| `NCBI_accession` | character | Semicolon-separated vector of NCBI accessions |
+
+#### Study Design
+
+| Field | Type | Description | Allowed Values |
+|-------|------|-------------|----------------|
+| `target_condition` | character | Primary phenotype/condition of interest (multiple values separated by `;`) | Ontology terms (NCIT:C7057, EFO:0000408 descendants) |
+| `control` | character | Sample classification in study | "Study Control", "Case", "Not Used" |
+
+#### Demographics
+
+| Field | Type | Description | Allowed Values |
+|-------|------|-------------|----------------|
+| `age` | integer | Age of subject | Numeric value |
+| `age_unit` | character | Unit for age | "Day", "Week", "Month", "Year" |
+| `age_group` | character | Age category | "Infant" (0-2), "Children 2-11 Years Old" (2-11), "Adolescent" (11-18), "Adult" (18-65), "Elderly" (≥65) |
+| `sex` | character | Biological sex | "Female", "Male" |
+| `host_species` | character | Species of subject | "Homo sapiens", "Mus musculus" |
+
+#### Clinical Information
+
+| Field | Type | Description | Allowed Values |
+|-------|------|-------------|----------------|
+| `disease` | character | Reported disease/condition(s) (multiple values separated by `;`; "Healthy" if none) | Ontology terms (NCIT:C7057, EFO:0000408 descendants) |
+| `body_site` | character | Anatomical location | "feces", "milk", "nasal cavity", "oral cavity", "skin epidermis", "vagina" |
+
+#### Curation
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `curator` | character | Curator name(s) (multiple values separated by `;`) |
+
+### Accessing Metadata Information Programmatically
+
+```{r metadata_info}
+# View the data dictionary
+metadata_info <- data_dict()
+kable(head(metadata_info, 10))
+```
+
+### Example: Exploring Sample Characteristics
+
+```{r explore_metadata}
+# Summary of control status
+table(sampleMetadata$control, useNA = "ifany")
+
+# Age distribution
+summary(sampleMetadata$age)
+
+# Studies included
+head(unique(sampleMetadata$study_name))
+
+# Body sites sampled
+table(sampleMetadata$body_site, useNA = "ifany")
+```
+
+## Microbiome Data Types
+
+The package provides multiple types of microbiome profiling data, organized by biological content and normalization method.
+
+### Available Data Types
+
+```{r data_types}
+# Get information about all data types
+data_types <- biobakery_files()
+kable(data_types)
+```
+
+### Data Type Categories
+
+#### Taxonomic Composition (MetaPhlAn)
+
+**`relative_abundance`** - Primary taxonomic profiling output
+
+- **Description**: Relative abundance of bacterial, archaeal, viral, and eukaryotic taxa
+- **Units**: Relative Abundance (%)
+- **Levels**: Kingdom through species and strain
+- **Tool**: MetaPhlAn
+
+**`viral_clusters`** - Viral community profiling
+
+- **Description**: Clusters of viral sequences for strain/species-level analysis
+- **Units**: Varies (often Relative Abundance or CPM)
+- **Tool**: MetaPhlAn/Custom
+
+**`marker_abundance`** - Marker gene quantification
+
+- **Description**: Abundance of clade-specific marker genes
+- **Units**: Mean coverage of marker genes
+- **Tool**: MetaPhlAn
+
+**`marker_presence`** - Marker gene detection
+
+- **Description**: Binary presence/absence of marker genes
+- **Units**: Binary (0 or 1)
+- **Tool**: MetaPhlAn
+
+#### Strain-Level Profiling (StrainPhlAn)
+
+**`strainphlan_markers`** - Strain-specific markers
+
+- **Description**: Consensus sequences for strain-level reconstruction
+- **Units**: Fraction of marker covered / Mean coverage
+- **Tool**: StrainPhlAn
+
+#### Functional Profiling (HUMAnN)
+
+HUMAnN data types come in multiple variants based on:
+- **Content**: Gene families (`genefamilies`), pathway abundance (`pathabundance`), or pathway coverage (`pathcoverage`)
+- **Stratification**: Taxonomically stratified (by species) or unstratified (community total)
+- **Normalization**: Raw (RPK), relative abundance (`relab`), or copies per million (`cpm`)
+
+**Gene Families**
+
+| Data Type | Stratification | Normalization | Description |
+|-----------|----------------|---------------|-------------|
+| `genefamilies` | Mixed | RPK | Raw output (unnormalized) |
+| `genefamilies_unstratified` | Community total | RPK | Total gene family abundance |
+| `genefamilies_stratified` | By species | RPK | Species-specific contributions |
+| `genefamilies_relab_unstratified` | Community total | Relative % | Normalized community totals |
+| `genefamilies_relab_stratified` | By species | Relative % | Normalized species contributions |
+| `genefamilies_cpm_unstratified` | Community total | CPM | Depth-corrected totals |
+| `genefamilies_cpm_stratified` | By species | CPM | Depth-corrected species contributions |
+
+**Metabolic Pathways - Abundance**
+
+| Data Type | Stratification | Normalization | Description |
+|-----------|----------------|---------------|-------------|
+| `pathabundance` | Mixed | RPK | Raw pathway abundance |
+| `pathabundance_unstratified` | Community total | RPK | Total pathway abundance |
+| `pathabundance_stratified` | By species | RPK | Species-specific pathway contributions |
+| `pathabundance_relab_unstratified` | Community total | Relative % | Normalized community pathways |
+| `pathabundance_relab_stratified` | By species | Relative % | Normalized species pathways |
+| `pathabundance_cpm_unstratified` | Community total | CPM | Depth-corrected pathway totals |
+| `pathabundance_cpm_stratified` | By species | CPM | Depth-corrected species pathways |
+
+**Metabolic Pathways - Coverage**
+
+| Data Type | Stratification | Units | Description |
+|-----------|----------------|-------|-------------|
+| `pathcoverage` | Mixed | Proportion (0-1) | Pathway completeness |
+| `pathcoverage_unstratified` | Community total | Proportion (0-1) | Total pathway coverage |
+| `pathcoverage_stratified` | By species | Proportion (0-1) | Species-specific pathway coverage |
+
+#### Quality Control
+
+**`fastqc`** - Sequencing quality metrics
+
+- **Description**: Quality scores, adapter contamination, sequence content
+- **Units**: Varies by metric
+- **Tool**: FastQC
+
+**`kneaddata_log`** - Preprocessing statistics
+
+- **Description**: Quality trimming, host read removal, read counts
+- **Units**: None (log file)
+- **Tool**: KneadData
+
+### Choosing Data Types
+
+**For taxonomic analysis:**
+- Use `relative_abundance` for bacteria/archaea
+- Add `viral_clusters` for viruses
+
+**For functional analysis:**
+- Use `genefamilies_relab` or `pathabundance_relab` for relative comparisons
+- Use `genefamilies_cpm` or `pathabundance_cpm` when comparing across sequencing depths
+- Use `pathcoverage` to assess pathway completeness
+
+**Stratified vs. Unstratified:**
+- Unstratified: Total community-level measurements (smaller files)
+- Stratified: See which species contribute to each function (larger files, richer information)
+
+## Parquet File Column Definitions
+
+Each data type has specific columns with defined roles in the TreeSummarizedExperiment structure.
+
+### Column Roles
+
+Columns are assigned to specific components:
+
+- **`cname`**: Column names (sample identifiers, typically `uuid`)
+- **`cdata`**: Column data (sample metadata: processing parameters, versions)
+- **`rname`**: Row names (feature identifiers)
+- **`rdata`**: Row data (feature metadata)
+- **`assay`**: Assay data (measurement values)
+
+### Accessing Column Information
+
+```{r column_info}
+# Get column information for a specific data type
+rel_abund_cols <- parquet_colinfo("relative_abundance")
+kable(rel_abund_cols)
+```
+
+### Relative Abundance Columns
+
+```{r relab_cols}
+# Show relative abundance columns grouped by role
+rel_abund_cols %>%
+    select(col_name, col_class, se_role, description) %>%
+    kable()
+```
+
+#### Sample Identifiers (cname)
+- **`uuid`**: Sample UUID - links to `sampleMetadata`
+
+#### Sample Metadata (cdata)
+- **`db_version`**: MetaPhlAn database version
+- **`command`**: MetaPhlAn command executed
+- **`reads_processed`**: Number of reads processed
+- **`metaphlan_header`**: Original MetaPhlAn header
+- **`original_columns`**: Original column names
+
+#### Feature Identifiers (rname)
+- **`clade_name`**: Full taxonomic lineage (e.g., "k__Bacteria|p__Firmicutes|c__Bacilli|o__Lactobacillales|f__Streptococcaceae|g__Streptococcus|s__Streptococcus_mutans")
+
+#### Feature Metadata (rdata)
+- **`clade_name_kingdom`** through **`clade_name_terminal`**: Taxonomic ranks parsed from `clade_name`
+- **`NCBI_tax_id`** through **`NCBI_tax_id_terminal`**: NCBI Taxonomy IDs for each rank
+- **`additional_species`**: Other species with the same marker set
+
+#### Assay Data
+- **`relative_abundance`**: Proportion of community (0-100%)
+
+### Gene Families Columns
+
+```{r genefamilies_cols}
+# Gene families column structure
+gf_cols <- parquet_colinfo("genefamilies")
+gf_cols %>%
+    select(col_name, col_class, se_role, description) %>%
+    kable()
+```
+
+Key columns:
+- **`gene_family`** (rname): Full gene family identifier
+- **`gene_family_uniref`** (rdata): UniRef90 identifier
+- **`gene_family_genus`** (rdata): Taxonomic genus (if stratified)
+- **`gene_family_species`** (rdata): Taxonomic species (if stratified)
+- **`rpk_abundance`** (assay): Reads per kilobase
+
+### Pathway Columns
+
+```{r pathway_cols}
+# Pathway abundance/coverage column structure
+pa_cols <- parquet_colinfo("pathabundance")
+pa_cols %>%
+    select(col_name, col_class, se_role, description) %>%
+    kable()
+```
+
+Key columns:
+- **`pathway`** (rname): MetaCyc pathway identifier
+- **`pathway_uniref`** (rdata): UniRef identifier (if applicable)
+- **`pathway_genus`** (rdata): Taxonomic genus (if stratified)
+- **`pathway_species`** (rdata): Taxonomic species (if stratified)
+- **`abundance`** or **`coverage`** (assay): Measurement value
+
+## Reference Files
+
+Reference files provide lookup tables for non-UUID identifiers found in the parquet files.
+
+### Available References
+
+```{r ref_info}
+# Get information about reference files
+ref_info <- get_ref_info()
+kable(ref_info)
+```
+
+### Loading Reference Files
+
+Reference files can be loaded from remote repositories or local files.
+
+```{r load_ref_example, eval=FALSE}
+# From remote repository (requires network)
+clade_ref <- load_ref("clade_name_ref")
+
+# From local file
+refpath <- file.path(system.file("extdata",
+                                 package = "parkinsonsMetagenomicData"),
+                     "pathway_ref.parquet")
+pathway_ref <- load_ref(ref_file = refpath)
+head(pathway_ref)
+```
+
+### Reference File Contents
+
+**`clade_name_ref`** - Taxonomic lineages
+
+- All unique `clade_name` values from `relative_abundance` files
+- Includes NCBI Taxonomy IDs at each rank
+- Use for: Taxonomic lookups, lineage parsing
+
+**`gene_family_ref`** - Gene family identifiers
+
+- All unique `gene_family` values from `genefamilies` files
+- Use for: Gene family annotation lookups
+
+**`pathway_ref`** - Pathway identifiers
+
+- All unique `pathway` values from `pathabundance` and `pathcoverage` files
+- Use for: Pathway annotation, MetaCyc lookups
+
+**`genome_name_ref`** - Viral genome identifiers
+
+- All unique `genome_name` values from `viral_clusters` files
+- Use for: Viral genome annotation
+
+**`uniref_marker_ref`** - Marker gene identifiers
+
+- All unique `uniref` marker values from `marker_abundance` and `marker_presence` files
+- Use for: Marker gene lookups
+
+## Data Repositories
+
+Data are hosted on Hugging Face in parquet format for efficient access.
+
+### Repository Information
+
+```{r repo_info}
+# Get repository information
+repos <- get_repo_info()
+kable(repos)
+```
+
+### Default Repository
+
+The default repository (`waldronlab/metagenomics_mac`) contains the full dataset with all available samples.
+
+### Examples Repository
+
+The examples repository (`waldronlab/metagenomics_mac_examples`) contains small example files with 10 samples each, useful for testing and learning.
+
+## Data Access Patterns
+
+### Quick Access with returnSamples()
+
+For most users, `returnSamples()` provides the simplest interface:
+
+```{r return_samples_example, eval=FALSE}
+# Load sample metadata
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
+
+# Filter to samples of interest
+my_samples <- sampleMetadata %>%
+    filter(control %in% c("Case", "Study Control"),
+           age >= 18,
+           !is.na(sex))
+
+# Retrieve relative abundance data
+tse <- returnSamples(sample_data = my_samples[1:10, ],
+                     data_type = "relative_abundance")
+```
+
+### Advanced Access with accessParquetData() and loadParquetData()
+
+For more control over filtering and data loading:
+
+```{r advanced_example, eval=FALSE}
+# Connect to database
+con <- accessParquetData(data_types = "relative_abundance")
+
+# Apply filters and load
+tse <- loadParquetData(con = con,
+                       data_type = "relative_abundance",
+                       filter_values = list(
+                           clade_name_species = c("s__Streptococcus_mutans",
+                                                  "s__Escherichia_coli")
+                       ))
+```
+
+### Using Local Files
+
+When working with downloaded parquet files:
+
+```{r local_example, eval=FALSE}
+# Point to local directory
+con <- accessParquetData(file_paths = "path/to/parquet/files/",
+                         data_types = "relative_abundance")
+
+# Load data
+tse <- loadParquetData(con = con,
+                       data_type = "relative_abundance")
+```
+
+## Additional Resources
+
+### Package Functions for Data Discovery
+
+- `output_file_types()` - List available output file types and their properties
+- `parquet_colinfo()` - Get column definitions for a specific data type
+- `get_repo_info()` - List available Hugging Face repositories
+- `get_ref_info()` - List available reference files
+- `get_hf_parquet_urls()` - Get direct URLs to parquet files
+
+### Vignettes
+
+- **First 15 Minutes** - Quick start guide
+- **Full Workflow** - Comprehensive data retrieval tutorial
+- **Piecewise Workflow** - Advanced direct database access
+- **Working with Large Parquet Files** - Strategies for large data types
+
+### External Documentation
+
+- [MetaPhlAn Documentation](https://github.com/biobakery/MetaPhlAn)
+- [HUMAnN Documentation](https://github.com/biobakery/humann)
+- [TreeSummarizedExperiment](https://bioconductor.org/packages/TreeSummarizedExperiment)
+
+## Session Info
+
+```{r session_info}
+sessionInfo()
+```

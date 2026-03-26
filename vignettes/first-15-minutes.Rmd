@@ -29,6 +29,7 @@ This vignette is a fast path to retrieving microbiome data as a
 
 | Vignette | Audience | Typical time | Use when |
 |---|---|---:|---|
+| `Data Codebook` | All users | Reference | You need to understand variable definitions, data types, and column structures |
 | `First 15 Minutes` | New users, biology-first workflows | 10-15 min | You want your first successful data retrieval quickly |
 | `Full Workflow` | Intermediate/advanced users | 30-45 min | You want full control over sample, feature, and query setup |
 | `Piecewise Workflow` | Advanced users | 30-60 min | You need direct control of `accessParquetData()` and `loadParquetData()` |

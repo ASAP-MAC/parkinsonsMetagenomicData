@@ -42,15 +42,16 @@ output_file_types <- function(filter_col = NULL, filter_string = NULL) {
 
 #' @title Read in extdata/biobakery_file_definitions.csv
 #' @description 'biobakery_files' reads in the table
-#' extdata/biobakery_file_definitions.csv.
-#' @return Tibble with columns 'DataType', 'Tool', 'Description', and
-#' Units/Normalization'
+#' extdata/biobakery_file_definitions.csv, which contains information about
+#' all available microbiome data types including their tool of origin,
+#' description, and units/normalization method.
+#' @return Tibble with columns 'data_type', 'tool', 'description', and
+#' 'units_normalization'
 #' @examples
 #' biobakery_files()
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
-#' @rdname biobakery_files
-#' @noRd
+#' @export
 #' @importFrom readr read_csv
 biobakery_files <- function() {
     ## Read file
@@ -389,14 +390,23 @@ get_repo_info <- function() {
 #' @title Return a table with information about curated metadata features
 #' @description 'data_dict' returns a table of information associated with
 #' each curated feature (not prefixed with "uncurated_") in sampleMetadata.
-#' @return Data frame: A table of metadata feature information, including
-#' information on allowed values and requiredness as well as other parameters.
+#' This includes column names, data types, descriptions, allowed values,
+#' and whether fields are required or allow multiple values.
+#' @return Data frame: A table of metadata feature information with columns:
+#' 'ColName', 'ColClass', 'Unique', 'Required', 'MultipleValues',
+#' 'Description', 'AllowedValues', 'Delimiter', 'Separater',
+#' 'DynamicEnum', and 'DynamicEnumProperty'.
 #' @examples
-#' data_dict()
+#' # View the sample metadata data dictionary
+#' metadata_info <- data_dict()
+#' head(metadata_info)
+#'
+#' # Check required fields
+#' required_fields <- metadata_info[metadata_info$Required == "required", ]
+#' required_fields$ColName
 #' @seealso
 #'  \code{\link[readr]{read_delim}}
-#' @rdname data_dict
-#' @noRd
+#' @export
 #' @importFrom readr read_csv
 data_dict <- function() {
     ## Load in data dictionary table
