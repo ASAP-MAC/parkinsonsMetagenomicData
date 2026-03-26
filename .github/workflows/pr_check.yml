@@ -128,6 +128,7 @@ jobs:
 
   deploy:
     needs: check
+    if: ${{ github.ref == format('refs/heads/{0}', env.BIOC_RELEASE) && github.event_name != 'pull_request' }}
     permissions:
       contents: write
       pages: write
