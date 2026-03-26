@@ -39,33 +39,7 @@ package. To see which data types are available in the remote repositories, use
 
 ### Sample Metadata
 
-Metadata for all samples present within `parkinsonsMetagenomicData` is available
-through the included `data.frame` `sampleMetadata`. Both curated and uncurated
-features are included in this `data.frame`, with uncurated features being
-prefixed by "uncurated_". Curated features include the following at this time:
-
- - curation_id
- - study_name
- - sample_id
- - subject_id
- - target_condition
- - target_condition_ontology_term_id
- - control
- - control_ontology_term_id
- - age
- - age_group
- - age_group_ontology_term_id
- - age_unit
- - age_unit_ontology_term_id
- - sex
- - sex_ontology_term_id
- - disease
- - disease_ontology_term_id
- - curator
- - BioProject
- - BioSample
- - NCBI_accession
- - uuid
+Metadata for all samples is available through the `sampleMetadata` data frame, which includes curated clinical and demographic information (identifiers, age, sex, disease status, study design) as well as uncurated features (prefixed with "uncurated_"). For complete variable definitions, allowed values, and column descriptions, see the [Data Codebook vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/codebook.html).
 
 ### Data Types
 
@@ -96,42 +70,21 @@ While the sample metadata are available within this package, the various output
 files are hosted remotely due to their size and number. There are therefore two
 options for data retrieval.
 
-### Google Cloud Storage
+### Google Cloud Storage (Developer Access)
 
-The initial output location of the pipeline is the Google Cloud Bucket
-`gs://metagenomics-mac`, which requires credentials for access. The creation of
-these credentials is covered in the
-[Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html), and you
-will need the owner of the Google Cloud Project within which the Bucket is
-contained to follow these steps and provide you with the resulting credentials.
-Once you have access to the Bucket, the data will be stored in individual files
-for each sample and output type, and can be accessed with the functions and
-workflows detailed in the
-[Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html).
+The raw pipeline outputs are stored in the Google Cloud Bucket `gs://metagenomics-mac`, which requires credentials for access. This is primarily for developers and maintainers who need to access individual sample files directly from the pipeline. Most users should use the Hugging Face repository instead (see below).
 
-### Parquet Creation
-
-To create the individual parquet files, one needs credentials to access the
-`gs://metagenomics-mac` Google Bucket. Instructions on obtaining these can be
-found in the
-[Google Cloud Storage vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/google_cloud_storage.html). These
-credentials are then substituted into the scripts found in the repo
-[parquet_generation](https://github.com/ASAP-MAC/parquet_generation). These
-scripts perform a number of transformations that increase searchability before
-storing the combined data for each data type in parquet files.
+For developers: Once authenticated, data are organized as individual files for each sample and output type, and can be downloaded with requester-pays GCP egress fees. The [parquet_generation](https://github.com/ASAP-MAC/parquet_generation) repository contains scripts for transforming these raw outputs into the consolidated parquet files.
 
 
-### Hugging Face
+### Hugging Face (Recommended)
 
-While Google Cloud Storage is a good place to access the data as soon as they
-have been processed, it requires credentialed access and more file wrangling.
-As a simpler alternative, the data have been combined into parquet files and
-hosted publicly on Hugging Face in the
-[metagenomics_mac repo](https://huggingface.co/datasets/waldronlab/metagenomics_mac).
-Smaller example files featuring data from 10 samples each can be found at
-[metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
-These files are able to be easily accessed through the
-[DuckDB R client](https://duckdb.org/docs/stable/clients/r.html) and the
-functions and workflows detailed in the
-[Parquet File vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/docs/vignettes/parquet.html) streamline this process
-even further.
+For most users, the data have been combined into parquet files and hosted publicly on Hugging Face in the [metagenomics_mac repo](https://huggingface.co/datasets/waldronlab/metagenomics_mac). Smaller example files featuring data from 10 samples each can be found at [metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
+
+These files can be easily accessed through the [DuckDB R client](https://duckdb.org/docs/stable/clients/r.html). The package provides convenient wrapper functions documented in the vignettes:
+
+- [First 15 Minutes](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/first-15-minutes.html) - Quick start guide
+- [Full Workflow](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/full-workflow.html) - Comprehensive data retrieval
+- [Piecewise Workflow](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/piecewise-workflow.html) - Advanced database control
+- [Working with Large Parquet Files](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/working-with-large-parquet-files.html) - Strategies for large data types
+- [Data Codebook](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/codebook.html) - Complete variable definitions
