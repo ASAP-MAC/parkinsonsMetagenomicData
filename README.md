@@ -39,7 +39,14 @@ package. To see which data types are available in the remote repositories, use
 
 ### Sample Metadata
 
-Metadata for all samples is available through the `sampleMetadata` data frame, which includes curated clinical and demographic information (identifiers, age, sex, disease status, study design) as well as uncurated features (prefixed with "uncurated_"). For complete variable definitions, allowed values, and column descriptions, see the [Data Codebook vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/codebook.html).
+Metadata for all samples is available through the `sampleMetadata` data frame,
+which includes curated clinical and demographic information (identifiers, age,
+sex, disease status, study design) as well as uncurated features (prefixed with
+"uncurated_"). The curation process can be seen in more detail in the
+[parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
+repository. For complete variable definitions, allowed values, and column
+descriptions, see the
+[Data Codebook vignette](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/codebook.html).
 
 ### Data Types
 
@@ -79,7 +86,7 @@ For developers: Once authenticated, data are organized as individual files for e
 
 ### Hugging Face (Recommended)
 
-For most users, the data have been combined into parquet files and hosted publicly on Hugging Face in the [metagenomics_mac repo](https://huggingface.co/datasets/waldronlab/metagenomics_mac). Smaller example files featuring data from 10 samples each can be found at [metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
+For most users, the data have been combined into parquet files (see this process in the [parquet_generation](https://github.com/ASAP-MAC/parquet_generation) repository) and hosted publicly on Hugging Face in the [metagenomics_mac repo](https://huggingface.co/datasets/waldronlab/metagenomics_mac). Smaller example files featuring data from 10 samples each can be found at [metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples).
 
 These files can be easily accessed through the [DuckDB R client](https://duckdb.org/docs/stable/clients/r.html). The package provides convenient wrapper functions documented in the vignettes:
 
