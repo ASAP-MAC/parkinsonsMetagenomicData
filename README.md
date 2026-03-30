@@ -95,3 +95,12 @@ These files can be easily accessed through the [DuckDB R client](https://duckdb.
 - [Piecewise Workflow](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/piecewise-workflow.html) - Advanced database control
 - [Working with Large Parquet Files](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/working-with-large-parquet-files.html) - Strategies for large data types
 - [Data Codebook](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/codebook.html) - Complete variable definitions
+
+## Linked Repositories
+
+Here are all of the repositories involved in making this data available:
+
+* Data Acquisition: [parkinsons_data_search](https://github.com/ASAP-MAC/parkinsons_data_search)
+* Processing: [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
+* Output Transformation: [parquet_generation](https://github.com/ASAP-MAC/parquet_generation)
+* Metadata Curation: [parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
