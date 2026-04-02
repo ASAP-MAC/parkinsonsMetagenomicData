@@ -31,20 +31,29 @@ using the single-step returnSamples() wrapper.
 
 Use a piecewise workflow when you need:
 
-1. **Direct SQL control**: Write custom dplyr queries on the DuckDB connection before loading data
-2. **Multiple queries from one connection**: Query different data types efficiently and without reconnecting, such as to determine association between a species and a pathway
-3. **Complex filtering**: Apply advanced dplyr operations beyond simple column matching
-4. **Memory-efficient workflows**: Preview data size with `dplyr::show_query()` before loading
+1. **Direct SQL control**: Write custom dplyr queries on the DuckDB connection 
+  before loading data
+2. **Multiple queries from one connection**: Query different data types 
+  efficiently and without reconnecting, such as to determine association between
+  a species and a pathway
+3. **Complex filtering**: Apply advanced dplyr operations beyond simple column 
+  matching
+4. **Memory-efficient workflows**: Preview data size with `dplyr::show_query()`
+  before loading
 5. **Debugging queries**: Inspect the SQL generated at each step
 
-If you just want to retrieve data quickly, use `First 15 Minutes` or `Full Workflow` instead. Those vignettes use the wrapper function `returnSamples()` which handles the connection and loading steps for you.
+If you just want to retrieve data quickly, use `First 15 Minutes` or 
+`Full Workflow` instead. Those vignettes use the wrapper function 
+`returnSamples()` which handles the connection and loading steps for you.
 
 ## How It Works
 
 The piecewise workflow splits data retrieval into two steps:
 
-1. **`accessParquetData()`** - Creates a DuckDB connection and sets up VIEW objects for parquet files (remote or local)
-2. **`loadParquetData()`** - Queries those views with your filters and loads data as a TreeSummarizedExperiment
+1. **`accessParquetData()`** - Creates a DuckDB connection and sets up VIEW 
+  objects for parquet files (remote or local)
+2. **`loadParquetData()`** - Queries those views with your filters and loads 
+  data as a TreeSummarizedExperiment
 
 Between these steps, you can use `dplyr` to inspect, modify, and optimize queries before executing them.
 
@@ -84,7 +93,8 @@ ref_info |>
 
 ## File Selection
 
-Now that we know what's available, we can select our files of interest. The `data_type` value corresponds to the parquet files we want to access.
+Now that we know what's available, we can select our files of interest. The 
+`data_type` value corresponds to the parquet files we want to access.
 
 We then run `accessParquetData`, which creates the DuckDB connection and sets
 up DuckDB "VIEW" objects for each available file, whether remotely hosted or
@@ -204,7 +214,8 @@ dplyr::show_query(query_only)
 
 ## Example 2: Pathway Abundance
 
-The piecewise workflow works identically for functional data types. Here's an example with pathway abundance:
+The piecewise workflow works identically for functional data types. Here's an 
+example with pathway abundance:
 
 ```{r pathway_example}
 # Connect to pathway data
@@ -241,11 +252,15 @@ pathway_experiment <- loadParquetData(
 pathway_experiment
 ```
 
-This demonstrates the flexibility of the piecewise approach: you can create multiple connections to different data types and query them with the same workflow.
+This demonstrates the flexibility of the piecewise approach: you can create 
+multiple connections to different data types and query them with the same 
+workflow.
 
 ## Custom View: Advanced dplyr Operations
 
-The real power of the piecewise workflow is using `dplyr` to manipulate DuckDB views before loading data. You can access any view with `tbl()` and apply dplyr operations.
+The real power of the piecewise workflow is using `dplyr` to manipulate DuckDB 
+views before loading data. You can access any view with `tbl()` and apply dplyr
+operations.
 
 ### Example 1: Filter on Additional Columns
 
@@ -278,7 +293,8 @@ custom_experiment
 
 ### Example 2: Aggregate Before Loading
 
-You can perform aggregations in DuckDB before bringing data into R. This is memory-efficient for large datasets:
+You can perform aggregations in DuckDB before bringing data into R. This is 
+memory-efficient for large datasets:
 
 ```{r custom_aggregation, eval=interactive()}
 # Calculate summary statistics for Akkermansia muciniphila across all samples
@@ -310,11 +326,14 @@ aggregated_data <- collect(aggregated_view)
 aggregated_data
 ```
 
-This aggregation happens in DuckDB before loading into R, making it much more memory-efficient than loading all individual sample abundances first and then aggregating in R.
+This aggregation happens in DuckDB before loading into R, making it much more 
+memory-efficient than loading all individual sample abundances first and then 
+aggregating in R.
 
 ### Example 3: Combine Data from Multiple Connections
 
-You can query different data types separately and combine them in R. This example pairs taxonomic and pathway data:
+You can query different data types separately and combine them in R. This 
+example pairs taxonomic and pathway data:
 
 ```{r custom_join}
 # Get species present in our samples (aggregate to species level)
@@ -347,7 +366,11 @@ joined_data |>
     datatable(extensions = "Responsive")
 ```
 
-This demonstrates querying different data types separately (aggregating in DuckDB before loading) then combining in R. The joined data pairs each sample's Faecalibacterium abundance with its total butyrate pathway abundance, enabling correlation analysis to test hypotheses like: "Do samples with higher Faecalibacterium also have higher butyrate biosynthesis capacity?"
+This demonstrates querying different data types separately (aggregating in 
+DuckDB before loading) then combining in R. The joined data pairs each sample's
+Faecalibacterium abundance with its total butyrate pathway abundance, enabling
+correlation analysis to test hypotheses like: "Do samples with higher 
+Faecalibacterium also have higher butyrate biosynthesis capacity?"
 
 ```{r session_info}
 sessionInfo()
