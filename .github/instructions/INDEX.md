@@ -1,6 +1,6 @@
 ---
 title: Instruction Files Index
-purpose: Navigation and discovery for AI agents
+topics: [navigation, index, discovery, organization]
 ---
 
 # Instruction Files Index
