@@ -52,7 +52,7 @@ This vignette is a fast path to retrieving microbiome data as a
 
 ## Quick start
 
-You can view metadata about all samples in `sampleMetaData`. Later in example 1, you'll see how to filter rows 
+You can view metadata about all samples in `sampleMetadata`. Later in example 1, you'll see how to filter rows 
 of this table to choose which samples you want to download data for. 
 
 ```{r load_sample_metadata}
