@@ -1,0 +1,121 @@
+---
+title: "Full Data Preparation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Full Data Preparation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Full Data Preparation
+
+This vignette describes the process of generating the data available in this
+package. The main steps are data acquisition, processing, transformation, and
+metadata curation.
+
+## Data Acquisition
+
+The first step in making the data collected in parkinsonsMetagenomicData
+accessible is to find and obtain sequences and metadata. Datasets relevant to
+both Parkinson's disease and the microbiome are discovered through a Google
+Scholar search, and the associated sequences and metadata are gathered, or
+requested if necessary. The main repository associated with the data acquisition
+step is
+[parkinsons_data_search](https://github.com/ASAP-MAC/parkinsons_data_search).
+The table
+[parkinson_shotgun_datasets.tsv](https://github.com/ASAP-MAC/parkinsons_data_search/blob/main/parkinson_shotgun_datasets.tsv) describes the datasets discovered,
+and most of them are available for retrieval with this package.
+
+## Data Processing Pipeline
+
+Once the datasets have been acquired, the sequences are uniformly processed with
+the [bioBakery](https://github.com/biobakery)-based pipeline
+[curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow).
+This pipeline performs basic quality control and alignment with
+[KneadData](https://github.com/biobakery/kneaddata), taxonomic profiling with
+[MetaPhlAn](https://github.com/biobakery/MetaPhlAn), and functional profiling
+with [HUMAnN](https://github.com/biobakery/humann). Many of the files produced
+directly from this pipeline are detailed in the
+[Available File Types](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/file-types.html)
+vignette. Other files, containing information such as the exact commands and
+software versions used in each step, are output from this pipeline, but they are
+not publicly available at this time. In the meantime, MetaPhlAn output files
+generally contain the database version and exact code used to generate that
+file within the header (this information is carried into the parquet format).
+
+### Reproducing the data
+
+If you are interested in reproducing these analyses from scratch, simply run the
+[curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow) pipeline with the following parameters set in
+[`nextflow.config`](https://github.com/seandavi/curatedMetagenomicsNextflow/blob/main/nextflow.config):
+
+```
+// KneadData parameters
+organism_database = 'human_genome' // Alternative: 'mouse_C57BL'
+    
+// MetaPhlAn parameters
+metaphlan_index = 'latest'
+    
+// HUMAnN parameters
+chocophlan = 'full'
+uniref = 'uniref90_diamond'
+    
+// Process control parameters
+skip_humann = false  // Set to true to skip HUMAnN processing
+
+// biobakery databases
+uniref                      = "uniref90_diamond"
+chocophlan                  = "full"
+metaphlan_index             = "latest"
+```
+
+Other parameters referenced in `nextflow.config` pertain to the environment the
+pipeline is set up in and will vary according to individual users' needs. For
+more details, the
+[curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
+repo contains a number of example scripts and accompanying profiles used to run
+the pipeline on various HPC systems.
+
+As an additional note, we generated UUIDs for each sample as a redundant
+de-identification measure, and those UUIDs are what is referenced in the
+resultant output files even as they are hosted on Hugging Face. This is not a
+necessary step in analysis reproduction.
+
+## Pipeline Output Transformation
+
+Once the pipeline has been run on each dataset and the output files have been
+produced and stored in a Google Cloud Bucket, they are transformed into parquet
+format. This is done so that the individual files from each sample can be
+combined into a single file for each type of output, and so that the resulting
+single file can be filtered in an efficient manner. The process and scripts
+associated can be found in the
+[parquet_generation](https://github.com/ASAP-MAC/parquet_generation) repo. Here
+is a summarized list of the various transformations performed:
+
+  * standardization of column names
+  * conversion of extra header information into a tabular format
+  * splitting of full taxonomic string into individual levels
+  * sorting data by specific relevant columns to ease filtering
+  
+After these transformations have been applied, the resulting parquet files are
+published in the
+[metagenomics_mac](https://huggingface.co/datasets/waldronlab/metagenomics_mac)
+and
+[metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples/tree/main)
+repositories on Hugging Face. These files are then directly accessed by
+parkinsonsMetagenomicsData through DuckDB's Hugging Face-specific
+[protocol](https://huggingface.co/docs/hub/datasets-duckdb).
+
+## Metadata Curation
+
+As an accompanying step to the uniform sequence processing, sample metadata is
+manually curated to a brief, but uniform, schema. This process is documented in
+the
+[parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
+repository. Original metadata is preserved and indicated with the `uncurated_`
+prefix, and is automatically attached to data as it is accessed from Hugging
+Face. Metadata for each dataset is curated in a dedicated script and output to
+an individual CSV. All CSVs are then combined into a single table and saved as
+`sampleMetadata.rda`, which is then transported to the data file of the same
+name here in parkinsonsMetagenomicData.
+
