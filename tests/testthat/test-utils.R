@@ -214,3 +214,16 @@ test_that("standardize_ordering correctly orders strings", {
 
     expect_equal(new_vec, expect_vec)
 })
+
+## convert_to_filter_values
+test_that("convert_to_filter_values correctly handles multiple feature values", {
+    feature_df <- data.frame(feature_col = c("feat1", "feat2", "feat3"))
+    sample_df <- data.frame(uuid = c("uuid1", "uuid2"))
+
+    filters <- convert_to_filter_values(con = NULL, data_type = "relative_abundance",
+                                        sample_data = sample_df, feature_data = feature_df)
+
+    expect_equal(length(filters$feature_col), 3)
+    expect_equal(filters$feature_col, c("feat1", "feat2", "feat3"))
+    expect_equal(length(filters$uuid), 2)
+})
