@@ -1,4 +1,20 @@
 url: https://asap-mac.github.io/parkinsonsMetagenomicData/
 template:
   bootstrap: 5
-
+articles:
+  - title: "Getting Started"
+    desc: "Start here to learn how to access data."
+    contents:
+      - first-15-minutes
+      - full-workflow
+      - piecewise-workflow
+  - title: "Data Reference"
+    desc: "Documentation of the package's data schemas and formats."
+    contents:
+      - codebook
+      - file-types
+  - title: "Advanced Topics"
+    desc: "Details on generating the data and handling large files."
+    contents:
+      - full-data-preparation
+      - working-with-large-parquet-files

@@ -261,7 +261,7 @@ subdivided or not based on the contributions of individual species. The
 abundance values are reported as reads per kilobase (RPK), counts per million
 (CPM), or relative abundance. The base HUMAnN calls to obtain these files are:
 
-```{base ex_genefam_call}
+```{bash ex_genefam_call}
 # Base call; outputs values in RPK
 $ humann \
         --input metagenome.fastq \
@@ -329,7 +329,7 @@ subdivided or not based on the contributions of individual species. The
 abundance values are reported as reads per kilobase (RPK), counts per million
 (CPM), or relative abundance. The base HUMAnN calls to obtain these files are:
 
-```{base ex_pathab_call}
+```{bash ex_pathab_call}
 # Base call; outputs values in RPK
 $ humann \
         --input metagenome.fastq \
@@ -396,7 +396,7 @@ file type can be stratified or unstratified, meaning the coverage values are
 subdivided or not based on the contributions of individual species. The base
 HUMAnN calls to obtain these files are:
 
-```{base ex_pathcov_call}
+```{bash ex_pathcov_call}
 # Base call
 $ humann \
         --input metagenome.fastq \
