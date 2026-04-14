@@ -577,7 +577,7 @@ convert_to_filter_values <- function(con, data_type, sample_data,
         for (i in seq_along(fcols)) {
             cur_col <- fcols[i]
             names(fsets)[i] <- cur_col
-            fsets[i] <- as.vector(unique(feature_data[,cur_col]))
+            fsets[[i]] <- as.vector(unique(feature_data[[cur_col]]))
         }
 
         filter_values <- c(filter_values, fsets)
