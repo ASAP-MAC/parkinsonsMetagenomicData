@@ -86,3 +86,23 @@ The following aspects of the data generation process are currently under-documen
 * **DuckDB Execution Commands:** The specific CLI commands used to run the generated `.sql` scripts through DuckDB (e.g., `duckdb -c ".read output.sql"` or using the provided Singularity container).
 * **Parquet File Upload Process:** The exact steps, scripts, or commands used to transfer the locally generated `.parquet` files up to the Hugging Face dataset repositories.
 * **Nextflow Execution and Source Data Inputs:** The exact upstream location of the relevant `nextflow.config` documentation/configuration should be linked here (for example, in the `curatedMetagenomicsNextflow` repository), along with the exact `nextflow run` execution commands. In particular, it is unclear what arguments were used to specify raw source data (e.g., FASTQ files from SRA or the CRN Cloud) in order to reproduce what is passed to the pipeline via execution arguments or sample sheets.
+
+## 6. TODO: Missing Data
+
+### [missing_UUIDs.txt](https://github.com/user-attachments/files/26728153/missing_UUIDs.txt)
+
+List of 400 sample UUIDs that have processed data files present in the Google Cloud bucket (gs://metagenomics-mac), but do not have a corresponding entry in the package's sampleMetadata.rda. The first 400 are samples from the Mazmanian researchers that were re-run through pipeline post removal of the ribosomal RNA filtering step [curatedMetagenomicsNextflow issue 23](https://github.com/seandavi/curatedMetagenomicsNextflow/issues/23). Their pre-modification versions are present in `sampleMetadata.rda`. See the below files in [this directory](https://github.com/ASAP-MAC/parkinsonsManualCuration/tree/main/uuid_mapping/uuid_maps/kneaddata_v2):
+
+* MazmanianS_DeCastroFonsecaM_1.tsv
+* MazmanianS_DeCastroFonsecaM_2.tsv
+* MazmanianS_DeCastroFonsecaM_3.tsv
+* MazmanianS_DeCastroFonsecaM_4.tsv
+* MazmanianS_DumitrescuDG.tsv
+* MazmanianS_MoiseyenkoA.tsv
+* MazmanianS_SchonhoffA.tsv
+
+The last one, `9b91f0a9-7f56-400d-a652-4fe6e1f1955e`, is from [AsnicarF_2021](https://github.com/ASAP-MAC/parkinsonsManualCuration/blob/main/uuid_mapping/uuid_maps/kneaddata_v2/AsnicarF_2021.tsv), also post-kneaddata modification.
+
+### [missing_uuids_metadata_not_in_parquet.txt](https://github.com/user-attachments/files/26728138/missing_uuids_metadata_not_in_parquet.txt)
+
+Present in sampleMetadata.rda but are missing from the generated parquet files. These are 2 samples each from BedarfJR_2017 and BoktorJC_2023, both pre-kneaddata modification.
