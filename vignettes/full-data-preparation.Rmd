@@ -74,12 +74,27 @@ pipeline is set up in and will vary according to individual users' needs. For
 more details, the
 [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
 repo contains a number of example scripts and accompanying profiles used to run
-the pipeline on various HPC systems.
+the pipeline on various HPC systems. The pMD data was run using the script
+[submit_unitn.sh](https://github.com/seandavi/curatedMetagenomicsNextflow/blob/main/submit_unitn.sh),
+with the appropriate credentials filled in. Individual input tables were
+supplied for each dataset's run by providing them when submitting the job:
 
-As an additional note, we generated UUIDs for each sample as a redundant
-de-identification measure, and those UUIDs are what is referenced in the
-resultant output files even as they are hosted on Hugging Face. This is not a
-necessary step in analysis reproduction.
+```
+qsub -N job_name -v metadata_tsv=/absolute/path/to/samples.tsv submit_unitn.sh
+```
+
+These tables contain UUIDs mapped to each original sample (discussed further
+below) and can be found in the
+[parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
+repository.
+
+We generated UUIDs for each sample as a redundant de-identification measure, and
+those UUIDs are what is referenced in the resultant output files even as they
+are hosted on Hugging Face. This is not a necessary step in analysis
+reproduction. The UUIDs and their mappings to original sample metadata are
+available in the
+[parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
+repository.
 
 ## Pipeline Output Transformation
 
