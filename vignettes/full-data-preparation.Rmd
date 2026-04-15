@@ -71,12 +71,23 @@ metaphlan_index             = "latest"
 
 Other parameters referenced in `nextflow.config` pertain to the environment the
 pipeline is set up in and will vary according to individual users' needs. For
-more details, the
+example, if you would like the pipeline output to go to a Google Bucket rather
+than a local directory, you will need to specify the address of that bucket as
+the value for `publish_dir`. You will also need to make sure that the
+environment variable `GOOGLE_APPLICATION_CREDENTIALS` is set to the location of
+a JSON keyfile for that bucket. For more details, the
 [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
 repo contains a number of example scripts and accompanying profiles used to run
 the pipeline on various HPC systems. The pMD data was run using the script
 [submit_unitn.sh](https://github.com/seandavi/curatedMetagenomicsNextflow/blob/main/submit_unitn.sh),
-with the appropriate credentials filled in. Individual input tables were
+with the appropriate credentials filled in. This script is simply a wrapper for
+the Nextflow run command:
+
+```
+nextflow run ASAP-MAC/metagenomicsNextflowMAC --metadata_tsv=$metadata_tsv -profile unitn -with-weblog https://nf-telemetry-819875667022.us-central1.run.app/nextflow-telemetry/events
+```
+
+Individual input tables were
 supplied for each dataset's run by providing them when submitting the job:
 
 ```
@@ -86,7 +97,11 @@ qsub -N job_name -v metadata_tsv=/absolute/path/to/samples.tsv submit_unitn.sh
 These tables contain UUIDs mapped to each original sample (discussed further
 below) and can be found in the
 [parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
-repository.
+repository in the
+[uuid_mapping/input_tables/kneaddata_v1](https://github.com/ASAP-MAC/parkinsonsManualCuration/tree/main/uuid_mapping/input_tables/kneaddata_v1)
+and
+[uuid_mapping/input_tables/kneaddata_v2](https://github.com/ASAP-MAC/parkinsonsManualCuration/tree/main/uuid_mapping/input_tables/kneaddata_v2)
+directories.
 
 We generated UUIDs for each sample as a redundant de-identification measure, and
 those UUIDs are what is referenced in the resultant output files even as they
@@ -95,6 +110,34 @@ reproduction. The UUIDs and their mappings to original sample metadata are
 available in the
 [parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
 repository.
+
+### Example Pipeline Run
+
+For example: to run the samples in the dataset "QianY_2020.tsv", we first
+download the
+[accession list](https://github.com/ASAP-MAC/parkinsonsManualCuration/blob/main/uuid_mapping/original_metadata/QianY_2020.tsv)
+from SRA. Then, we assign a UUID to each accession to create an
+[input table](https://github.com/ASAP-MAC/parkinsonsManualCuration/blob/main/uuid_mapping/input_tables/kneaddata_v1/QianY_2020.tsv).
+This can be done with the
+[`uuids.R` script](https://github.com/ASAP-MAC/parkinsonsManualCuration/blob/main/uuid_mapping/uuids.R).
+Then, we setup the
+[pipeline](https://github.com/seandavi/curatedMetagenomicsNextflow/tree/main) in
+our environment of choice. If using the UniTn HPC,
+[unitn_setup.md](https://github.com/seandavi/curatedMetagenomicsNextflow/blob/main/unitn_setup.md)
+has some helpful tips.
+We configure the pipeline according to the guidelines above, and finally run the
+script
+[submit_unitn.sh](https://github.com/seandavi/curatedMetagenomicsNextflow/blob/main/submit_unitn.sh)
+with the following command:
+
+```
+# assuming we are working in /home/user/workdir/
+qsub -N job_name -v metadata_tsv=/home/user/workdir/QianY_2020.tsv submit_unitn.sh
+```
+
+The pipeline will now run, and all output files will be deposited to the
+location that is specified for `publish_dir` in
+[`nextflow.config`](https://github.com/seandavi/curatedMetagenomicsNextflow/blob/main/nextflow.config).
 
 ## Pipeline Output Transformation
 
