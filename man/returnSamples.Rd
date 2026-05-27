@@ -12,7 +12,8 @@ returnSamples(
   repo = NULL,
   local_files = NULL,
   include_empty_samples = TRUE,
-  dry_run = FALSE
+  dry_run = FALSE,
+  clean_meta = TRUE
 )
 }
 \arguments{
@@ -45,7 +46,9 @@ the source parquet data file. Default: TRUE}
 
 \item{dry_run}{Boolean (optional): if TRUE, the function will return the
 tbl_duckdb_connection object prior to calling 'dplyr::collect'. Default:
-FALSE}
+FALSE
+#' @param clean_meta Boolean (optional): should sampleMetadata columns that have
+all-NA columns be removed? Default: TRUE}
 }
 \value{
 A TreeSummarizedExperiment object with process metadata, row data,

@@ -420,7 +420,7 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' they were present in the original parquet file. The extra data included is
 #' usually the headers of the original output files. Default: NULL
 #' @param clean_meta Boolean (optional): should sampleMetadata columns that have
-#' greater than 90% NA be removed. Default: NULL
+#' all-NA columns be removed? Default: TRUE
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays.
 #' @examples
@@ -485,8 +485,8 @@ parquet_to_tse <- function(parquet_table, data_type,
     cdata <- build_tse_coldata(cs$cnames_col, cs$cdata_cols, parquet_table,
                                 esamps, empty_data)
 
-    ## Remove columns with >90% NA
-    if (clean_meta) { cdata <- cdata[colMeans(is.na(cdata)) <= 0.9] }
+    ## Remove columns with all NA values in the sample subset retrieved
+    if (clean_meta) { cdata <- cdata[, colSums(is.na(cdata)) != nrow(cdata)] }
 
     ## Confirm rows and columns are in the same order
     ordered_elements <- order_tse_elements(rdata, cdata, alist)
@@ -604,6 +604,8 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @param dry_run Boolean (optional): if TRUE, the function will return the
 #' tbl_duckdb_connection object prior to calling 'dplyr::collect'. Default:
 #' FALSE
+#' @param clean_meta Boolean (optional): should sampleMetadata columns that have
+#' all-NA columns be removed? Default: TRUE
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays. If dry_run = TRUE, a tbl_duckdb_connection
 #' object.
@@ -667,7 +669,7 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @importFrom dplyr filter
 loadParquetData <- function(con, data_type, filter_values = NULL,
                             custom_view = NULL, include_empty_samples = FALSE,
-                            dry_run = FALSE) {
+                            dry_run = FALSE, clean_meta = TRUE) {
     ## Check input
     # con, data_type, filter_values, custom_view, include_empty_samples
     confirm_duckdb_con(con)
@@ -707,9 +709,9 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     if (!is.null(prep$sample_headers)) {
         empty_samples <- dplyr::filter(prep$sample_headers,
                                         !.data$uuid %in% collected_view$uuid)
-        exp <- parquet_to_tse(collected_view, data_type, empty_samples)
+        exp <- parquet_to_tse(collected_view, data_type, empty_samples, clean_meta = clean_meta)
     } else {
-        exp <- parquet_to_tse(collected_view, data_type)
+        exp <- parquet_to_tse(collected_view, data_type, clean_meta = clean_meta)
     }
 
     return(exp)
@@ -743,6 +745,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' @param dry_run Boolean (optional): if TRUE, the function will return the
 #' tbl_duckdb_connection object prior to calling 'dplyr::collect'. Default:
 #' FALSE
+#' @param clean_meta Boolean (optional): should sampleMetadata columns that have
+#' all-NA columns be removed? Default: TRUE
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays. If dry_run = TRUE, a tbl_duckdb_connection
 #' object.
@@ -819,7 +823,7 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' @importFrom DBI dbDisconnect
 returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
                             repo = NULL, local_files = NULL,
-                            include_empty_samples = TRUE, dry_run = FALSE) {
+                            include_empty_samples = TRUE, dry_run = FALSE, clean_meta = TRUE) {
     ## Check input
     # repo, data_type, sample_data, feature_data
     confirm_repo(repo)
@@ -842,7 +846,7 @@ returnSamples <- function(data_type, sample_data = NULL, feature_data = NULL,
     tse <- loadParquetData(con = con, data_type = data_type,
                             filter_values = filter_values,
                             include_empty_samples = include_empty_samples,
-                            dry_run = dry_run)
+                            dry_run = dry_run, clean_meta = clean_meta)
 
     ## Close connection
     DBI::dbDisconnect(con)
