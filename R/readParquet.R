@@ -486,7 +486,7 @@ parquet_to_tse <- function(parquet_table, data_type,
                                 esamps, empty_data)
 
     ## Remove columns with all NA values in the sample subset retrieved
-    if (clean_meta) { cdata <- cdata[, colSums(is.na(cdata)) != nrow(cdata)] }
+    if (clean_meta) { cdata <- cdata[, colSums(is.na(cdata)) != nrow(cdata), drop = FALSE] }
 
     ## Confirm rows and columns are in the same order
     ordered_elements <- order_tse_elements(rdata, cdata, alist)
@@ -604,8 +604,8 @@ accessParquetData <- function(dbdir = ":memory:",
 #' @param dry_run Boolean (optional): if TRUE, the function will return the
 #' tbl_duckdb_connection object prior to calling 'dplyr::collect'. Default:
 #' FALSE
-#' @param clean_meta Boolean (optional): should sampleMetadata columns that have
-#' all-NA columns be removed? Default: TRUE
+#' @param clean_meta Boolean (optional): should all-NA sampleMetadata columns be removed?
+#' Default: TRUE
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays. If dry_run = TRUE, a tbl_duckdb_connection
 #' object.
@@ -745,8 +745,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
 #' @param dry_run Boolean (optional): if TRUE, the function will return the
 #' tbl_duckdb_connection object prior to calling 'dplyr::collect'. Default:
 #' FALSE
-#' @param clean_meta Boolean (optional): should sampleMetadata columns that have
-#' all-NA columns be removed? Default: TRUE
+#' @param clean_meta Boolean (optional): should all-NA sampleMetadata columns be removed?
+#' Default: TRUE
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays. If dry_run = TRUE, a tbl_duckdb_connection
 #' object.
