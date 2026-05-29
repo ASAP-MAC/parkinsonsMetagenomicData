@@ -419,8 +419,8 @@ interpret_and_filter <- function(con, data_type, filter_values) {
 #' were not included due to their assay data not passing a filter even though
 #' they were present in the original parquet file. The extra data included is
 #' usually the headers of the original output files. Default: NULL
-#' @param clean_meta Boolean (optional): should sampleMetadata columns that have
-#' all-NA columns be removed? Default: TRUE
+#' @param clean_meta Boolean (optional): should all-NA sampleMetadata columns
+#' be removed? Default: TRUE
 #' @return A TreeSummarizedExperiment object with process metadata, row data,
 #' column names, and relevant assays.
 #' @examples
