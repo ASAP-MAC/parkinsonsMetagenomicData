@@ -88,7 +88,8 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
 #' together
 #' @description 'mergeExperiments' takes a list of TreeSummarizedExperiment
 #' objects with the same assays but different samples, and combines them into a
-#' single TreeSummarizedExperiment object.
+#' single TreeSummarizedExperiment object. Delegates to
+#' \code{\link[curatedCore]{mergeExperiments}}.
 #' @param merge_list List of TreeSummarizedExperiment objects: to be merged into
 #' a single TreeSummarizedExperiment object
 #' @return TreeSummarizedExperiment object with multiple samples
@@ -103,60 +104,9 @@ add_metadata <- function(sample_ids, id_col = "uuid", experiment,
 #'
 #' mergeExperiments(sample_experiment_list)
 #' @seealso
-#'  \code{\link[purrr]{map}}, \code{\link[purrr]{reduce}}
-#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment-class}}
-#'  \code{\link[TreeSummarizedExperiment]{TreeSummarizedExperiment}}
-#'  \code{\link[tibble]{rownames}}
-#'  \code{\link[dplyr]{mutate-joins}}, \code{\link[dplyr]{mutate}}
-#'  \code{\link[dplyr]{across}}, \code{\link[dplyr]{bind_rows}}
-#'  \code{\link[tidyselect]{everything}}
-#'  \code{\link[tidyr]{replace_na}}
-#'  \code{\link[S4Vectors]{SimpleList-class}}
-#'  \code{\link[S4Vectors]{DataFrame-class}}
-#'  \code{\link[magrittr]{extract}}
+#'  \code{\link[curatedCore]{mergeExperiments}}
 #' @rdname mergeExperiments
 #' @noRd
-#' @importFrom SummarizedExperiment assayNames assay rowData colData
-#' @importFrom purrr map reduce
-#' @importFrom tibble rownames_to_column column_to_rownames
-#' @importFrom dplyr full_join mutate across bind_rows
-#' @importFrom tidyselect everything
-#' @importFrom tidyr replace_na
-#' @importFrom S4Vectors SimpleList DataFrame
-#' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
 mergeExperiments <- function(merge_list) {
-    ## Check that list contains more than one TreeSummarizedExperiment
-    if (length(merge_list) == 1) {
-        return(merge_list[[1]])
-    }
-
-    for (i in seq_along(merge_list)) {
-        if (!methods::is(merge_list[[i]], "TreeSummarizedExperiment")) {
-            stop("The list item at index = ", i, " is not a ",
-                 "TreeSummarizedExperiment object.")
-        }
-    }
-
-
-    ## Merge assays
-    assay_list <- merge_assays(merge_list)
-
-    ## Merge row data
-    rowData <- merge_rowdata(merge_list, assay_list)
-
-    ## Merge column data
-    colData <-
-        purrr::map(merge_list, SummarizedExperiment::colData) |>
-        purrr::map(as.data.frame) |>
-        purrr::map(tibble::rownames_to_column) |>
-        dplyr::bind_rows() |>
-        tibble::column_to_rownames() |>
-        S4Vectors::DataFrame()
-
-    ## Reformat as TreeSummarizedExperiment
-    se <- TreeSummarizedExperiment::TreeSummarizedExperiment(
-                                                            assays = assay_list,
-                                                            rowData = rowData,
-                                                            colData = colData)
-    return(se)
+    curatedCore::mergeExperiments(merge_list)
 }
