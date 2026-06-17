@@ -1,57 +1,52 @@
----
-title: Data Access Guidance
-topics: [returnSamples, accessParquetData, loadParquetData, filtering, performance]
----
+# Data Access Patterns
 
-# Data Access Guidance
+## Overview
 
-## Preferred access patterns
+Uses curatedCore as the data-access layer. DuckDB connects to remote parquet files stored on Hugging Face or GCP, allowing incremental queries and filtering before downloading into R.
 
-### Use `returnSamples()`
-Use this when the user wants:
-- quick access without complex filtering
-- metadata-based filtering first
-- immediate `TreeSummarizedExperiment` output
+## Primary Data Access Functions
 
-Example:
+### High-Level Functions
+
+- `returnSamples()`: Create TreeSummarizedExperiment objects
+- `loadParquetData()`: Return filtered tibbles/data frames
+
+### Low-Level Functions
+
+- `accessParquetData()`: Open duckdb connection to remote datasets
+
+## Data Sources
+
+Remote repositories hosted on Hugging Face (waldronlab/metagenomics_mac) and GCP (gs://metagenomics-mac).
+
+## Access Patterns
+
+### Basic Retrieval
+
 ```r
-my_samples <- sampleMetadata %>% dplyr::filter(age >= 18)
-
-tse <- returnSamples(
-  sample_data = my_samples,
-  data_type = "relative_abundance"
-)
+con <- accessParquetData("huggingface", "metaphlan_relative_abundance")
+res <- loadParquetData(con)
 ```
 
-### Use `accessParquetData()` + `loadParquetData()`
-Use this when the user needs:
-- feature-level filtering before loading
-- direct DuckDB queries
-- custom SQL-like operations
-- memory-efficient loading of large files
+### Filtered Retrieval
 
-Example:
 ```r
-con <- accessParquetData(data_types = "relative_abundance")
-
-tse <- loadParquetData(
-  con,
-  data_type = "relative_abundance",
-  filter_values = list(
-    clade_name_species = c("s__Escherichia_coli")
-  )
-)
+con <- accessParquetData("huggingface", "metaphlan_relative_abundance")
+tse <- returnSamples(con, 
+                     dataType = "metaphlan_relative_abundance",
+                     samples = c("sample1", "sample2"))
 ```
 
-## Large file strategy
-For `genefamilies_stratified` and similarly large files:
-1. Filter first on sorted columns such as `uuid`, `gene_family_uniref`, and `pathway`
-2. Use two-stage filtering: remote sorted-column filter, then local filtering
-3. Consider downloading files locally for repeated queries
-4. See detailed examples in the "Working with Large Parquet Files" vignette (refer to [40-vignettes.md](40-vignettes.md))
+### Advanced Queries
 
-## Useful helper functions
-- `parquet_colinfo(data_type)` — inspect column structure
-- `get_hf_parquet_urls()` — obtain parquet file URLs
-- `load_ref()` — load reference lookup tables
-- `db_connect()` — create a DuckDB connection
+Use dplyr verbs on DuckDB connections before calling collect().
+
+## Large File Handling
+
+DuckDB enables fetching only requested columns or filtering rows via SQL without downloading full parquet files.
+
+## Testing with Data
+
+- **Production data**: Hugging Face parquet files accessed via curatedCore::parquetRepoSource.
+- **Test/example data**: inst/extdata/
+- **Running tests**: Local dummy parquet files, text files, and .Rds files used for unit tests to avoid network dependence.

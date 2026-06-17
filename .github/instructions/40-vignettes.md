@@ -1,19 +1,22 @@
----
-title: Vignette Guidance
-topics: [vignettes, documentation, tutorials, examples]
----
+# Vignette Guide
 
-# Vignette Guidance
+## Available Vignettes
 
-## Existing vignette purposes
-- `Data Codebook` — reference for variables and structures
-- `First 15 Minutes` — quick start for new users
-- `Full Workflow` — comprehensive tutorial
-- `Piecewise Workflow` — advanced direct database control
-- `Working with Large Parquet Files` — performance optimization (see [10-data-access.md](10-data-access.md#large-file-strategy) for implementation guidance)
+1. `first-15-minutes.Rmd` - Quick Start
+2. `codebook.Rmd` - Data Codebook
+3. `full-workflow.Rmd` - Comprehensive data retrieval
+4. `piecewise-workflow.Rmd` - Advanced database control
+5. `working-with-large-parquet-files.Rmd` - Large data handling
+6. `full-data-preparation.Rmd` - Background on data creation
+7. `file-types.Rmd` - Overview of file formats
 
-## When updating vignettes
-- Keep each vignette focused on its intended audience
-- Use consistent code style
-- Test code chunks before committing
-- Maintain the vignette guide table for navigation
+## Recommended Reading Order
+
+first-15-minutes, codebook, full-workflow, piecewise-workflow, working-with-large-parquet-files, full-data-preparation, file-types.
+
+## Updating Vignettes
+
+Guidelines for maintaining vignettes:
+- Ensure all code chunks execute successfully
+- Update examples if function signatures change
+- Test: `devtools::build_vignettes()`

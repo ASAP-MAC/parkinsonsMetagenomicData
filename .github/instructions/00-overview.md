@@ -1,64 +1,47 @@
----
-title: Overview
-topics: [package-overview, data-sources, key-functions, navigation]
----
+# parkinsonsMetagenomicData Overview
 
-# Overview
+## Classification
+- **Type**: Data Package
+- **Version**: 0.99.0
 
-This directory contains AI agent guidance for the parkinsonsMetagenomicData R package. These instructions help agents understand package structure, coding standards, and workflows.
+## Purpose
 
-## Navigation Guide
+Provides functions to retrieve raw tabular data from Google Cloud Bucket or Hugging Face, starting from a pre-built sample metadata file. Data types include output from FastQC, KneadData, MetaPhlAn, and HUMAnN. Outputs a TreeSummarizedExperiment object as the final result.
 
-Read these files for complete context:
-- **[00-overview.md](00-overview.md)** (this file) - Package overview and key resources
-- **[10-data-access.md](10-data-access.md)** - Data retrieval patterns and strategies
-- **[20-development.md](20-development.md)** - Coding standards and best practices
-- **[30-testing-and-docs.md](30-testing-and-docs.md)** - Testing and documentation requirements
-- **[40-vignettes.md](40-vignettes.md)** - Vignette purposes and update guidance
-- **[50-git-workflow.md](50-git-workflow.md)** - Git branching, commits, and checks
+## Key Functions
 
-## Key Data Access Functions
+**Data Access Functions**:
+- `returnSamples()`: Main high-level data retrieval function
+- `loadParquetData()`: Load filtered data from DuckDB connection
+- `accessParquetData()`: Access a dataset on Hugging Face or GCP
 
-### `returnSamples()`
-Quick access to filtered data with immediate TreeSummarizedExperiment output.
-- Use when: Simple metadata-based filtering
-- Returns: TreeSummarizedExperiment object
-- See: [10-data-access.md](10-data-access.md#use-returnsamples)
-
-### `accessParquetData()` + `loadParquetData()`
-Advanced querying with feature-level filtering and direct DuckDB access.
-- Use when: Complex filtering, SQL operations, memory-efficient loading
-- Returns: Database connection and TreeSummarizedExperiment
-- See: [10-data-access.md](10-data-access.md#use-accessparquetdata--loadparquetdata)
-
-### Helper Functions
-- `parquet_colinfo(data_type)` - Inspect column structure before coding
-- `get_hf_parquet_urls()` - Obtain parquet file URLs
-- `load_ref()` - Load reference lookup tables
-- `db_connect()` - Create DuckDB connection
-
-## Data Sources
-
-### HuggingFace Repositories
-- **Full dataset**: [waldronlab/metagenomics_mac](https://huggingface.co/datasets/waldronlab/metagenomics_mac)
-  - Complete combined parquet files for production analyses
-- **Example dataset**: [waldronlab/metagenomics_mac_examples](https://huggingface.co/datasets/waldronlab/metagenomics_mac_examples)
-  - Smaller files with 10 samples each for testing and demonstrations
-
-### Local Test Data
-- **inst/extdata/** - Small offline examples for package testing
-- Used in test suite and examples that don't require network access
-
-## Package Structure
-
-This package provides access to Parkinson's disease metagenomic data from the Michael J. Fox Foundation's ASAP MAC consortium. Data are stored as parquet files and accessed remotely or locally via DuckDB.
-
-### Key Design Principles
-- Return TreeSummarizedExperiment objects for compatibility with Bioconductor
-- Support both simple and advanced filtering patterns
-- Enable memory-efficient queries on large files
-- Provide reference data for feature annotations
+**Discovery Functions**:
+- `parquet_colinfo()`: Inspect column structure
+- `biobakery_files()`: List available data types
+- `data_dict()`: View data dictionary
+- `get_hf_parquet_urls()`: Get Hugging Face parquet URLs
+- `get_repo_info()`: Get repository info
+- `get_ref_info()`: Get reference information
+- `load_ref()`: Load reference tables
 
 ## Quick Start
 
-For detailed guidance on specific topics, see the linked instruction files above.
+```r
+library(parkinsonsMetagenomicData)
+# View sample metadata
+head(sampleMetadata)
+
+# Create a DuckDB connection to parquet files
+con <- accessParquetData("huggingface", "metaphlan_relative_abundance")
+
+# Load data into a TreeSummarizedExperiment
+tse <- returnSamples(con, dataType = "metaphlan_relative_abundance")
+```
+
+## Key Concepts
+
+TreeSummarizedExperiment, DuckDB, Parquet, Microbiome profiles, Hugging Face data hosting.
+
+## Data Sources
+
+Hugging Face (waldronlab/metagenomics_mac) and Google Cloud Storage (gs://metagenomics-mac).

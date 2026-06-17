@@ -1,60 +1,36 @@
----
-title: Instruction Files Index
-topics: [navigation, index, discovery, organization]
----
+# Instructions Index
 
-# Instruction Files Index
+Quick reference for AI assistants working with parkinsonsMetagenomicData.
 
-This directory contains modular guidance for AI agents working with the parkinsonsMetagenomicData R package.
+## Quick Links
 
-## Reading Order
+- [Overview](00-overview.md) - Package classification and key functions
+- [Data Access](10-data-access.md) - Data retrieval patterns
+- [Development](20-development.md) - Coding standards
+- [Testing & Docs](30-testing-and-docs.md) - Testing and documentation
+- [Vignettes](40-vignettes.md) - Vignette guide
 
-For complete context, read these files in order:
+## Package Metadata
 
-1. **[00-overview.md](00-overview.md)** - Package overview, key functions, and data sources
-2. **[10-data-access.md](10-data-access.md)** - Data retrieval patterns and filtering strategies
-3. **[20-development.md](20-development.md)** - Coding standards and parquet structure
-4. **[30-testing-and-docs.md](30-testing-and-docs.md)** - Testing requirements and documentation standards
-5. **[40-vignettes.md](40-vignettes.md)** - Vignette purposes and update guidelines
-6. **[50-git-workflow.md](50-git-workflow.md)** - Git branching, commit style, and check procedures
+- **Name**: parkinsonsMetagenomicData
+- **Type**: Data Package
+- **Version**: 0.99.0
+- **Repository**: https://github.com/ASAP-MAC/parkinsonsMetagenomicData
 
-## Quick Reference by Topic
+## Key Functions Quick Reference
 
-### Data Access
-- **Simple filtering**: [10-data-access.md](10-data-access.md#use-returnsamples) - `returnSamples()`
-- **Advanced querying**: [10-data-access.md](10-data-access.md#use-accessparquetdata--loadparquetdata) - `accessParquetData()` + `loadParquetData()`
-- **Large files**: [10-data-access.md](10-data-access.md#large-file-strategy)
-- **Data sources**: [00-overview.md](00-overview.md#data-sources) - HuggingFace repos and local data
+- **Access**: `returnSamples()`, `loadParquetData()`, `accessParquetData()`
+- **Discovery**: `biobakery_files()`, `data_dict()`, `parquet_colinfo()`
 
-### Development
-- **Coding standards**: [20-development.md](20-development.md#coding-standards)
-- **Column roles**: [20-development.md](20-development.md#column-roles-in-parquet-files)
-- **Package suggestions**: [20-development.md](20-development.md#when-to-suggest-package-changes)
+## External Resources
 
-### Testing & Documentation
-- **Documentation requirements**: [30-testing-and-docs.md](30-testing-and-docs.md#documentation-requirements-for-exported-functions)
-- **Example guidelines**: [30-testing-and-docs.md](30-testing-and-docs.md#examples)
-- **Testing standards**: [30-testing-and-docs.md](30-testing-and-docs.md#testing-standards)
+https://asap-mac.github.io/parkinsonsMetagenomicData/
 
-### Vignettes
-- **Vignette purposes**: [40-vignettes.md](40-vignettes.md#existing-vignette-purposes)
-- **Update guidelines**: [40-vignettes.md](40-vignettes.md#when-updating-vignettes)
+## Quick Commands
 
-### Git Workflow
-- **Branch naming**: [50-git-workflow.md](50-git-workflow.md#branch-naming)
-- **Commit messages**: [50-git-workflow.md](50-git-workflow.md#commit-messages)
-- **Pre-commit checks**: [50-git-workflow.md](50-git-workflow.md#before-committing)
-- **Quick commands**: [50-git-workflow.md](50-git-workflow.md#quick-commands)
-
-## File Organization
-
-Files are numbered to indicate recommended reading order:
-- **00-** - Overview and navigation
-- **10-20** - Core functionality and development
-- **30-40** - Quality assurance and documentation
-- **50+** - Workflows and processes
-
-Each file includes:
-- YAML frontmatter with title and topic tags
-- Cross-references to related files
-- Focused, actionable guidance on specific topics
+```r
+BiocManager::install("parkinsonsMetagenomicData")
+library(parkinsonsMetagenomicData)
+?returnSamples
+browseVignettes("parkinsonsMetagenomicData")
+```
