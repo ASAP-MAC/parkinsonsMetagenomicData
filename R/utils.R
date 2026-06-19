@@ -212,95 +212,6 @@ pick_projection <- function(con, data_type, feature_name = "uuid") {
     return(cview)
 }
 
-#' @title Apply filtering and custom view transformations to a DuckDB view
-#' @description 'prepare_view' accesses a DuckDB view created by
-#' 'accessParquetData' and applies requested filtering and transformations.
-#' @param con DuckDB connection object of class 'duckdb_connection'
-#' @param data_type Single string: value found in the data_type' column of
-#' output_file_types() and also as part of the name of a view found in
-#' DBI::dbListTables(con), indicating which views to consider when collecting
-#' data.
-#' @param filter_values Named list: element name equals the column name to be
-#' filtered and element value equals a vector of exact column values.
-#' @param custom_view Saved object with the initial class
-#' 'tbl_duckdb_connection' (optional): DuckDB tables/views can be accessed with
-#' with the 'dplyr::tbl' function, and piped into additional functions such as
-#' 'dplyr::filter' prior to loading into memory with 'dplyr::collect'. A
-#' particular sequence of function calls can be saved and provided to this
-#' function for collection and formatting as a Summarized Experiment. See the
-#' function example.
-#' @param include_empty_samples Boolean (optional): should samples provided via
-#' a 'uuid' argument within 'filter_values' be included in the final
-#' TreeSummarizedExperiment if they do not show up in the results from filtering
-#' the source parquet data file.
-#' @return Named list: the 'working_view' element is a DuckDB database view or
-#' table. This is still lazy until collect() is called. The 'sample_headers'
-#' element contains metadata for any empty samples.
-#' @examples
-#' fpaths <- c(file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_uuid.parquet"),
-#'             file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_pathway.parquet"))
-#'
-#' con <- accessParquetData(local_files = fpaths,
-#'                          data_types = "pathcoverage_unstratified")
-#'
-#' custom_filter <- dplyr::tbl(con, "pathcoverage_unstratified_pathway") |>
-#'                  dplyr::filter(grepl("UMP biosynthesis", pathway))
-#'
-#' uuids <- c("8793b1dc-3ba1-4591-82b8-4297adcfa1d7",
-#'            "cc1f30a0-45d9-41b1-b592-7d0892919ee7",
-#'            "fb7e8210-002a-4554-b265-873c4003e25f",
-#'            "d9cc81ea-c39e-46a6-a6f9-eb5584b87706",
-#'            "4985aa08-6138-4146-8ae3-952716575395",
-#'            "8eb9f7ae-88c2-44e5-967e-fe7f6090c7af")
-#'
-#' prep <- prepare_view(con,
-#'                      data_type = "pathcoverage_unstratified",
-#'                      filter_values = list(uuid = uuids),
-#'                      custom_view = custom_filter,
-#'                      include_empty_samples = FALSE)
-#' working_view <- prep$working_view
-#' @rdname prepare_view
-#' @noRd
-#' @importFrom dplyr tbl
-prepare_view <- function(con, data_type, filter_values, custom_view,
-                         include_empty_samples) {
-    sample_headers <- NULL
-    if (!is.null(filter_values)) {
-        if (!is.null(custom_view)) {
-            working_view <- filter_parquet_view(custom_view, filter_values)
-        } else {
-            working_view <- interpret_and_filter(con, data_type, filter_values)
-
-            if ("uuid" %in% names(filter_values) && include_empty_samples) {
-                sample_headers <- get_cdata_only(con, data_type,
-                                                 filter_values$uuid)
-                full_empties <- setdiff(filter_values$uuid, sample_headers$uuid)
-                emat <- as.data.frame(matrix(nrow = length(full_empties),
-                                             ncol = ncol(sample_headers),
-                                             dimnames = list(c(),
-                                                    colnames(sample_headers))))
-                emat$uuid <- full_empties
-                sample_headers <- rbind(sample_headers, emat)
-            }
-        }
-    } else {
-        if (!is.null(custom_view)) {
-            working_view <- custom_view
-        } else {
-            proj <- pick_projection(con, data_type)
-            working_view <- dplyr::tbl(con, proj)
-        }
-    }
-
-    wv_list <- list(working_view = working_view,
-                    sample_headers = sample_headers)
-
-    return(wv_list)
-}
 
 #' @title Collect a DuckDB view and provide important notifications
 #' @description 'collect_and_notify' calls dplyr::collect() on a DuckDB database
@@ -787,49 +698,26 @@ confirm_sample_feature_data <- function(sample_data, feature_data) {
 }
 
 #' @title Validate DuckDB connection argument
-#' @description 'confirm_duckdb_con' checks that an object is a valid DuckDB
-#' connection object.
+#' @description Deprecated: validation is now handled by curatedCore.
+#' This thin wrapper is kept for backward compatibility.
 #' @param con Object to validate
 #' @return NULL (invisibly)
-#' @details This function is intended to be used within another function as
-#' input validation. If the input is valid, nothing will happen. If it is not,
-#' the function will throw a 'stop()' error.
-#' @examples
-#' con <- db_connect()
-#' try(confirm_duckdb_con(con))
-#' try(confirm_duckdb_con("horse"))
 #' @rdname confirm_duckdb_con
 #' @noRd
 confirm_duckdb_con <- function(con) {
-    ## Check that object class is valid
     if (!methods::is(con, "duckdb_connection")) {
         stop("Please provide a valid 'duckdb_connection' object.")
     }
 }
 
 #' @title Validate DuckDB view/table argument
-#' @description 'confirm_duckdb_view' checks that an object is a valid DuckDB
-#' table connection object
+#' @description Deprecated: validation is now handled by curatedCore.
+#' This thin wrapper is kept for backward compatibility.
 #' @param view Object to validate
 #' @return NULL (invisibly)
-#' @details This function is intended to be used within another function as
-#' input validation. If the input is valid, nothing will happen. If it is not,
-#' the function will throw a 'stop()' error.
-#' @examples
-#' fpaths <- c(file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_uuid.parquet"),
-#'             file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_pathway.parquet"))
-#' con <- accessParquetData(local_files = fpaths,
-#'                          data_types = "pathcoverage_unstratified")
-#' view <- dplyr::tbl(con, "pathcoverage_unstratified_uuid")
-#' try(confirm_duckdb_view(view))
 #' @rdname confirm_duckdb_view
 #' @noRd
 confirm_duckdb_view <- function(view) {
-    ## Check that object class is valid
     if (!methods::is(view, "tbl_duckdb_connection")) {
         stop("Please provide a valid object of the class ",
              "'tbl_duckdb_connection'.")
@@ -885,293 +773,63 @@ confirm_ref <- function(ref) {
 }
 
 #' @title Pull the individual column roles from parquet_colinfo() output
-#' @description 'find_tse_cols' saves space by organizing all column roles into
-#' a single list object.
+#' @description Deprecated: column-role resolution is now handled by
+#' curatedCore's SchemaSpec. Kept for backward compatibility.
 #' @param colinfo Dataframe: output from parquet_colinfo()
-#' @return A list of names of the columns marked as the following roles: cname,
-#' cdata, rname, rdata, and assay
-#' @examples
-#' find_tse_cols(parquet_colinfo("pathcoverage_unstratified"))
+#' @return A list of column role names
 #' @rdname find_tse_cols
 #' @noRd
 find_tse_cols <- function(colinfo) {
-    ## Get columns for each se_role value
     cnames_col <- colinfo$col_name[colinfo$se_role == "cname"]
     cdata_cols <- colinfo$col_name[colinfo$se_role == "cdata"]
     rnames_col <- colinfo$col_name[colinfo$se_role == "rname"]
     rdata_cols <- colinfo$col_name[colinfo$se_role == "rdata"]
     assay_cols <- colinfo$col_name[colinfo$se_role == "assay"]
-
-    ## Combine into list
-    collist <- list(cnames_col = cnames_col, cdata_cols = cdata_cols,
-                    rnames_col = rnames_col, rdata_cols = rdata_cols,
-                    assay_cols = assay_cols)
-
-    return(collist)
+    list(cnames_col = cnames_col, cdata_cols = cdata_cols,
+         rnames_col = rnames_col, rdata_cols = rdata_cols,
+         assay_cols = assay_cols)
 }
 
 #' @title Build SummarizedExperiment assay tables
-#' @description 'build_tse_assays' takes a number of pieces that are used to
-#' create assay tables consistent with the SummarizedExperiment data type and
-#' derivatives.
-#' @param assay_cols Character vector: column(s) that indicate an assay
-#' @param rnames_col Character string: column that supplies row names
-#' @param cnames_col Character string: column that supplies column names
-#' @param parquet_table Table or data frame: data taken directly from a parquet
-#' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
-#' @param esamps Character vector: IDs of requested samples not present in
-#' parquet_table. Default: NULL
-#' @return A list of assay tables compatible with the SummarizedExperiment
-#' format
-#' @examples
-#' fpaths <- c(file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_uuid.parquet"),
-#'             file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_pathway.parquet"))
-#'
-#' con <- accessParquetData(local_files = fpaths,
-#'                          data_types = "pathcoverage_unstratified")
-#'
-#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
-#'                     dplyr::collect()
-#'
-#' atab <- build_tse_assays(assay_cols = "coverage",
-#'                          rnames_col = "pathway",
-#'                          cnames_col = "uuid",
-#'                          parquet_table = parquet_tbl,
-#'                          esamps = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
-#'                                     "88a4d532-64fa-414c-b3d0-f02b291341c0"))
-#' @seealso
-#'  \code{\link[tidyselect]{all_of}}
-#'  \code{\link[tidyr]{pivot_wider}}
-#'  \code{\link[tibble]{rownames}}
-#' @rdname build_tse_assays
+#' @description Deprecated: assembly is now handled by
+#' \code{\link[curatedCore]{buildExperiment}}.
 #' @noRd
-#' @importFrom tidyselect all_of
-#' @importFrom tidyr pivot_wider
-#' @importFrom tibble column_to_rownames
-#' @importFrom dplyr select
 build_tse_assays <- function(assay_cols, rnames_col, cnames_col, parquet_table,
                             esamps = NULL) {
-    alist <- lapply(assay_cols, function(acol) {
-        ## Select columns relevant to assay tables and format
-        pdata <- parquet_table %>%
-            dplyr::select(tidyselect::all_of(c(rnames_col, acol,
-                                                cnames_col))) %>%
-            tidyr::pivot_wider(
-                names_from  = tidyselect::all_of(cnames_col),
-                values_from = tidyselect::all_of(acol),
-                values_fill = 0
-            ) %>%
-            tibble::column_to_rownames(var = rnames_col) %>%
-            as.matrix()
-
-        ## Add data from "empty samples" if provided
-        edata <- matrix(NA, nrow(pdata), length(esamps),
-                        dimnames = list(NULL, esamps))
-
-        cbind(pdata, edata)
-    })
-    names(alist) <- assay_cols
-
-    return(alist)
+    .Deprecated("curatedCore::buildExperiment")
 }
 
 #' @title Build SummarizedExperiment colData table
-#' @description 'build_tse_coldata' takes a number of pieces that are used to
-#' create a colData table consistent with the SummarizedExperiment data type and
-#' derivatives.
-#' @param cnames_col Character string: column that supplies column names
-#' @param cdata_cols Character string: column(s) that indicate colData
-#' @param parquet_table Table or data frame: data taken directly from a parquet
-#' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
-#' @param esamps Character vector: IDs of requested samples not present in
-#' parquet_table. Default: NULL
-#' @param empty_data Table or data frame (optional): data on samples not
-#' included in parquet_table. Default: NULL
-#' @return A colData table compatible with the SummarizedExperiment format
-#' @examples
-#' fpaths <- c(file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_uuid.parquet"),
-#'             file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_pathway.parquet"))
-#'
-#' con <- accessParquetData(local_files = fpaths,
-#'                          data_types = "pathcoverage_unstratified")
-#'
-#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
-#'                     dplyr::collect()
-#'
-#' edat <- data.frame(uuid = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
-#'                             "88a4d532-64fa-414c-b3d0-f02b291341c0"),
-#'                    humann_header = c("# Pathway\tout_Coverage",
-#'                                      "# Pathway\tout_Coverage"))
-#'
-#' cdat <- build_tse_coldata(cnames_col = "uuid",
-#'                           cdata_cols = "humann_header",
-#'                           parquet_table = parquet_tbl,
-#'                           esamps = c("9b91f0a9-7f56-400d-a652-4fe6e1f1955e",
-#'                                      "88a4d532-64fa-414c-b3d0-f02b291341c0"),
-#'                           empty_data = edat)
-#' @seealso
-#'  \code{\link[tidyselect]{all_of}}
-#'  \code{\link[dplyr]{distinct}}
-#'  \code{\link[dplyr]{mutate-joins}}
-#'  \code{\link[dplyr]{join_by}}
-#' @rdname build_tse_coldata
+#' @description Deprecated: assembly is now handled by
+#' \code{\link[curatedCore]{buildExperiment}}.
 #' @noRd
-#' @importFrom tidyselect any_of
-#' @importFrom dplyr distinct left_join join_by filter select
-#' @importFrom utils data
 build_tse_coldata <- function(cnames_col, cdata_cols, parquet_table,
                                 esamps = NULL, empty_data = NULL) {
-    ## Check if empty data was supplied and pull relevant columns if so
-    if (!is.null(empty_data)) {
-        etab <- empty_data %>%
-            dplyr::filter(.data$uuid %in% esamps) %>%
-            dplyr::select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
-            as.data.frame()
-    }
-
-    ## Select relevant info from main parquet table
-    cdata <- parquet_table %>%
-        dplyr::select(tidyselect::any_of(c(cnames_col, cdata_cols))) %>%
-        dplyr::distinct() %>%
-        as.data.frame()
-
-    ## Combine
-    if (exists("etab")) {
-        cdata <- rbind(cdata, etab)
-    }
-
-    ## Load sampleMetadata
-    utils::data("sampleMetadata", package = "parkinsonsMetagenomicData",
-         envir = environment())
-
-    ## Add sample metadata
-    cdata <- cdata %>%
-        dplyr::left_join(sampleMetadata, by = cnames_col)
-    rownames(cdata) <- cdata[[cnames_col]]
-
-    return(cdata)
+    .Deprecated("curatedCore::buildExperiment")
 }
 
 #' @title Build SummarizedExperiment rowData table
-#' @description 'build_tse_rowdata' takes a number of pieces that are used to
-#' create a rowData table consistent with the SummarizedExperiment data type and
-#' derivatives.
-#' @param parquet_table Table or data frame: data taken directly from a parquet
-#' file found in the repo of interest (see inst/extdata/parquet_repos.csv).
-#' @param rnames_col Character string: column that supplies row names
-#' @param rdata_cols Character string: column(s) that indicate rowData
-#' @return A rowData table compatible with the SummarizedExperiment format
-#' @examples
-#' fpaths <- c(file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_uuid.parquet"),
-#'             file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_pathway.parquet"))
-#'
-#' con <- accessParquetData(local_files = fpaths,
-#'                          data_types = "pathcoverage_unstratified")
-#'
-#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
-#'                     dplyr::collect()
-#'
-#' rdat <- build_tse_rowdata(parquet_table = parquet_tbl,
-#'                           rnames_col = "pathway",
-#'                           rdata_cols = c("pathway_uniref", "pathway_genus",
-#'                                          "pathway_species"))
-#' @seealso
-#'  \code{\link[tidyselect]{all_of}}
-#'  \code{\link[dplyr]{distinct}}
-#' @rdname build_tse_rowdata
+#' @description Deprecated: assembly is now handled by
+#' \code{\link[curatedCore]{buildExperiment}}.
 #' @noRd
-#' @importFrom tidyselect any_of
-#' @importFrom dplyr distinct select
 build_tse_rowdata <- function(parquet_table, rnames_col, rdata_cols) {
-    rdata <- parquet_table %>%
-        dplyr::select(tidyselect::any_of(c(rnames_col, rdata_cols))) %>%
-        dplyr::distinct() %>%
-        as.data.frame()
-    rownames(rdata) <- rdata[[rnames_col]]
-
-    return(rdata)
+    .Deprecated("curatedCore::buildExperiment")
 }
 
-#' @title Confirm that SummarizedExperiment rowData, colData, and assays have
-#' the same row/column orders
-#' @description 'order_tse_elements' is a precaution to make sure that all
-#' SummarizedExperiment elements are ordered the same.
-#' @param rdata Table: SummarizedExperiment rowData
-#' @param cdata Table: SummarizedExperiment colData
-#' @param alist List of tables: SummarizedExperiment assays
-#' @return List of three elements: a rowData table, a colData table, and a list
-#' of assay tables
-#' @examples
-#' fpaths <- c(file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_uuid.parquet"),
-#'             file.path(system.file("extdata",
-#'                                   package = "parkinsonsMetagenomicData"),
-#'                       "pathcoverage_unstratified_pathway.parquet"))
-#'
-#' con <- accessParquetData(local_files = fpaths,
-#'                          data_types = "pathcoverage_unstratified")
-#'
-#' parquet_tbl <- dplyr::tbl(con, "pathcoverage_unstratified_uuid") |>
-#'                     dplyr::collect()
-
-#' rdata <- build_tse_rowdata(parquet_table = parquet_tbl,
-#'                           rnames_col = "pathway",
-#'                           rdata_cols = c("pathway_uniref", "pathway_genus",
-#'                                          "pathway_species"))
-#' cdata <- build_tse_coldata(cnames_col = "uuid",
-#'                           cdata_cols = "humann_header",
-#'                           parquet_table = parquet_tbl)
-#' alist <- build_tse_assays(assay_cols = "coverage",
-#'                          rnames_col = "pathway",
-#'                          cnames_col = "uuid",
-#'                          parquet_table = parquet_tbl)
-#'
-#' ordered <- order_tse_elements(rdata, cdata, alist)
-#' @rdname order_tse_elements
+#' @title Confirm that SummarizedExperiment elements have same order
+#' @description Deprecated: element ordering is now handled by
+#' \code{\link[curatedCore]{buildExperiment}}.
 #' @noRd
 order_tse_elements <- function(rdata, cdata, alist) {
-    ## Get rows that exist in both rowData/colData and assays
-    rowids <- intersect(rownames(rdata), unlist(lapply(alist, rownames)))
-    colids <- intersect(rownames(cdata), unlist(lapply(alist, colnames)))
-
-    ## Order rowData, colData, and assays the same
-    rdata <- rdata[rowids,, drop = FALSE]
-    cdata <- cdata[colids,, drop = FALSE]
-    alist <- lapply(alist, function(x) x[rowids, colids, drop = FALSE])
-
-    ## Package for return
-    combined <- list(rdata = rdata, cdata = cdata, alist = alist)
-
-    return(combined)
+    .Deprecated("curatedCore::buildExperiment")
 }
 
 #' @title Standardize the order of a vector of delimited strings
-#' @description 'standardize_ordering' takes a vector of strings, splits each of
-#' them on a specified delimiter, orders them, then re-collapses them with the
-#' same delimiter. This confirms that when calling unique(), there are no
-#' strings that contain the same elements but in a different order.
-#' @param vec Vector of strings: vector of strings to be standardized
-#' @param delim Character: delimiter to split each of the strings by.
-#' @return Vector of strings
-#' @examples
-#' vec <- c("horse|gecko|frog",
-#'          "cow|camel|fish",
-#'          "frog|gecko|horse")
-#'
-#' standardize_ordering(vec, delim = "|")
+#' @description Deprecated: now provided by curatedCore internally.
+#' Kept for backward compatibility.
+#' @param vec Vector of strings to standardize
+#' @param delim Delimiter character
+#' @return Standardized character vector
 #' @rdname standardize_ordering
 #' @noRd
 #' @importFrom stringr str_split str_escape
@@ -1185,122 +843,23 @@ standardize_ordering <- function(vec, delim) {
         } else { x }
         }) |>
         unlist()
-
     return(vec)
 }
 
 #' @title Merge TreeSummarizedExperiment assays
-#' @description 'merge_assays' takes the assay elements of multiple
-#' TreeSummarizedExperiment objects and merges them into a single assay per
-#' type.
-#' @param merge_list List of TreeSummarizedExperiment objects
-#' @return List of tables formatted as TreeSummarizedExperiment assays
-#' @examples
-#' fpath <- file.path(system.file("extdata",
-#'                                package = "parkinsonsMetagenomicData"),
-#'                    "sample_experiment_list.Rds")
-#' sample_experiment_list <- readRDS(fpath)
-#' assay_list <- merge_assays(sample_experiment_list)
-#' @seealso
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}
-#'  \code{\link[purrr]{map}}
-#'  \code{\link[purrr]{reduce}}
-#'  \code{\link[tibble]{rownames}}
-#'  \code{\link[dplyr]{mutate-joins}}
-#'  \code{\link[dplyr]{mutate}}
-#'  \code{\link[dplyr]{across}}
-#'  \code{\link[tidyselect]{everything}}
-#'  \code{\link[tidyr]{replace_na}}
-#'  \code{\link[S4Vectors]{SimpleList-class}}
-#' @rdname merge_assays
+#' @description Deprecated: merging is now handled by
+#' \code{\link[curatedCore]{mergeExperiments}}.
 #' @noRd
-#' @importFrom SummarizedExperiment assayNames assay
-#' @importFrom purrr map reduce
-#' @importFrom tibble rownames_to_column column_to_rownames
-#' @importFrom dplyr full_join mutate across
-#' @importFrom tidyselect everything
-#' @importFrom tidyr replace_na
-#' @importFrom S4Vectors SimpleList
 merge_assays <- function(merge_list) {
-    ## Check that assays match
-    assay_names <-
-        lapply(merge_list, SummarizedExperiment::assayNames) |>
-        unique()
-
-    if (length(assay_names) != 1) {
-        stop("'merge_list' contains multiple assay types, please ",
-             "provide a list where all assays match in type and order.")
-    }
-
-    ## Merge assays
-    assay_list <- vector("list", length(assay_names[[1]]))
-    names(assay_list) <- assay_names[[1]]
-    for (i in seq_along(assay_list)) {
-        assay_list[[i]] <-
-            purrr::map(merge_list, \(x) SummarizedExperiment::assay(x, i)) |>
-            purrr::map(as.matrix) |>
-            purrr::map(as.data.frame) |>
-            purrr::map(tibble::rownames_to_column) |>
-            purrr::reduce(dplyr::full_join, by = "rowname") |>
-            tibble::column_to_rownames() |>
-            dplyr::mutate(dplyr::across(tidyselect::everything(),
-                                        .fns = ~ tidyr::replace_na(.x, 0))) |>
-            as.matrix()
-    }
-
-    assay_list <- assay_list |>
-        S4Vectors::SimpleList()
-
-    return(assay_list)
+    .Deprecated("curatedCore::mergeExperiments")
 }
 
 #' @title Merge TreeSummarizedExperiment rowData
-#' @description 'merge_rowdata' takes the rowData elements of multiple
-#' TreeSummarizedExperiment objects and merges them into a single DataFrame of
-#' rowData.
-#' @param merge_list List of TreeSummarizedExperiment objects
-#' @param assay_list List of TreeSummarizedExperiment assays or similarly
-#' formatted tables
-#' @return DataFrame formatted as a TreeSummarizedExperiment rowData object
-#' @examples
-#' fpath <- file.path(system.file("extdata",
-#'                                package = "parkinsonsMetagenomicData"),
-#'                    "sample_experiment_list.Rds")
-#' sample_experiment_list <- readRDS(fpath)
-#' assay_list <- merge_assays(sample_experiment_list)
-#' rowData <- merge_rowdata(sample_experiment_list, assay_list)
-#' @seealso
-#'  \code{\link[purrr]{map}}
-#'  \code{\link[purrr]{reduce}}
-#'  \code{\link[SummarizedExperiment]{SummarizedExperiment-class}}
-#'  \code{\link[tibble]{rownames}}
-#'  \code{\link[dplyr]{mutate-joins}}
-#'  \code{\link[S4Vectors]{DataFrame-class}}
-#' @rdname merge_rowdata
+#' @description Deprecated: merging is now handled by
+#' \code{\link[curatedCore]{mergeExperiments}}.
 #' @noRd
-#' @importFrom purrr map reduce
-#' @importFrom SummarizedExperiment rowData
-#' @importFrom tibble rownames_to_column column_to_rownames
-#' @importFrom dplyr full_join
-#' @importFrom S4Vectors DataFrame
 merge_rowdata <- function(merge_list, assay_list) {
-    rowData <-
-        purrr::map(merge_list, SummarizedExperiment::rowData) |>
-        purrr::map(as.data.frame) |>
-        purrr::map(tibble::rownames_to_column)
-
-    join_by <-
-        purrr::map(rowData, colnames) |>
-        purrr::reduce(intersect)
-
-    rowData <-
-        purrr::reduce(rowData, dplyr::full_join, by = join_by) |>
-        tibble::column_to_rownames() |>
-        S4Vectors::DataFrame()
-
-    rowData <- rowData[match(rownames(assay_list[[1]]), rownames(rowData)),]
-
-    return(rowData)
+    .Deprecated("curatedCore::mergeExperiments")
 }
 
 #' @title Retrieve the URL or filepath of the data source from a lazy DuckDB

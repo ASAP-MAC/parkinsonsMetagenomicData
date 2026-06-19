@@ -12,9 +12,8 @@ accessParquetData(
 )
 }
 \arguments{
-\item{dbdir}{Location for database files. Should be a path to an existing
-directory in the file system or the value ':memory:' to keep data in RAM.
-Default: ':memory:'}
+\item{dbdir}{Kept for API compatibility. Ignored — connections are always
+in-memory. Default: ':memory:'}
 
 \item{repo}{String (optional): Hugging Face repo where the parquet files are
 stored. If NULL and local_files is also NULL, the repo listed as the default
@@ -32,12 +31,16 @@ created for all available data types. Default: NULL}
 DuckDB connection object of class 'duckdb_connection'
 }
 \description{
-'accessParquetData' is a wrapper function for 'db_connect' and
-'retrieve_views'. A DuckDB connection is established and views are created
-for either all provided local files or all data types available in a repo of
-interest (see inst/extdata/parquet_repos.csv). When using a remote repo, a
-vector of specific data types can be supplied as doing this for all data
-types can take longer.
+'accessParquetData' is a wrapper function that establishes a
+DuckDB connection and creates views for either all provided local files or
+all data types available in a repo of interest (see
+inst/extdata/parquet_repos.csv). When using a remote repo, a vector of
+specific data types can be supplied as doing this for all data types can
+take longer.
+
+Internally, connection management is delegated to
+\code{\link[curatedCore]{connectSource}} via the appropriate
+\code{CuratedSource} constructor.
 }
 \details{
 Files stored remotely and locally cannot be combined in the same

@@ -96,6 +96,25 @@ These files can be easily accessed through the [DuckDB R client](https://duckdb.
 - [Working with Large Parquet Files](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/working-with-large-parquet-files.html) - Strategies for large data types
 - [Data Codebook](https://asap-mac.github.io/parkinsonsMetagenomicData/articles/codebook.html) - Complete variable definitions
 
+## Data Access Architecture (curatedCore)
+
+parkinsonsMetagenomicData uses the
+[curatedCore](https://github.com/waldronlab/curatedCore) package as its
+data-access layer. curatedCore provides a unified interface for connecting to
+DuckDB-backed parquet data stores, filtering views, collecting results, and
+assembling (Tree)SummarizedExperiment objects.
+
+**Current backend**: PMD currently uses Hugging Face parquet URLs via
+`curatedCore::parquetRepoSource()`. Each data type is a separate parquet file
+hosted publicly on Hugging Face, and the package constructs `hf://` URLs that
+DuckDB's httpfs extension can read directly.
+
+**Future migration**: Once PMD data is published to the unified ETL DuckDB
+catalog (the same catalog used by curatedMetagenomicData), PMD can switch to
+`curatedCore::duckdbCatalogSource()` to read from a single pre-built catalog
+file. This requires no changes to the user-facing API — only the internal
+`CuratedSource` constructor changes.
+
 ## Linked Repositories
 
 Here are all of the repositories involved in making this data available:
@@ -104,3 +123,5 @@ Here are all of the repositories involved in making this data available:
 * Processing: [curatedMetagenomicsNextflow](https://github.com/seandavi/curatedMetagenomicsNextflow)
 * Output Transformation: [parquet_generation](https://github.com/ASAP-MAC/parquet_generation)
 * Metadata Curation: [parkinsonsManualCuration](https://github.com/ASAP-MAC/parkinsonsManualCuration)
+* Data Access Layer: [curatedCore](https://github.com/waldronlab/curatedCore)
+

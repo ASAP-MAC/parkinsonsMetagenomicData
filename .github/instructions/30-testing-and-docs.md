@@ -1,32 +1,54 @@
----
-title: Testing and Documentation Guidance
-topics: [roxygen, examples, testing, documentation]
----
+# Testing and Documentation
 
-# Testing and Documentation Guidance
 
-## Documentation requirements for exported functions
-Required roxygen tags:
-- `@title`
-- `@description`
-- `@param`
-- `@return`
-- `@examples`
+## Development and Checking Commands
 
-## Examples
-- Include at least one runnable example
-- Use `\donttest` for examples that require network access or may hit rate limits
-- Never use `\dontrun`
-- Always provide a local alternative using test data when network examples exist
+```bash
+# Build and check
+R CMD build .
+R CMD check parkinsonsMetagenomicData_*.tar.gz
 
-## Testing standards
-- Use small local files in `inst/extdata/`
-- Prefer tests that do not depend on remote services
-- Cover invalid input and error handling
-- Include representative parquet, TSV/TXT, and RDS test files as needed
+# Documentation
+R -e "roxygen2::roxygenize()"
 
-## Before considering a change complete
-- Run `roxygen2::roxygenize()` if docs changed
-- Verify examples still work
-- Check that exported functions have tests
-- Follow the complete checklist in [50-git-workflow.md](50-git-workflow.md#before-committing)
+# Tests
+R -e "devtools::test()"
+```
+
+## Package-Specific Considerations
+
+[To be documented]
+
+## Package-Specific Testing
+
+### Test Organization
+
+Standard testthat setup with tests separated by functionality (e.g., test-readParquet.R, test-utils.R).
+
+### Test Data
+
+- **Location**: inst/extdata/
+- **File types**: Parquet, .Rds, .csv, and compressed text files.
+- **Purpose**: Validate reading, parsing, and data retrieval functions locally.
+
+### Remote Data Testing
+
+Primarily tested against local versions of files in inst/extdata to ensure tests pass offline.
+
+### Running Tests
+
+devtools::test()
+
+## Package-Specific Documentation Patterns
+
+### Function Categories
+
+roxygen2 standard documentation
+
+### Common Parameters
+
+con (duckdb connection), dataType (character), repository (character)
+
+## Common Testing Patterns
+
+testthat edition 3

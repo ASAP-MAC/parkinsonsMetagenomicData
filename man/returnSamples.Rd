@@ -126,5 +126,5 @@ genus_ex <- returnSamples(data_type = "pathcoverage_unstratified",
 genus_ex
 }
 \seealso{
-\code{\link[DBI]{dbDisconnect}}
+\code{\link[curatedCore]{closeSource}}
 }

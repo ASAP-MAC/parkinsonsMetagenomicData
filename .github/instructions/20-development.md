@@ -1,33 +1,24 @@
----
-title: Development Guidance
-topics: [coding-standards, parquet-structure, validation, api-design]
----
+# Development Patterns
 
-# Development Guidance
 
-## Coding standards
-- Use `@noRd` for internal helper functions
-- Export user-facing functions and document them fully (see [30-testing-and-docs.md](30-testing-and-docs.md))
-- Validation helpers should start with `confirm_*`
-- Return `TreeSummarizedExperiment` when appropriate
-- Use `parquet_colinfo(data_type)` to confirm column structure before coding against a data type
+## Package-Specific Patterns
 
-## Column roles in parquet files
-- `cname`: column names, typically sample IDs / `uuid`
-- `cdata`: column metadata such as versions or commands
-- `rname`: row names, feature IDs
-- `rdata`: row metadata, feature annotations
-- `assay`: measurement values
+### Function Organization
 
-## When to suggest package changes
-Good candidates:
-- simplifying common analysis patterns
-- better validation and error messages
-- performance improvements for large files
-- reference data that benefits multiple users
+Modular R files like parseFiles.R, readParquet.R, getMetagenomicData.R, utils.R
 
-Avoid suggesting:
-- visualization functions
-- analysis functions better suited to other packages
-- study-specific filtering logic
-- breaking API changes
+### Naming Conventions
+
+Mixed camelCase (e.g., returnSamples) and snake_case (e.g., biobakery_files).
+
+## S4 Classes and Methods
+
+None defined internally. Uses TreeSummarizedExperiment from Bioconductor.
+
+## Key Dependencies
+
+curatedCore, duckdb, arrow, httr2, TreeSummarizedExperiment.
+
+## Code Style Notes
+
+Uses tidyverse conventions (dplyr, stringr, purrr) and dbplyr.

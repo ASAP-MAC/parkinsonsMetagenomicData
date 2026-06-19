@@ -52,34 +52,38 @@ test_that("detect_data_type returns NA for no matches", {
     expect_true(is.na(res))
 })
 
-## pick_projection
-test_that("pick_projection selects exact matching view", {
-    con <- db_connect(":memory:")
+## pickProjection (via curatedCore)
+test_that("pickProjection selects exact matching view", {
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
     DBI::dbExecute(con, "CREATE TABLE relative_abundance_uuid (id INTEGER)")
     tbls <- DBI::dbListTables(con)
     expect_true("relative_abundance_uuid" %in% tbls)
 
-    res <- pick_projection(con, "relative_abundance", "uuid")
+    res <- curatedCore::pickProjection(con, "relative_abundance", feature = "uuid")
     expect_equal(res, "relative_abundance_uuid")
+    DBI::dbDisconnect(con)
 })
 
-test_that("pick_projection falls back to uuid view when exact not found", {
-    con <- db_connect(":memory:")
+test_that("pickProjection falls back to uuid view when exact not found", {
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
     DBI::dbExecute(con, "CREATE TABLE relative_abundance_uuid (id INTEGER)")
-    res <- pick_projection(con, "relative_abundance", "nonexistent_feature")
+    res <- curatedCore::pickProjection(con, "relative_abundance", feature = "nonexistent_feature")
     expect_equal(res, "relative_abundance_uuid")
+    DBI::dbDisconnect(con)
 })
 
-test_that("pick_projection selects view that matches data_type if no uuid or exact views", {
-    con <- db_connect(":memory:")
+test_that("pickProjection selects view that matches data_type if no uuid or exact views", {
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
     DBI::dbExecute(con, "CREATE TABLE relative_abundance_horse (id INTEGER)")
-    res <- pick_projection(con, "relative_abundance")
+    res <- curatedCore::pickProjection(con, "relative_abundance")
     expect_equal(res, "relative_abundance_horse")
+    DBI::dbDisconnect(con)
 })
 
-test_that("pick_projection errors if no matching views", {
-    con <- db_connect(":memory:")
-    expect_error(pick_projection(con, "relative_abundance"))
+test_that("pickProjection errors if no matching views", {
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+    expect_error(curatedCore::pickProjection(con, "relative_abundance"))
+    DBI::dbDisconnect(con)
 })
 
 ## get_repo_info
@@ -159,8 +163,9 @@ test_that("confirm_filter_values rejects invalid inputs", {
 
 ## confirm_duckdb_con
 test_that("confirm_duckdb_con accepts valid duckdb_connection", {
-    con <- db_connect(":memory:")
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
     expect_no_error(confirm_duckdb_con(con))
+    DBI::dbDisconnect(con)
 })
 
 test_that("confirm_duckdb_con errors on invalid input", {
@@ -170,10 +175,11 @@ test_that("confirm_duckdb_con errors on invalid input", {
 
 ## confirm_duckdb_view
 test_that("confirm_duckdb_view accepts tbl_duckdb_connection", {
-    con <- db_connect(":memory:")
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
     DBI::dbExecute(con, "CREATE TABLE test (id INTEGER)")
     view <- dplyr::tbl(con, "test")
     expect_no_error(confirm_duckdb_view(view))
+    DBI::dbDisconnect(con)
 })
 
 test_that("confirm_duckdb_view errors on wrong class", {
