@@ -2,7 +2,7 @@ parkinsonsMetagenomicData
 ================
 
 <!-- badges: start -->
-[![R CMD Check + BiocCheck](https://github.com/ASAP-MAC/parkinsonsMetagenomicData/actions/workflows/pr_check.yml/badge.svg)](https://github.com/ASAP-MAC/parkinsonsMetagenomicData/actions/workflows/pr_check.yml)
+[![R CMD check](https://github.com/ASAP-MAC/parkinsonsMetagenomicData/actions/workflows/ci.yml/badge.svg)](https://github.com/ASAP-MAC/parkinsonsMetagenomicData/actions/workflows/ci.yml)
 [![Codecov test coverage](https://codecov.io/gh/ASAP-MAC/parkinsonsMetagenomicData/branch/devel/graph/badge.svg)](https://app.codecov.io/gh/ASAP-MAC/parkinsonsMetagenomicData?branch=devel)
 <!-- badges: end -->
 
