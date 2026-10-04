@@ -671,7 +671,8 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
                             custom_view = NULL, include_empty_samples = FALSE,
                             dry_run = FALSE, clean_meta = TRUE) {
     ## Check input
-    # con, data_type, filter_values, custom_view, include_empty_samples
+    # con, data_type, filter_values, custom_view, include_empty_samples,
+    # clean_meta
     confirm_duckdb_con(con)
     confirm_data_type(data_type)
     if (!is.null(filter_values)) { confirm_filter_values(filter_values) }
@@ -682,6 +683,10 @@ loadParquetData <- function(con, data_type, filter_values = NULL,
     } else if (include_empty_samples && !"uuid" %in% names(filter_values)) {
         message("'include_empty_samples' is TRUE but 'filter_values' ",
                 "does not contain a UUID argument.")
+    }
+    if (!methods::is(clean_meta, "logical") || length(clean_meta) != 1 ||
+        is.na(clean_meta)) {
+        stop("Invalid value of 'clean_meta'. Please provide TRUE or FALSE.")
     }
 
     ## Apply any requested filtering, incorporating custom view if provided

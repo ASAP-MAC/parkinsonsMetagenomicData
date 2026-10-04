@@ -125,6 +125,26 @@ test_that("TSE assays are matrices", {
     expect_true(all(sapply(SummarizedExperiment::assays(tse_basic), function(x) inherits(x, "matrix"))))
 })
 
+test_that("clean_meta = TRUE removes exactly the all-NA colData columns", {
+    tse_raw <- parquet_to_tse(parquet_tbl,
+                              data_type = "pathcoverage_unstratified",
+                              clean_meta = FALSE)
+    tse_clean <- parquet_to_tse(parquet_tbl,
+                                data_type = "pathcoverage_unstratified",
+                                clean_meta = TRUE)
+    cdata_raw <- as.data.frame(SummarizedExperiment::colData(tse_raw))
+    cdata_clean <- as.data.frame(SummarizedExperiment::colData(tse_clean))
+
+    all_na_cols <- names(cdata_raw)[colSums(is.na(cdata_raw)) ==
+                                        nrow(cdata_raw)]
+    # The fixture must exercise both branches
+    expect_gt(length(all_na_cols), 0)
+    expect_setequal(names(cdata_clean), setdiff(names(cdata_raw), all_na_cols))
+    # Default matches clean_meta = TRUE
+    expect_identical(names(as.data.frame(
+        SummarizedExperiment::colData(tse_basic))), names(cdata_clean))
+})
+
 ## accessParquetData
 test_that("accessParquetData returns a valid DuckDB connection", {
     con <- accessParquetData(local_files = local_pathcoverage_files,
@@ -174,6 +194,26 @@ test_that("custom_view was applied", {
 
 test_that("filter_values were applied", {
     expect_true(all(colnames(custom_tse) %in% uuids))
+})
+
+test_that("loadParquetData passes clean_meta through and validates it", {
+    tse_raw <- loadParquetData(con,
+                               data_type = data_type,
+                               filter_values = list(uuid = uuids),
+                               clean_meta = FALSE)
+    cdata_raw <- as.data.frame(SummarizedExperiment::colData(tse_raw))
+    cdata_default <- as.data.frame(SummarizedExperiment::colData(custom_tse))
+
+    # clean_meta = FALSE keeps all-NA columns that the default drops
+    expect_gt(sum(colSums(is.na(cdata_raw)) == nrow(cdata_raw)), 0)
+    expect_equal(sum(colSums(is.na(cdata_default)) == nrow(cdata_default)), 0)
+
+    expect_error(loadParquetData(con, data_type = data_type,
+                                 clean_meta = "yes"),
+                 "clean_meta")
+    expect_error(loadParquetData(con, data_type = data_type,
+                                 clean_meta = NA),
+                 "clean_meta")
 })
 
 test_that("sampleMetadata was added", {

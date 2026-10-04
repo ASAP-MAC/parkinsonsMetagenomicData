@@ -43,8 +43,8 @@ the source parquet data file. Default: FALSE}
 tbl_duckdb_connection object prior to calling 'dplyr::collect'. Default:
 FALSE}
 
-\item{clean_meta}{Boolean (optional): should sampleMetadata columns that have
-all-NA columns be removed? Default: TRUE}
+\item{clean_meta}{Boolean (optional): should all-NA sampleMetadata columns be removed?
+Default: TRUE}
 }
 \value{
 A TreeSummarizedExperiment object with process metadata, row data,
